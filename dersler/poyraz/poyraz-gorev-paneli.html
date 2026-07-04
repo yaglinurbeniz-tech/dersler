@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Görev: Enerji Fırtınası Finali</title>
+<style>
+  :root{
+    --bg:#0b1026; --panel:#151d40; --panel2:#1b244f;
+    --ink:#eef2ff; --dim:#8b96c9;
+    --amber:#ffb545; --cyan:#39d3e6; --ok:#4ade80; --bad:#f4597b;
+    --line:#2a356e;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at 20% -10%, #1a2560 0%, transparent 55%),
+      radial-gradient(ellipse at 90% 110%, #241a4d 0%, transparent 50%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'Trebuchet MS','Segoe UI',sans-serif;
+    line-height:1.55; min-height:100vh;
+  }
+  .star{position:fixed; background:#fff; border-radius:50%; opacity:.7; pointer-events:none;
+        animation:tw 3s ease-in-out infinite;}
+  @keyframes tw{50%{opacity:.15}}
+  @media (prefers-reduced-motion: reduce){ .star{animation:none} *{transition:none!important} }
+
+  /* ------- ÜST BAR ------- */
+  .topbar{
+    position:sticky; top:0; z-index:10;
+    background:rgba(11,16,38,.92); backdrop-filter:blur(4px);
+    border-bottom:1px solid var(--line);
+    padding:10px 16px; display:flex; align-items:center; gap:14px;
+  }
+  .rank{font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--amber); font-weight:bold; white-space:nowrap;}
+  .xpwrap{flex:1; height:14px; background:var(--panel); border:1px solid var(--line); border-radius:99px; overflow:hidden;}
+  .xpbar{height:100%; width:0%; background:linear-gradient(90deg,var(--amber),#ffd98a); border-radius:99px; transition:width .5s;}
+  .xpnum{font-family:monospace; font-size:14px; color:var(--amber); min-width:70px; text-align:right;}
+
+  .wrap{max-width:720px; margin:0 auto; padding:28px 18px 80px;}
+
+  /* ------- BAŞLIK ------- */
+  header.hero{text-align:center; padding:26px 0 10px;}
+  .eyebrow{font-size:11px; letter-spacing:4px; text-transform:uppercase; color:var(--cyan); margin-bottom:10px;}
+  h1{font-size:30px; line-height:1.2;}
+  h1 .hl{color:var(--amber);}
+  .pilot{color:var(--dim); margin-top:8px; font-size:15px;}
+
+  /* ------- GÖREV KARTLARI ------- */
+  .mission{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    margin-top:22px; overflow:hidden;
+  }
+  .mission.locked{opacity:.38; pointer-events:none;}
+  .mhead{display:flex; align-items:center; gap:12px; padding:14px 18px; border-bottom:1px solid var(--line);}
+  .mnum{
+    width:34px; height:34px; border-radius:50%; flex:0 0 34px;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:bold; font-family:monospace; font-size:15px;
+    background:var(--panel2); border:1.5px solid var(--cyan); color:var(--cyan);
+  }
+  .mission.done .mnum{background:var(--ok); border-color:var(--ok); color:#06210f;}
+  .mtitle{font-size:18px; font-weight:bold;}
+  .msub{font-size:12px; color:var(--dim);}
+  .mbody{padding:18px;}
+
+  .note{background:var(--panel2); border-left:3px solid var(--cyan); padding:10px 14px; border-radius:0 8px 8px 0; font-size:14px; margin-bottom:14px;}
+  .note b{color:var(--cyan);}
+
+  code, .code{font-family:'Courier New',monospace; background:#0d1330; color:#ffd98a; padding:1px 6px; border-radius:5px; font-size:.93em;}
+
+  /* akış haritası */
+  .flow{display:flex; flex-direction:column; gap:6px; margin:12px 0;}
+  .fbox{
+    background:var(--panel2); border:1.5px solid var(--line); border-radius:10px;
+    padding:11px 14px; cursor:pointer; transition:border-color .2s;
+  }
+  .fbox:hover{border-color:var(--cyan);}
+  .fbox.open{border-color:var(--amber);}
+  .fbox .ft{font-weight:bold; font-size:15px;}
+  .fbox .fd{display:none; color:var(--dim); font-size:13.5px; margin-top:6px;}
+  .fbox.open .fd{display:block;}
+  .arrow{text-align:center; color:var(--cyan); font-size:14px; line-height:1;}
+
+  /* quiz */
+  .q{margin:18px 0;}
+  .qt{font-weight:bold; margin-bottom:9px; font-size:15.5px;}
+  .qt .qn{color:var(--cyan); font-family:monospace; margin-right:6px;}
+  .opts{display:grid; gap:7px;}
+  .opt{
+    text-align:left; background:var(--panel2); color:var(--ink);
+    border:1.5px solid var(--line); border-radius:9px;
+    padding:10px 13px; font-size:14.5px; cursor:pointer; font-family:inherit;
+    transition:border-color .15s;
+  }
+  .opt:hover{border-color:var(--cyan);}
+  .opt.right{border-color:var(--ok); background:#12331f; color:#c9f7d9;}
+  .opt.wrong{border-color:var(--bad); background:#3a1626; color:#ffd3de;}
+  .opt:disabled{cursor:default;}
+  .exp{display:none; font-size:13.5px; color:var(--dim); margin-top:8px; padding-left:4px; border-left:2px solid var(--amber); padding:6px 10px;}
+  .exp.show{display:block;}
+  .exp b{color:var(--amber);}
+
+  /* karşılaştırma tablosu */
+  table.vs{width:100%; border-collapse:collapse; font-size:14px; margin:10px 0 4px;}
+  table.vs th{color:var(--cyan); text-align:left; padding:7px 9px; border-bottom:1.5px solid var(--line); font-size:13px; letter-spacing:1px; text-transform:uppercase;}
+  table.vs td{padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:top;}
+  table.vs td:first-child{color:var(--dim); white-space:nowrap;}
+
+  /* butonlar */
+  .btn{
+    display:inline-block; background:var(--amber); color:#241500;
+    border:none; border-radius:9px; padding:11px 22px;
+    font-size:15px; font-weight:bold; cursor:pointer; font-family:inherit;
+    margin-top:14px;
+  }
+  .btn:hover{filter:brightness(1.08);}
+  .btn.ghost{background:transparent; color:var(--cyan); border:1.5px solid var(--cyan);}
+  .btn:disabled{opacity:.4; cursor:default;}
+
+  /* mola sayacı */
+  .timer{font-family:monospace; font-size:52px; text-align:center; color:var(--cyan); margin:14px 0 6px; letter-spacing:3px;}
+
+  .toast{
+    position:fixed; right:16px; bottom:16px; background:var(--amber); color:#241500;
+    font-weight:bold; padding:10px 18px; border-radius:10px; font-size:15px;
+    opacity:0; transform:translateY(10px); transition:all .3s; pointer-events:none; z-index:20;
+  }
+  .toast.show{opacity:1; transform:translateY(0);}
+
+  /* final */
+  .final{display:none; text-align:center; padding:34px 18px;}
+  .final.show{display:block;}
+  .badge{font-size:64px;}
+  .final h2{font-size:26px; margin:10px 0 6px;}
+  .final .rankname{color:var(--amber); font-size:20px; font-weight:bold;}
+  .final p{color:var(--dim); max-width:440px; margin:10px auto 0;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="rank" id="rank">🚀 KADET</div>
+  <div class="xpwrap"><div class="xpbar" id="xpbar"></div></div>
+  <div class="xpnum"><span id="xp">0</span> XP</div>
+</div>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">Görev Kontrol Paneli · Ders 12</div>
+  <h1>Enerji Fırtınası: <span class="hl">Final Görevi</span></h1>
+  <div class="pilot">Pilot: Poyraz · Hedef: 120 XP → Uzay Kaptanı rütbesi</div>
+</header>
+
+<!-- GÖREV 1: BRİFİNG -->
+<div class="mission" id="m1">
+  <div class="mhead">
+    <div class="mnum">1</div>
+    <div><div class="mtitle">Görev Brifingi</div><div class="msub">Bugünün anlaşması ve rota</div></div>
+  </div>
+  <div class="mbody">
+    <div class="note"><b>Anlaşma:</b> 20 dakika tam odak → 5 dakika oyun molası → tekrar odak. Zamanlayıcı 3. görevde seni bekliyor. Söz mü? 🤝</div>
+    <p>Bugünkü rota: önce uzay oyununun <b>haritasını</b> çıkaracağız (kodun nasıl aktığını göreceksin), sonra <b>Tahmin Şovu</b> (puanlı!), mola, <b>Sözlük ve Liste turu</b> ve final sürprizi: yeni oyunumuzun fragmanı.</p>
+    <button class="btn" onclick="completeMission(1, 0)">Anlaştık, başlayalım! →</button>
+  </div>
+</div>
+
+<!-- GÖREV 2: KOD HARİTASI -->
+<div class="mission locked" id="m2">
+  <div class="mhead">
+    <div class="mnum">2</div>
+    <div><div class="mtitle">Kod Haritası</div><div class="msub">Oyun aslında nasıl "dönüyor"? · +20 XP</div></div>
+  </div>
+  <div class="mbody">
+    <p>Sen kodları tek tek biliyorsun. Şimdi <b>bütünü</b> göreceğiz. Aşağıdaki kutulara sırayla tıkla — her biri oyunun kalp atışının bir adımı:</p>
+    <div class="flow" id="flow">
+      <div class="fbox" onclick="openBox(this)">
+        <div class="ft">🟢 1 · Oyun açılır</div>
+        <div class="fd">En üstteki kodlar <b>bir kez</b> çalışır: gemi, kristal ve küreler doğar, skor 0 olur. Sahne kurulur — perde açılmadan önceki hazırlık gibi.</div>
+      </div>
+      <div class="arrow">▼</div>
+      <div class="fbox" onclick="openBox(this)">
+        <div class="ft">🔁 2 · update() — saniyede ~60 kez!</div>
+        <div class="fd">Oyunun KALBİ. Pygame Zero bu fonksiyonu durmadan çağırır. O da iki işçisine emir verir: <code>move_orbs()</code> ve <code>collisions()</code>. Sen çağırmazsın — o kendi kendine döner.</div>
+      </div>
+      <div class="arrow">▼</div>
+      <div class="fbox" onclick="openBox(this)">
+        <div class="ft">⚙️ 3 · İşçiler çalışır</div>
+        <div class="fd"><code>move_orbs()</code> her küreyi kendi hızıyla aşağı kaydırır. <code>collisions()</code> "gemi bir şeye değdi mi?" diye bakar: kristal ise skor artar, küre ise oyun biter.</div>
+      </div>
+      <div class="arrow">▼</div>
+      <div class="fbox" onclick="openBox(this)">
+        <div class="ft">🖼️ 4 · draw() — fotoğraf çeker</div>
+        <div class="fd">Her karede ekran silinir ve her şey YENİDEN çizilir. Hareket dediğimiz şey aslında saniyede 60 fotoğraf — çizgi film gibi! Sonra ok yukarı döner: tekrar update()...</div>
+      </div>
+    </div>
+    <div class="note" id="flowNote" style="display:none">💡 Yani oyun = <b>sonsuz döngü</b>: update → draw → update → draw... Bir orb'un ekranda "düşmesi", her karede y'sine hızının eklenmesi demek. Bütün resim bu!</div>
+    <button class="btn" id="m2btn" disabled onclick="completeMission(2, 20)">Haritayı anladım → +20 XP</button>
+  </div>
+</div>
+
+<!-- GÖREV 3: TAHMİN ŞOVU -->
+<div class="mission locked" id="m3">
+  <div class="mhead">
+    <div class="mnum">3</div>
+    <div><div class="mtitle">Tahmin Şovu</div><div class="msub">Uzay oyunu bilgi yarışması · her doğru +10 XP</div></div>
+  </div>
+  <div class="mbody">
+
+    <div class="q"><div class="qt"><span class="qn">S1</span>Şu satırı silersek ne olur? <code>orb.speed = random.randint(2, 5)</code></div>
+      <div class="opts">
+        <button class="opt" onclick="answer(this,false)">Küreler kaybolur</button>
+        <button class="opt" onclick="answer(this,true)">Kürelere hız verilmediği için move_orbs() hata verir</button>
+        <button class="opt" onclick="answer(this,false)">Hiçbir şey değişmez</button>
+      </div>
+      <div class="exp"><b>Neden:</b> move_orbs() içinde <code>orb.y + orb.speed</code> var. speed hiç tanımlanmadıysa Python "böyle bir şey yok!" der. Kod dedektifliği: bir satırı silince nerede KULLANILDIĞINA bak.</div>
+    </div>
+
+    <div class="q"><div class="qt"><span class="qn">S2</span>Oyunu 100 puanla başlatmak istersek hangi satırı değiştiririz?</div>
+      <div class="opts">
+        <button class="opt" onclick="answer(this,true)">score = 0 satırını</button>
+        <button class="opt" onclick="answer(this,false)">score = score + 1 satırını</button>
+        <button class="opt" onclick="answer(this,false)">screen.draw.text satırını</button>
+      </div>
+      <div class="exp"><b>Neden:</b> Başlangıç değeri en üstte, sahne kurulurken verilir. <code>score = score + 1</code> ise oyun SIRASINDA artışı yönetir — ikisi farklı anlarda çalışır. (Kod Haritası kutu 1 ve kutu 3!)</div>
+    </div>
+
+    <div class="q"><div class="qt"><span class="qn">S3</span><code>mode = "end"</code> olduğunda draw() hangi bloğa girer?</div>
+      <div class="opts">
+        <button class="opt" onclick="answer(this,false)">if mode == "game" bloğuna</button>
+        <button class="opt" onclick="answer(this,true)">elif mode == "end" bloğuna — "OYUN BİTTİ!" çizilir</button>
+        <button class="opt" onclick="answer(this,false)">Hiçbirine, draw() durur</button>
+      </div>
+      <div class="exp"><b>Neden:</b> draw() çalışmaya devam eder ama artık öbür odaya girer. mode değişkeni bir <b>tren makası</b> gibi: aynı ray, farklı yön.</div>
+    </div>
+
+    <div class="q"><div class="qt"><span class="qn">S4</span>update() fonksiyonunu KİM çağırıyor?</div>
+      <div class="opts">
+        <button class="opt" onclick="answer(this,false)">Biz, kodun en altında</button>
+        <button class="opt" onclick="answer(this,false)">draw() fonksiyonu</button>
+        <button class="opt" onclick="answer(this,true)">Pygame Zero'nun kendisi, saniyede ~60 kez</button>
+      </div>
+      <div class="exp"><b>Neden:</b> update ve draw özel isimlerdir — Pygame Zero bu isimleri görünce "bunları ben çalıştırırım" der. Bu yüzden kodda hiçbir yerde update() yazıp çağırmayız.</div>
+    </div>
+
+    <div class="q"><div class="qt"><span class="qn">S5</span>Gemi küreye değince oyun bitiyor. Bunu KAPATMAK (ölümsüz mod!) istersek ne yaparız?</div>
+      <div class="opts">
+        <button class="opt" onclick="answer(this,true)">collisions() içindeki mode = "end" satırını sileriz/yorum yaparız</button>
+        <button class="opt" onclick="answer(this,false)">orbs listesini boşaltırız</button>
+        <button class="opt" onclick="answer(this,false)">draw() içindeki elif bloğunu sileriz</button>
+      </div>
+      <div class="exp"><b>Neden:</b> Kural nerede KARAR veriliyorsa orada değişir. Küreler yine değer ama sonuç doğurmaz = ölümsüzlük. (orbs'u boşaltmak küreleri yok eder — o hile başka!)</div>
+    </div>
+
+    <div class="q"><div class="qt"><span class="qn">S6</span>Kürelerin İKİ KAT hızlı düşmesi için en kolay değişiklik?</div>
+      <div class="opts">
+        <button class="opt" onclick="answer(this,false)">range(4) yerine range(8)</button>
+        <button class="opt" onclick="answer(this,true)">orb.y = orb.y + orb.speed yerine + orb.speed * 2</button>
+        <button class="opt" onclick="answer(this,false)">WIDTH değerini büyütmek</button>
+      </div>
+      <div class="exp"><b>Neden:</b> Hız = her karede eklenen mesafe. Ekleneni 2 ile çarparsan düşüş 2 kat hızlanır. range(8) küre SAYISINI artırır, hızını değil!</div>
+    </div>
+
+    <button class="btn" id="m3btn" disabled onclick="completeMission(3, 0)">Şov bitti, molaya! →</button>
+  </div>
+</div>
+
+<!-- GÖREV 4: MOLA -->
+<div class="mission locked" id="m4">
+  <div class="mhead">
+    <div class="mnum">4</div>
+    <div><div class="mtitle">Kazanılmış Mola</div><div class="msub">5 dakika — hak ettin 🎮</div></div>
+  </div>
+  <div class="mbody">
+    <p style="text-align:center">Blooket, Gimkit, ne istersen. Sayaç sıfırlanınca panele geri dönüyoruz — anlaşma anlaşmadır!</p>
+    <div class="timer" id="timer">05:00</div>
+    <div style="text-align:center">
+      <button class="btn" id="startT" onclick="startTimer()">Molayı başlat</button>
+      <button class="btn ghost" onclick="completeMission(4, 5)">Molayı atla (+5 XP bonus!)</button>
+    </div>
+  </div>
+</div>
+
+<!-- GÖREV 5: SÖZLÜK vs LİSTE -->
+<div class="mission locked" id="m5">
+  <div class="mhead">
+    <div class="mnum">5</div>
+    <div><div class="mtitle">Liste ve Sözlük Turu</div><div class="msub">Hangisi ne zaman? · her doğru +10 XP</div></div>
+  </div>
+  <div class="mbody">
+    <table class="vs">
+      <tr><th></th><th>Liste []</th><th>Sözlük {}</th></tr>
+      <tr><td>Nedir?</td><td>Sıralı kutular dizisi</td><td>etiket → değer eşleşmesi</td></tr>
+      <tr><td>Erişim</td><td>Sıra numarasıyla: <code>orbs[0]</code></td><td>Etiketle: <code>oyuncu["can"]</code></td></tr>
+      <tr><td>Ne zaman?</td><td>"Aynı türden bir sürü şey"</td><td>"Bir şeyin özellikleri"</td></tr>
+      <tr><td>Oyundan</td><td><code>orbs = []</code> → küre sürüsü</td><td><code>{"isim":"Poyraz","can":3}</code></td></tr>
+    </table>
+
+    <div class="q"><div class="qt"><span class="qn">D1</span>Uzay oyununda küreleri neden SÖZLÜK değil LİSTE ile tuttuk?</div>
+      <div class="opts">
+        <button class="opt" onclick="answer(this,true)">Hepsi aynı türden ve tek tek dolaşmak istiyoruz (for orb in orbs)</button>
+        <button class="opt" onclick="answer(this,false)">Sözlük Pygame'de çalışmaz</button>
+        <button class="opt" onclick="answer(this,false)">Liste daha az yer kaplar</button>
+      </div>
+      <div class="exp"><b>Kural:</b> "Bir sürü aynı şey" = liste. Kürelerin ismi yok, etiketi yok — sadece kalabalıklar. Kalabalık = liste.</div>
+    </div>
+
+    <div class="q"><div class="qt"><span class="qn">D2</span>Oyuncunun ismini, canını ve skorunu BİR ARADA tutmak istiyorum. Hangisi?</div>
+      <div class="opts">
+        <button class="opt" onclick="answer(this,false)">["Poyraz", 3, 150] — liste</button>
+        <button class="opt" onclick="answer(this,true)">{"isim": "Poyraz", "can": 3, "skor": 150} — sözlük</button>
+      </div>
+      <div class="exp"><b>Neden:</b> Liste de tutar ama <code>oyuncu[1]</code> neydi — can mı skor mu? Ezberlemen gerekir. Sözlükte <code>oyuncu["can"]</code> kendini anlatır. Farklı türden özellikler = sözlük.</div>
+    </div>
+
+    <div class="q"><div class="qt"><span class="qn">D3</span><code>envanter = {"elmas": 3, "altın": 10}</code> — Elmas sayısına nasıl ulaşırım?</div>
+      <div class="opts">
+        <button class="opt" onclick="answer(this,false)">envanter[0]</button>
+        <button class="opt" onclick="answer(this,true)">envanter["elmas"]</button>
+        <button class="opt" onclick="answer(this,false)">envanter.elmas()</button>
+      </div>
+      <div class="exp"><b>Neden:</b> Sözlükte sıra numarası YOKTUR, etiket vardır. <code>envanter[0]</code> hata verir — 0 diye bir etiket yok!</div>
+    </div>
+
+    <div class="q"><div class="qt"><span class="qn">D4</span><code>orbs.append(orb)</code> ne yapıyor?</div>
+      <div class="opts">
+        <button class="opt" onclick="answer(this,true)">Listenin SONUNA yeni bir küre ekliyor</button>
+        <button class="opt" onclick="answer(this,false)">Listeden küre siliyor</button>
+        <button class="opt" onclick="answer(this,false)">Listeyi sıralıyor</button>
+      </div>
+      <div class="exp"><b>Akılda kalsın:</b> append = "kuyruğa ekle". Sıradaki 4 küre de böyle tek tek kuyruğa girdi.</div>
+    </div>
+
+    <div class="q"><div class="qt"><span class="qn">D5</span>Haftaya yapacağımız TIKLAYICI oyunda mağaza olacak: "roket: 50 puan, kalkan: 30 puan, mıknatıs: 100 puan". Fiyatları nasıl tutarız?</div>
+      <div class="opts">
+        <button class="opt" onclick="answer(this,false)">fiyatlar = [50, 30, 100]</button>
+        <button class="opt" onclick="answer(this,true)">fiyatlar = {"roket": 50, "kalkan": 30, "mıknatıs": 100}</button>
+      </div>
+      <div class="exp"><b>Neden:</b> "Roket kaç para?" diye ETİKETLE soracağız → <code>fiyatlar["roket"]</code>. Bu soruyu doğru bildiysen haftaki dersin yarısı hazır demektir 😎</div>
+    </div>
+
+    <button class="btn" id="m5btn" disabled onclick="completeMission(5, 0)">Tur bitti → Final sürprizi</button>
+  </div>
+</div>
+
+<!-- GÖREV 6: FRAGMAN -->
+<div class="mission locked" id="m6">
+  <div class="mhead">
+    <div class="mnum">6</div>
+    <div><div class="mtitle">Fragman: Yeni Görev Yaklaşıyor</div><div class="msub">Son tahmin · +20 XP</div></div>
+  </div>
+  <div class="mbody">
+    <div class="note">🎬 <b>Haftaya:</b> TIKLAYICI oyun yapıyoruz. Ekranda dev bir gezegen — tıkladıkça puan! Puanla mağazadan güçlendirme alacaksın, hatta sen uyurken bile puan kazanan <b>otomatik üretici</b> ekleyeceğiz.</div>
+    <div class="q"><div class="qt"><span class="qn">F1</span>Büyük soru: Gezegene her tıklanışta puanın 1 artması için kodda ne olmalı sence?</div>
+      <div class="opts">
+        <button class="opt" onclick="answer(this,false)">update() içinde score = score + 1</button>
+        <button class="opt" onclick="answer(this,true)">Tıklamayı yakalayan bir fonksiyon içinde score = score + 1</button>
+        <button class="opt" onclick="answer(this,false)">draw() içinde score = score + 1</button>
+      </div>
+      <div class="exp"><b>Bravo — işte ders planı!</b> Pygame Zero'da <code>on_mouse_down()</code> diye özel bir fonksiyon var: tıklanınca çalışır. update() içinde olsaydı puan kendi kendine saniyede 60 artardı (aslında... otomatik üretici tam olarak BU hileyi kullanacak 🤫).</div>
+    </div>
+    <button class="btn" id="m6btn" disabled onclick="finish()">Görevi tamamla 🏁</button>
+  </div>
+</div>
+
+<!-- FİNAL -->
+<div class="final" id="final">
+  <div class="badge">🏅</div>
+  <h2>Görev Tamamlandı!</h2>
+  <div class="rankname" id="finalRank"></div>
+  <p id="finalMsg"></p>
+  <p style="margin-top:14px">Ödev: <b>uzay-gorevi-sablon.py</b> dosyasında Bölüm 1'i bitir ve Kontrol Noktası 1 ekranının fotoğrafını at. Sadece Bölüm 1 — fazlası yasak! 🚫😄</p>
+</div>
+
+</div>
+
+<div class="toast" id="toast">+10 XP</div>
+
+<script>
+  // yıldızlar
+  for (let i = 0; i < 40; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const sz = Math.random() * 2 + 1;
+    s.style.cssText = 'width:'+sz+'px;height:'+sz+'px;left:'+(Math.random()*100)+'vw;top:'+(Math.random()*100)+'vh;animation-delay:'+(Math.random()*3)+'s';
+    document.body.appendChild(s);
+  }
+
+  let xp = 0;
+  const MAXXP = 120;
+  const ranks = [[0,'🚀 KADET'],[40,'🛰️ PİLOT'],[80,'🌟 KOMUTAN'],[120,'👑 UZAY KAPTANI']];
+
+  function addXP(n){
+    if(n <= 0) return;
+    xp += n;
+    document.getElementById('xp').textContent = xp;
+    document.getElementById('xpbar').style.width = Math.min(100, xp/MAXXP*100) + '%';
+    let r = ranks[0][1];
+    for(const [t,name] of ranks) if(xp >= t) r = name;
+    document.getElementById('rank').textContent = r;
+    const t = document.getElementById('toast');
+    t.textContent = '+' + n + ' XP';
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 1400);
+  }
+
+  // kod haritası kutuları
+  let opened = 0;
+  function openBox(el){
+    if(!el.classList.contains('open')){
+      el.classList.add('open');
+      opened++;
+      if(opened === 4){
+        document.getElementById('flowNote').style.display = 'block';
+        document.getElementById('m2btn').disabled = false;
+      }
+    }
+  }
+
+  // quiz cevapları
+  function answer(btn, correct){
+    const opts = btn.parentElement.querySelectorAll('.opt');
+    opts.forEach(o => o.disabled = true);
+    if(correct){
+      btn.classList.add('right');
+      addXP(10);
+    } else {
+      btn.classList.add('wrong');
+      opts.forEach(o => { if(o.getAttribute('onclick').includes('true')) o.classList.add('right'); });
+    }
+    btn.closest('.q').querySelector('.exp').classList.add('show');
+    checkSection(btn.closest('.mission'));
+  }
+
+  function checkSection(mission){
+    const total = mission.querySelectorAll('.q').length;
+    const done = mission.querySelectorAll('.q .opt.right, .q .opt.wrong').length >= 1
+      ? [...mission.querySelectorAll('.q')].filter(q => q.querySelector('.opt:disabled')).length
+      : 0;
+    if(done === total){
+      const b = mission.querySelector('.btn[id$="btn"]');
+      if(b) b.disabled = false;
+    }
+  }
+
+  function completeMission(n, bonus){
+    addXP(bonus);
+    const m = document.getElementById('m'+n);
+    m.classList.add('done');
+    const next = document.getElementById('m'+(n+1));
+    if(next){
+      next.classList.remove('locked');
+      next.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+  }
+
+  // mola sayacı
+  let tInt = null;
+  function startTimer(){
+    document.getElementById('startT').disabled = true;
+    let sec = 300;
+    tInt = setInterval(()=>{
+      sec--;
+      const m = String(Math.floor(sec/60)).padStart(2,'0');
+      const s = String(sec%60).padStart(2,'0');
+      document.getElementById('timer').textContent = m+':'+s;
+      if(sec <= 0){
+        clearInterval(tInt);
+        document.getElementById('timer').textContent = 'SÜRE DOLDU!';
+        completeMission(4, 0);
+      }
+    }, 1000);
+  }
+
+  function finish(){
+    document.getElementById('m6').classList.add('done');
+    let r = ranks[0][1];
+    for(const [t,name] of ranks) if(xp >= t) r = name;
+    document.getElementById('finalRank').textContent = r + ' · ' + xp + ' XP';
+    document.getElementById('finalMsg').textContent =
+      xp >= 120 ? 'Tam puan bölgesi! Bu paneli senden iyi bilen yok.' :
+      xp >= 80  ? 'Müthiş bir görevdi. Kaptanlık çok yakın — haftaya XP devam ediyor!' :
+                  'Görev tamam! Yanlışlar da XP kadar değerli: her biri haftaya soru olarak geri gelecek 😏';
+    const f = document.getElementById('final');
+    f.classList.add('show');
+    f.scrollIntoView({behavior:'smooth'});
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Antrenman Odası: Veri Yağmuru</title>
+<style>
+  :root{
+    --bg:#0b1026; --panel:#151d40; --panel2:#1b244f;
+    --ink:#eef2ff; --dim:#8b96c9;
+    --amber:#ffb545; --cyan:#39d3e6; --ok:#4ade80; --bad:#f4597b;
+    --liste:#39d3e6; --sozluk:#c084fc;
+    --line:#2a356e;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  body{
+    background:
+      radial-gradient(ellipse at 20% -10%, #1a2560 0%, transparent 55%),
+      radial-gradient(ellipse at 90% 110%, #241a4d 0%, transparent 50%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'Trebuchet MS','Segoe UI',sans-serif;
+    line-height:1.5; min-height:100vh;
+    user-select:none; -webkit-user-select:none;
+  }
+  .star{position:fixed; background:#fff; border-radius:50%; opacity:.7; pointer-events:none; animation:tw 3s ease-in-out infinite;}
+  @keyframes tw{50%{opacity:.15}}
+  @media (prefers-reduced-motion: reduce){ .star{animation:none} *{transition:none!important; animation:none!important} }
+
+  .wrap{max-width:640px; margin:0 auto; padding:24px 16px 70px;}
+
+  header{text-align:center; padding:18px 0 6px;}
+  .eyebrow{font-size:11px; letter-spacing:4px; text-transform:uppercase; color:var(--cyan); margin-bottom:8px;}
+  h1{font-size:28px;}
+  h1 span{color:var(--amber);}
+  .sub{color:var(--dim); font-size:14px; margin-top:6px;}
+
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:14px; margin-top:20px; padding:18px; }
+  .panel h2{font-size:18px; margin-bottom:10px;}
+  .panel h2 .tag{font-size:11px; letter-spacing:2px; color:var(--amber); text-transform:uppercase; display:block; margin-bottom:4px;}
+
+  /* hatırlatma kartları */
+  .duo{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:8px;}
+  .memo{border-radius:12px; padding:14px; border:1.5px solid;}
+  .memo.l{border-color:var(--liste); background:rgba(57,211,230,.07);}
+  .memo.s{border-color:var(--sozluk); background:rgba(192,132,252,.07);}
+  .memo h3{font-size:16px; margin-bottom:6px;}
+  .memo.l h3{color:var(--liste);} .memo.s h3{color:var(--sozluk);}
+  .memo .viz{font-family:monospace; font-size:13px; background:#0d1330; border-radius:8px; padding:8px 10px; margin:8px 0; color:#ffd98a;}
+  .memo p{font-size:13px; color:var(--dim);}
+  .memo b{color:var(--ink);}
+
+  /* ============ OYUN ============ */
+  .hud{display:flex; justify-content:space-between; align-items:center; font-family:monospace; font-size:15px; margin-bottom:10px;}
+  .hud .score{color:var(--amber); font-weight:bold;}
+  .hud .combo{color:var(--ok);}
+  .hud .lives{letter-spacing:2px;}
+
+  #arena{
+    position:relative; height:340px; border-radius:12px; overflow:hidden;
+    background:linear-gradient(180deg, #0d1330 0%, #131b45 100%);
+    border:1px solid var(--line);
+  }
+  #arena .gline{position:absolute; left:0; right:0; bottom:86px; border-top:2px dashed rgba(244,89,123,.5);}
+
+  #card{
+    position:absolute; left:50%; transform:translateX(-50%);
+    background:var(--ink); color:#111a33;
+    font-weight:bold; font-size:16px; font-family:monospace;
+    padding:12px 16px; border-radius:12px;
+    box-shadow:0 6px 24px rgba(0,0,0,.5);
+    white-space:nowrap; max-width:92%; overflow:hidden; text-overflow:ellipsis;
+    text-align:center;
+  }
+  #card.plain{font-family:'Trebuchet MS','Segoe UI',sans-serif; font-size:15px;}
+
+  .pads{position:absolute; left:0; right:0; bottom:0; height:80px; display:flex; gap:8px; padding:8px;}
+  .pad{
+    flex:1; border-radius:12px; border:2px solid; cursor:pointer;
+    font-size:20px; font-weight:bold; font-family:inherit;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    color:var(--ink); background:rgba(11,16,38,.7);
+    transition:transform .08s;
+  }
+  .pad:active{transform:scale(.96);}
+  .pad small{font-size:11px; font-weight:normal; color:var(--dim);}
+  .pad.l{border-color:var(--liste);} .pad.l:active{background:rgba(57,211,230,.25);}
+  .pad.s{border-color:var(--sozluk);} .pad.s:active{background:rgba(192,132,252,.25);}
+  .pad.flash-ok{background:rgba(74,222,128,.35)!important;}
+  .pad.flash-bad{background:rgba(244,89,123,.35)!important;}
+
+  #overlay{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:12px;
+    background:rgba(11,16,38,.88); text-align:center; padding:20px;
+  }
+  #overlay h3{font-size:22px;}
+  #overlay p{color:var(--dim); font-size:14px; max-width:380px;}
+  #overlay .big{font-size:44px;}
+
+  .btn{
+    display:inline-block; background:var(--amber); color:#241500;
+    border:none; border-radius:9px; padding:12px 26px;
+    font-size:16px; font-weight:bold; cursor:pointer; font-family:inherit;
+  }
+  .btn:hover{filter:brightness(1.08);}
+  .btn.ghost{background:transparent; color:var(--cyan); border:1.5px solid var(--cyan);}
+
+  #feedback{
+    position:absolute; top:8px; left:0; right:0; text-align:center;
+    font-size:13px; color:var(--dim); min-height:20px; padding:0 10px;
+  }
+  #feedback b{color:var(--amber);}
+
+  /* ============ BOSS ============ */
+  #boss{display:none;}
+  .q{margin:16px 0;}
+  .qt{font-weight:bold; margin-bottom:8px; font-size:15px;}
+  .qt .qn{color:var(--sozluk); font-family:monospace; margin-right:6px;}
+  code{font-family:'Courier New',monospace; background:#0d1330; color:#ffd98a; padding:1px 6px; border-radius:5px; font-size:.93em;}
+  .opts{display:grid; gap:7px;}
+  .opt{
+    text-align:left; background:var(--panel2); color:var(--ink);
+    border:1.5px solid var(--line); border-radius:9px;
+    padding:10px 13px; font-size:14px; cursor:pointer; font-family:inherit;
+  }
+  .opt:hover{border-color:var(--cyan);}
+  .opt.right{border-color:var(--ok); background:#12331f; color:#c9f7d9;}
+  .opt.wrong{border-color:var(--bad); background:#3a1626; color:#ffd3de;}
+  .opt:disabled{cursor:default;}
+  .exp{display:none; font-size:13px; color:var(--dim); margin-top:8px; border-left:2px solid var(--amber); padding:6px 10px;}
+  .exp.show{display:block;} .exp b{color:var(--amber);}
+
+  #result{display:none; text-align:center; padding:26px 16px;}
+  #result .big{font-size:56px;}
+  #result h2{font-size:24px; margin:8px 0 4px;}
+  #result .rk{color:var(--amber); font-weight:bold; font-size:18px;}
+  #result p{color:var(--dim); font-size:14px; max-width:420px; margin:8px auto 0;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Antrenman Odası · Refleks Görevi</div>
+  <h1>VERİ <span>YAĞMURU</span> ⚡</h1>
+  <div class="sub">Liste mi, Sözlük mü? Düşünme — hisset. Kartlar düşüyor, sen yakala!</div>
+</header>
+
+<!-- HATIRLATMA -->
+<div class="panel">
+  <h2><span class="tag">30 saniyelik brifing</span>İkisini ayıran TEK soru</h2>
+  <p style="font-size:14px; margin-bottom:4px;">Kendine sor: <b>"Sıradaki mi, etiketli mi?"</b></p>
+  <div class="duo">
+    <div class="memo l">
+      <h3>📦 LİSTE</h3>
+      <div class="viz">[ 🔵, 🔵, 🔵, 🔵 ]</div>
+      <p><b>Vagonlar gibi:</b> aynı türden şeyler, sıra numarasıyla bulunur.<br>→ <b>kalabalıklar</b>: küreler, puanlar, düşmanlar</p>
+    </div>
+    <div class="memo s">
+      <h3>🗄️ SÖZLÜK</h3>
+      <div class="viz">{ "can"→3, "isim"→"P" }</div>
+      <p><b>Etiketli çekmeceler:</b> her değerin bir adı var, adıyla bulunur.<br>→ <b>özellikler</b>: oyuncunun canı, ürünün fiyatı</p>
+    </div>
+  </div>
+</div>
+
+<!-- OYUN -->
+<div class="panel" id="gamePanel">
+  <h2><span class="tag">Mini oyun · 3 can · combo sistemi</span>Kart hangi tarafa ait?</h2>
+  <div class="hud">
+    <div class="score">SKOR <span id="gscore">0</span></div>
+    <div class="combo" id="gcombo"></div>
+    <div class="lives" id="glives">❤️❤️❤️</div>
+  </div>
+  <div id="arena">
+    <div class="gline"></div>
+    <div id="feedback"></div>
+    <div id="card" style="display:none"></div>
+    <div class="pads">
+      <button class="pad l" id="padL" onclick="choose('liste')">📦 LİSTE<small>sıralı kalabalık</small></button>
+      <button class="pad s" id="padS" onclick="choose('sozluk')">🗄️ SÖZLÜK<small>etiket → değer</small></button>
+    </div>
+    <div id="overlay">
+      <div class="big">🌧️</div>
+      <h3>Veri Yağmuru başlıyor</h3>
+      <p>Düşen kart yere (kırmızı çizgiye) değmeden doğru butona bas. Her doğru <b>+10</b>, üst üste doğrular <b>combo çarpanı</b> kazandırır. 3 yanlış hakkın var. Gittikçe hızlanır!</p>
+      <button class="btn" onclick="startGame()">BAŞLAT ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOSS -->
+<div class="panel" id="boss">
+  <h2><span class="tag">Usta Turu · kod okuma</span>🧠 Kod Okuma Turu</h2>
+  <p style="font-size:14px; color:var(--dim); margin-bottom:4px;">Refleksin güçlendi. Şimdi sıra gerçek kod satırlarında — her doğru <b>+20</b>.</p>
+
+  <div class="q"><div class="qt"><span class="qn">B1</span><code>puanlar = [40, 85, 60]</code> → 85'e nasıl ulaşırım?</div>
+    <div class="opts">
+      <button class="opt" onclick="answer(this,false)">puanlar["85"]</button>
+      <button class="opt" onclick="answer(this,true)">puanlar[1]</button>
+      <button class="opt" onclick="answer(this,false)">puanlar[2]</button>
+    </div>
+    <div class="exp"><b>Vagon kuralı:</b> Liste sıra numarasıyla çalışır ve saymaya 0'dan başlar: 40 → [0], 85 → [1]. Etiket yazarsan ("85") hata!</div>
+  </div>
+
+  <div class="q"><div class="qt"><span class="qn">B2</span><code>oyuncu = {"isim": "Poyraz", "can": 3}</code> → canı 1 azaltmak?</div>
+    <div class="opts">
+      <button class="opt" onclick="answer(this,false)">oyuncu[1] = oyuncu[1] - 1</button>
+      <button class="opt" onclick="answer(this,true)">oyuncu["can"] = oyuncu["can"] - 1</button>
+      <button class="opt" onclick="answer(this,false)">oyuncu.can - 1</button>
+    </div>
+    <div class="exp"><b>Çekmece kuralı:</b> Sözlükte sıra numarası YOK — çekmecenin etiketi neyse o: <code>oyuncu["can"]</code>. Okuması da güzel: "oyuncunun canı".</div>
+  </div>
+
+  <div class="q"><div class="qt"><span class="qn">B3</span>Hangisi HATA verir?</div>
+    <div class="opts">
+      <button class="opt" onclick="answer(this,false)">orbs.append(yeni_orb)</button>
+      <button class="opt" onclick="answer(this,true)">fiyatlar = {"roket": 50} sonra fiyatlar[0]</button>
+      <button class="opt" onclick="answer(this,false)">kelimeler[0]</button>
+    </div>
+    <div class="exp"><b>Neden:</b> fiyatlar sözlüğünde "0" diye bir etiket yok — çekmecelerde 0 yazmıyor, "roket" yazıyor! <code>fiyatlar["roket"]</code> derdik.</div>
+  </div>
+
+  <div class="q"><div class="qt"><span class="qn">B4</span>Tıklayıcı oyunumuz: her güçlendirmenin fiyatı olacak VE satın alınanları sırayla hatırlayacağız. Ne kullanırız?</div>
+    <div class="opts">
+      <button class="opt" onclick="answer(this,true)">Fiyatlar için sözlük + satın alınanlar için liste</button>
+      <button class="opt" onclick="answer(this,false)">Her şey için tek büyük liste</button>
+      <button class="opt" onclick="answer(this,false)">Her şey için tek büyük sözlük</button>
+    </div>
+    <div class="exp"><b>Usta cevabı:</b> Gerçek oyunlar ikisini BİRLİKTE kullanır. "Roket kaç para?" → etiketle sor (sözlük). "3. aldığım şey neydi?" → sırayla sor (liste). Haftaya bunu KODLAYACAĞIZ.</div>
+  </div>
+
+  <div class="q"><div class="qt"><span class="qn">B5</span>Son vuruş: <code>for orb in orbs:</code> satırı Türkçe nasıl okunur?</div>
+    <div class="opts">
+      <button class="opt" onclick="answer(this,false)">"orb, orbs'a eşitse"</button>
+      <button class="opt" onclick="answer(this,true)">"orbs listesindeki HER orb için, sırayla"</button>
+      <button class="opt" onclick="answer(this,false)">"orbs'tan bir orb sil"</button>
+    </div>
+    <div class="exp"><b>İşte bu!</b> for = vagonları tek tek gez. Liste + for ikilisi bu yüzden ayrılmaz — kalabalığı tek tek dolaşmanın yolu.</div>
+  </div>
+
+  <div style="text-align:center"><button class="btn" id="bossBtn" disabled onclick="showResult()">Turu tamamla ✅</button></div>
+</div>
+
+<!-- SONUÇ -->
+<div class="panel" id="result">
+  <div class="big" id="rEmoji">🏆</div>
+  <h2>Antrenman Tamamlandı!</h2>
+  <div class="rk" id="rRank"></div>
+  <p id="rMsg"></p>
+  <p style="margin-top:12px;"><button class="btn ghost" onclick="location.reload()">↻ Rekoru geçmeyi dene</button></p>
+</div>
+
+</div>
+
+<script>
+// yıldızlar
+for (let i = 0; i < 36; i++) {
+  const s = document.createElement('div');
+  s.className = 'star';
+  const sz = Math.random()*2+1;
+  s.style.cssText = 'width:'+sz+'px;height:'+sz+'px;left:'+(Math.random()*100)+'vw;top:'+(Math.random()*100)+'vh;animation-delay:'+(Math.random()*3)+'s';
+  document.body.appendChild(s);
+}
+
+// ------- SES (Web Audio: kütüphanesiz bip'ler) -------
+let AC = null;
+function beep(freq, dur, type){
+  try{
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || 'square'; o.frequency.value = freq;
+    g.gain.setValueAtTime(.08, AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001, AC.currentTime + dur);
+    o.connect(g); g.connect(AC.destination);
+    o.start(); o.stop(AC.currentTime + dur);
+  }catch(e){}
+}
+const sOK = ()=>{beep(660,.09); setTimeout(()=>beep(880,.12),80);};
+const sBAD = ()=>beep(160,.25,'sawtooth');
+const sLVL = ()=>{beep(523,.1); setTimeout(()=>beep(659,.1),100); setTimeout(()=>beep(784,.18),200);};
+
+// ------- KART HAVUZU -------
+// t: 'liste' | 'sozluk', c: kod mu düz metin mi, why: geri bildirim
+const POOL = [
+  {x:'puanlar = [10, 20, 30]',            t:'liste',  c:1, why:'Köşeli parantez [ ] = liste imzası'},
+  {x:'oyuncu = {"can": 3}',               t:'sozluk', c:1, why:'Süslü parantez + etiket→değer = sözlük'},
+  {x:'Sınıftaki 24 öğrencinin boyları',   t:'liste',  c:0, why:'Aynı türden kalabalık = liste'},
+  {x:'Bir öğrencinin adı, yaşı, sınıfı',  t:'sozluk', c:0, why:'Bir şeyin farklı özellikleri = sözlük'},
+  {x:'orbs.append(orb)',                  t:'liste',  c:1, why:'append = listenin kuyruğuna ekle'},
+  {x:'fiyatlar["roket"]',                 t:'sozluk', c:1, why:'Etiketle erişim = sözlük'},
+  {x:'kelimeler[0]',                      t:'liste',  c:1, why:'Sıra numarasıyla erişim = liste'},
+  {x:'Kelime → anlamı (gerçek sözlük!)',  t:'sozluk', c:0, why:'Adı üstünde: eşleştirme = sözlük'},
+  {x:'Market sırası: ekmek, süt, yumurta',t:'liste',  c:0, why:'Sıralı dizi = liste'},
+  {x:'{"elmas": 5, "altın": 12}',         t:'sozluk', c:1, why:'Etiket→sayı çiftleri = sözlük'},
+  {x:'for orb in orbs:',                  t:'liste',  c:1, why:'Kalabalığı tek tek gezmek = liste işi'},
+  {x:'Ürün → fiyat eşleşmesi',            t:'sozluk', c:0, why:'Ok işareti gördün mü: eşleşme = sözlük'},
+  {x:'100 tane düşman uzay gemisi',       t:'liste',  c:0, why:'Aynı türden sürü = liste'},
+  {x:'envanter["kalkan"] = 2',            t:'sozluk', c:1, why:'Etikete değer yazmak = sözlük'},
+  {x:'skorlar.append(150)',               t:'liste',  c:1, why:'append sadece listede var!'},
+  {x:'Oyuncunun isim, can ve skoru',      t:'sozluk', c:0, why:'Farklı türden özellikler = sözlük'},
+  {x:'[ "elma", "armut", "kiraz" ]',      t:'liste',  c:1, why:'[ ] içinde sıralı elemanlar = liste'},
+  {x:'telefon_rehberi["Anne"]',           t:'sozluk', c:1, why:'İsimle numara bulmak = sözlük'},
+];
+
+// ------- OYUN DURUMU -------
+let deck = [], cur = null, lives = 3, score = 0, combo = 0, best = 0;
+let y = 0, speed = 0.9, raf = null, playing = false, answered = 0;
+const LINE_Y = 340 - 86 - 46; // arena - pad alanı - kart yüksekliği payı
+
+const $ = id => document.getElementById(id);
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+
+function startGame(){
+  $('overlay').style.display = 'none';
+  deck = shuffle([...POOL]);
+  lives = 3; score = 0; combo = 0; speed = 0.9; answered = 0;
+  updateHUD();
+  nextCard();
+  playing = true;
+  raf = requestAnimationFrame(tick);
+  beep(440,.1);
+}
+
+function nextCard(){
+  if(deck.length === 0) deck = shuffle([...POOL]);
+  cur = deck.pop();
+  const c = $('card');
+  c.textContent = cur.x;
+  c.className = cur.c ? '' : 'plain';
+  c.style.display = 'block';
+  y = -50;
+}
+
+function tick(){
+  if(!playing) return;
+  y += speed;
+  $('card').style.top = y + 'px';
+  if(y >= LINE_Y){ miss('Yere düştü!'); }
+  raf = requestAnimationFrame(tick);
+}
+
+function choose(side){
+  if(!playing || !cur) return;
+  if(side === cur.t){
+    combo++;
+    const mult = combo >= 9 ? 3 : combo >= 5 ? 2 : 1;
+    score += 10 * mult;
+    answered++;
+    sOK();
+    flash(side === 'liste' ? 'padL' : 'padS', 'flash-ok');
+    $('feedback').innerHTML = '✔ <b>+' + (10*mult) + '</b> · ' + cur.why;
+    // her 5 doğruda hızlan
+    if(answered % 5 === 0){ speed += 0.35; sLVL(); $('feedback').innerHTML += ' · <b>HIZLANIYOR!</b> 🔥'; }
+  } else {
+    miss('Yanlış taraf!');
+    flash(side === 'liste' ? 'padL' : 'padS', 'flash-bad');
+    return;
+  }
+  updateHUD();
+  nextCard();
+}
+
+function miss(reason){
+  lives--; combo = 0;
+  sBAD();
+  $('feedback').innerHTML = '✘ ' + reason + ' Doğrusu: <b>' + (cur.t === 'liste' ? '📦 LİSTE' : '🗄️ SÖZLÜK') + '</b> — ' + cur.why;
+  updateHUD();
+  if(lives <= 0){ endGame(); } else { nextCard(); }
+}
+
+function flash(id, cls){
+  const el = $(id);
+  el.classList.add(cls);
+  setTimeout(()=>el.classList.remove(cls), 250);
+}
+
+function updateHUD(){
+  $('gscore').textContent = score;
+  $('glives').textContent = '❤️'.repeat(lives) + '🖤'.repeat(3-lives);
+  const mult = combo >= 9 ? 'x3 🔥🔥' : combo >= 5 ? 'x2 🔥' : '';
+  $('gcombo').textContent = combo >= 2 ? 'COMBO ' + combo + ' ' + mult : '';
+}
+
+function endGame(){
+  playing = false;
+  cancelAnimationFrame(raf);
+  $('card').style.display = 'none';
+  best = Math.max(best, score);
+  const ov = $('overlay');
+  ov.style.display = 'flex';
+  ov.innerHTML =
+    '<div class="big">' + (score >= 200 ? '🏆' : score >= 100 ? '💪' : '🌧️') + '</div>' +
+    '<h3>Skor: ' + score + '</h3>' +
+    '<p>' + (score >= 200 ? 'Refleks tamam — usta turu seni bekliyor!' :
+             score >= 100 ? 'Sağlam skor! İstersen bir tur daha, istersen usta turuna geç.' :
+             'Isınma turuydu — bir tur daha atınca beynin "vagon mu çekmece mi" diye kendisi soracak.') + '</p>' +
+    '<div><button class="btn" onclick="startGame()">↻ Tekrar oyna</button> ' +
+    '<button class="btn ghost" onclick="openBoss()">Usta turuna geç →</button></div>';
+}
+
+function openBoss(){
+  $('boss').style.display = 'block';
+  $('boss').scrollIntoView({behavior:'smooth'});
+}
+
+// ------- BOSS -------
+let bossDone = 0, bossRight = 0;
+function answer(btn, correct){
+  const opts = btn.parentElement.querySelectorAll('.opt');
+  opts.forEach(o => o.disabled = true);
+  if(correct){ btn.classList.add('right'); bossRight++; score += 20; sOK(); }
+  else{
+    btn.classList.add('wrong'); sBAD();
+    opts.forEach(o => { if(o.getAttribute('onclick').includes('true')) o.classList.add('right'); });
+  }
+  btn.closest('.q').querySelector('.exp').classList.add('show');
+  updateHUD();
+  bossDone++;
+  if(bossDone === 5) $('bossBtn').disabled = false;
+}
+
+function showResult(){
+  const r = $('result');
+  r.style.display = 'block';
+  const total = score;
+  let rank, emoji, msg;
+  if(bossRight === 5 && total >= 250){ rank='🥇 VERİ EFSANESİ'; emoji='👑'; msg='Liste ve sözlük artık senin için ayrı gezegenler değil — ikisini de yönetiyorsun. Haftaya tıklayıcıda ikisini BİRLİKTE kullanacağız.'; }
+  else if(bossRight >= 4){ rank='🥈 VERİ USTASI'; emoji='🏆'; msg='Harika bir turdu! Karıştırdığın tek nokta haftaya ilk 5 dakikada tekrar karşına çıkacak — hazır ol!'; }
+  else if(bossRight >= 2){ rank='🥉 VERİ KÂŞİFİ'; emoji='💪'; msg='Refleksin geldi, kod okuma az kaldı. İpucu: takıldığında hep aynı soruyu sor — "sıradaki mi, etiketli mi?"'; }
+  else { rank='🌱 YENİ KÂŞİF'; emoji='🌱'; msg='İlk antrenman böyle olur! Oyunu bir tur daha oyna — skorun kendiliğinden ikiye katlanacak, söz.'; }
+  $('rEmoji').textContent = emoji;
+  $('rRank').textContent = rank + ' · TOPLAM ' + total + ' PUAN';
+  $('rMsg').textContent = msg;
+  r.scrollIntoView({behavior:'smooth'});
+  sLVL();
+}
+</script>
+</body>
+</html>
