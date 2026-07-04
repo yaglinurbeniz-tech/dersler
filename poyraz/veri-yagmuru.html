@@ -25,7 +25,10 @@
   }
   .star{position:fixed; background:#fff; border-radius:50%; opacity:.7; pointer-events:none; animation:tw 3s ease-in-out infinite;}
   @keyframes tw{50%{opacity:.15}}
-  @media (prefers-reduced-motion: reduce){ .star{animation:none} *{transition:none!important; animation:none!important} }
+  @media (prefers-reduced-motion: reduce){
+    .star{animation:none}
+    *:not(#zap):not(#zap *):not(.confetti-piece){transition:none!important; animation:none!important}
+  }
 
   .wrap{max-width:640px; margin:0 auto; padding:24px 16px 70px;}
 
@@ -138,10 +141,45 @@
   #result p{color:var(--dim); font-size:14px; max-width:420px; margin:8px auto 0;}
 
   /* ============ EASTER EGG: ZAP + ALTIN BİLET ============ */
-  #zap{display:inline-block; cursor:pointer; animation:zapglow 2.2s ease-in-out infinite;}
+  #zap{
+    position:relative; display:inline-block; cursor:pointer;
+    animation:zapglow 2.2s ease-in-out infinite;
+  }
   @keyframes zapglow{
     0%,100%{ transform:scale(1); color:var(--ink); filter:drop-shadow(0 0 0 transparent); }
     50%{ transform:scale(1.12); color:var(--amber); filter:drop-shadow(0 0 10px var(--amber)); }
+  }
+
+  /* "buraya tıkla" ipucu: ping halkaları + zıplayan etiket */
+  #zap::before, #zap::after{
+    content:''; position:absolute; left:50%; top:50%;
+    width:30px; height:30px; margin:-15px 0 0 -15px;
+    border-radius:50%; border:2px solid var(--amber);
+    opacity:0; pointer-events:none;
+    animation:zapping 2.4s ease-out infinite;
+  }
+  #zap::after{ animation-delay:1.2s; }
+  #zap.found::before, #zap.found::after{ display:none; }
+  @keyframes zapping{
+    0%{ transform:scale(.5); opacity:.85; }
+    70%{ opacity:.15; }
+    100%{ transform:scale(2.1); opacity:0; }
+  }
+
+  .zap-hint{
+    position:absolute; left:50%; top:100%; transform:translate(-50%, 8px) scale(.85);
+    white-space:nowrap; font-size:12px; font-weight:bold; letter-spacing:.3px;
+    background:var(--amber); color:#241500;
+    padding:3px 10px; border-radius:20px;
+    box-shadow:0 4px 12px rgba(255,181,69,.4);
+    opacity:0; pointer-events:none;
+    animation:zapHint 5s ease-in-out infinite;
+  }
+  #zap.found .zap-hint{ display:none; }
+  @keyframes zapHint{
+    0%, 45%{ opacity:0; transform:translate(-50%, 14px) scale(.85); }
+    55%, 80%{ opacity:1; transform:translate(-50%, 8px) scale(1); }
+    100%{ opacity:0; transform:translate(-50%, 14px) scale(.85); }
   }
 
   .golden-overlay{
@@ -180,7 +218,7 @@
 
 <header>
   <div class="eyebrow">Antrenman Odası · Refleks Görevi</div>
-  <h1>VERİ <span>YAĞMURU</span> <span id="zap" onclick="zapClick()">⚡</span></h1>
+  <h1>VERİ <span>YAĞMURU</span> <span id="zap" onclick="zapClick()">⚡<span class="zap-hint">Dokun! 👆</span></span></h1>
   <div class="sub">Liste mi, Sözlük mü? Düşünme — hisset. Kartlar düşüyor, sen yakala!</div>
 </header>
 
@@ -511,24 +549,8 @@ function spawnConfetti(){
   if(confettiRAF) cancelAnimationFrame(confettiRAF);
 
   const emojis = ['🎉','✨','⭐','🎊'];
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const w = layer.clientWidth || window.innerWidth;
   const h = layer.clientHeight || window.innerHeight;
-
-  if(reduced){
-    // hareketsiz kullanıcı tercihine saygı: düşme yerine sabit bir patlama göster
-    for(let i=0; i<60; i++){
-      const e = document.createElement('span');
-      e.className = 'confetti-piece';
-      e.textContent = emojis[Math.floor(Math.random()*emojis.length)];
-      e.style.fontSize = (14 + Math.random()*16) + 'px';
-      e.style.left = (Math.random()*w) + 'px';
-      e.style.top = (Math.random()*h*0.75) + 'px';
-      layer.appendChild(e);
-    }
-    setTimeout(()=>{ layer.innerHTML = ''; }, 2600);
-    return;
-  }
 
   const GRAVITY = 640;       // px/s² — kağıt gibi yavaşça hızlanır
   const pieces = [];
@@ -610,6 +632,8 @@ function spawnConfetti(){
 function openGoldenTicket(){
   score += 50;
   updateHUD();
+  try{ localStorage.setItem('vy_altinBiletBulundu', '1'); }catch(e){}
+  $('zap').classList.add('found');
   $('goldenOverlay').style.display = 'flex';
   spawnConfetti();
   sLVL();
@@ -620,6 +644,10 @@ function closeGoldenTicket(){
   if(confettiRAF) cancelAnimationFrame(confettiRAF);
   $('confettiLayer').innerHTML = '';
 }
+
+try{
+  if(localStorage.getItem('vy_altinBiletBulundu') === '1') $('zap').classList.add('found');
+}catch(e){}
 </script>
 </body>
 </html>
