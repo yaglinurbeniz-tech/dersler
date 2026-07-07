@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tıklayıcı Görevi 1: Kuruluş</title>
+<style>
+  :root{
+    --bg:#0b1026; --panel:#151d40; --panel2:#1b244f;
+    --ink:#eef2ff; --dim:#8b96c9;
+    --amber:#ffb545; --cyan:#39d3e6; --ok:#4ade80; --bad:#f4597b;
+    --line:#2a356e;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  body{
+    background:
+      radial-gradient(ellipse at 20% -10%, #1a2560 0%, transparent 55%),
+      radial-gradient(ellipse at 90% 110%, #241a4d 0%, transparent 50%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'Trebuchet MS','Segoe UI',sans-serif;
+    line-height:1.55; min-height:100vh;
+  }
+  .star{position:fixed; background:#fff; border-radius:50%; opacity:.7; pointer-events:none; animation:tw 3s ease-in-out infinite;}
+  @keyframes tw{50%{opacity:.15}}
+  @media (prefers-reduced-motion: reduce){ .star{animation:none} *{transition:none!important; animation:none!important} }
+
+  .topbar{
+    position:sticky; top:0; z-index:10;
+    background:rgba(11,16,38,.92); backdrop-filter:blur(4px);
+    border-bottom:1px solid var(--line);
+    padding:10px 16px; display:flex; align-items:center; gap:14px;
+  }
+  .rank{font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--amber); font-weight:bold; white-space:nowrap;}
+  .xpwrap{flex:1; height:14px; background:var(--panel); border:1px solid var(--line); border-radius:99px; overflow:hidden;}
+  .xpbar{height:100%; width:0%; background:linear-gradient(90deg,var(--amber),#ffd98a); border-radius:99px; transition:width .5s;}
+  .xpnum{font-family:monospace; font-size:14px; color:var(--amber); min-width:70px; text-align:right;}
+
+  .wrap{max-width:720px; margin:0 auto; padding:28px 18px 80px;}
+
+  header.hero{text-align:center; padding:22px 0 8px;}
+  .eyebrow{font-size:11px; letter-spacing:4px; text-transform:uppercase; color:var(--cyan); margin-bottom:10px;}
+  h1{font-size:29px; line-height:1.2;}
+  h1 .hl{color:var(--amber);}
+  .pilot{color:var(--dim); margin-top:8px; font-size:15px;}
+
+  .mission{background:var(--panel); border:1px solid var(--line); border-radius:14px; margin-top:22px; overflow:hidden;}
+  .mission.locked{opacity:.38; pointer-events:none;}
+  .mhead{display:flex; align-items:center; gap:12px; padding:14px 18px; border-bottom:1px solid var(--line);}
+  .mnum{
+    width:34px; height:34px; border-radius:50%; flex:0 0 34px;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:bold; font-family:monospace; font-size:15px;
+    background:var(--panel2); border:1.5px solid var(--cyan); color:var(--cyan);
+  }
+  .mission.done .mnum{background:var(--ok); border-color:var(--ok); color:#06210f;}
+  .mtitle{font-size:18px; font-weight:bold;}
+  .msub{font-size:12px; color:var(--dim);}
+  .mbody{padding:18px;}
+
+  .note{background:var(--panel2); border-left:3px solid var(--cyan); padding:10px 14px; border-radius:0 8px 8px 0; font-size:14px; margin-bottom:14px;}
+  .note b{color:var(--cyan);}
+  .note.gold{border-left-color:var(--amber);}
+  .note.gold b{color:var(--amber);}
+
+  code, .code{font-family:'Courier New',monospace; background:#0d1330; color:#ffd98a; padding:1px 6px; border-radius:5px; font-size:.93em;}
+  pre.code{display:block; padding:10px 14px; border-radius:8px; overflow-x:auto; margin:8px 0; line-height:1.6;}
+
+  /* tema seçimi */
+  .themes{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:10px 0;}
+  .theme{
+    background:var(--panel2); border:2px solid var(--line); border-radius:12px;
+    padding:14px; text-align:center; cursor:pointer; font-family:inherit; color:var(--ink);
+    font-size:15px; transition:border-color .15s;
+  }
+  .theme:hover{border-color:var(--cyan);}
+  .theme.sel{border-color:var(--amber); background:rgba(255,181,69,.1);}
+  .theme .tem{font-size:30px; display:block; margin-bottom:4px;}
+
+  /* görev kartı (kod görevleri) */
+  .task{border:1.5px solid var(--line); border-radius:12px; padding:14px; margin:14px 0; background:var(--panel2);}
+  .task .th{display:flex; align-items:baseline; gap:8px; margin-bottom:6px;}
+  .task .tno{font-family:monospace; font-weight:bold; color:var(--amber);}
+  .task .tt{font-weight:bold; font-size:15.5px;}
+  .task p{font-size:14px; margin-bottom:6px;}
+  .hintrow{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;}
+  .hbtn{
+    background:transparent; color:var(--cyan); border:1.5px solid var(--cyan);
+    border-radius:8px; padding:6px 12px; font-size:12.5px; cursor:pointer; font-family:inherit;
+  }
+  .hbtn.sol{color:var(--bad); border-color:var(--bad);}
+  .hbtn:disabled{opacity:.35; cursor:default;}
+  .hint{display:none; font-size:13.5px; margin-top:8px; padding:8px 12px; border-left:2px solid var(--cyan); background:rgba(57,211,230,.06); border-radius:0 8px 8px 0;}
+  .hint.show{display:block;}
+  .hint.sol{border-left-color:var(--bad); background:rgba(244,89,123,.06);}
+  .hint b{color:var(--cyan);}
+
+  /* kontrol noktası */
+  .checkpoint{
+    border:2px dashed var(--ok); border-radius:12px; padding:14px; margin:16px 0 4px;
+    background:rgba(74,222,128,.05);
+  }
+  .checkpoint .ct{font-weight:bold; color:var(--ok); font-size:13px; letter-spacing:2px; text-transform:uppercase; margin-bottom:6px;}
+  .checkpoint p{font-size:14px;}
+
+  .btn{
+    display:inline-block; background:var(--amber); color:#241500;
+    border:none; border-radius:9px; padding:11px 22px;
+    font-size:15px; font-weight:bold; cursor:pointer; font-family:inherit; margin-top:12px;
+  }
+  .btn:hover{filter:brightness(1.08);}
+  .btn.ok{background:var(--ok); color:#06210f;}
+  .btn:disabled{opacity:.4; cursor:default;}
+
+  .timer{font-family:monospace; font-size:52px; text-align:center; color:var(--cyan); margin:14px 0 6px; letter-spacing:3px;}
+
+  .toast{
+    position:fixed; right:16px; bottom:16px; background:var(--amber); color:#241500;
+    font-weight:bold; padding:10px 18px; border-radius:10px; font-size:15px;
+    opacity:0; transform:translateY(10px); transition:all .3s; pointer-events:none; z-index:20;
+  }
+  .toast.show{opacity:1; transform:translateY(0);}
+  .toast.neg{background:var(--bad); color:#fff;}
+
+  .final{display:none; text-align:center; padding:34px 18px;}
+  .final.show{display:block;}
+  .badge{font-size:64px;}
+  .final h2{font-size:26px; margin:10px 0 6px;}
+  .final .rankname{color:var(--amber); font-size:20px; font-weight:bold;}
+  .final p{color:var(--dim); max-width:460px; margin:10px auto 0;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="rank" id="rank">🚀 KADET</div>
+  <div class="xpwrap"><div class="xpbar" id="xpbar"></div></div>
+  <div class="xpnum"><span id="xp">0</span> XP</div>
+</div>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">Görev Kontrol Paneli · Tıklayıcı Serisi 1/5</div>
+  <h1>Yeni Görev: <span class="hl">KURULUŞ</span></h1>
+  <div class="pilot">Pilot: Poyraz · Bugünün hedefi: tıklanınca puan veren çalışan bir oyun</div>
+</header>
+
+<!-- G1: TÖREN + TEMA -->
+<div class="mission" id="m1">
+  <div class="mhead">
+    <div class="mnum">1</div>
+    <div><div class="mtitle">🦅 Kartal Töreni + Tema Seçimi</div><div class="msub">Altın Bilet hakkın kullanılıyor · +10 XP</div></div>
+  </div>
+  <div class="mbody">
+    <div class="note gold"><b>Bilet onaylandı!</b> Şifreyi hocana söyledin, haklar aktif: bugün molan <b>5+2 dakika</b> (2'si ders sonunda bonus) ve bu oyunun teması <b>tamamen senin.</b></div>
+    <p>Yapacağımız oyun: ekranda dev bir şey duracak, her tıklamada puan kazanacaksın. Peki NEYE tıklayacağız? Kaptan sensin:</p>
+    <div class="themes">
+      <button class="theme" onclick="pickTheme(this)"><span class="tem">🪐</span>Gezegen<br><small style="color:var(--dim)">uzay serimize uyar</small></button>
+      <button class="theme" onclick="pickTheme(this)"><span class="tem">🍪</span>Kurabiye<br><small style="color:var(--dim)">klasiklerin klasiği</small></button>
+      <button class="theme" onclick="pickTheme(this)"><span class="tem">💎</span>Kristal<br><small style="color:var(--dim)">uzay oyunundan tanıdık</small></button>
+      <button class="theme" onclick="pickTheme(this)"><span class="tem">✏️</span>Kendi fikrim!<br><small style="color:var(--dim)">hocana söyle, birlikte onaylayın</small></button>
+    </div>
+    <button class="btn" id="m1btn" disabled onclick="completeMission(1, 10)">Tema seçildi, kuruluş başlasın →</button>
+  </div>
+</div>
+
+<!-- G2: GÖRSEL AVI -->
+<div class="mission locked" id="m2">
+  <div class="mhead">
+    <div class="mnum">2</div>
+    <div><div class="mtitle">🔍 Görsel Avı</div><div class="msub">Oyununun yıldızını bul ve hazırla · +20 XP</div></div>
+  </div>
+  <div class="mbody">
+    <p>Her oyunun görselleri vardır — profesyoneller bunlara <b>asset</b> der. Şimdi seçtiğin temanın görselini bulacaksın:</p>
+    <div class="task">
+      <div class="th"><span class="tno">AV-1</span><span class="tt">Görseli bul</span></div>
+      <p>Şu güvenli ve ücretsiz sitelerden birine gir, temana uygun bir görsel seç:</p>
+      <p>• <b>kenney.nl/assets</b> — oyun görselleri hazinesi (öneri: 2D assets)<br>
+         • <b>opengameart.org</b> — arama kutusuna İngilizce yaz (planet, cookie, crystal...)<br>
+         • Ya da kendin çiz! (Piskel, boyama uygulaması... senin eserin en değerlisi)</p>
+    </div>
+    <div class="task">
+      <div class="th"><span class="tno">AV-2</span><span class="tt">İsimlendir ve yerleştir</span></div>
+      <p>Görseli <b>tam olarak şu adla</b> kaydet: <code>hedef.png</code> — küçük harf, Türkçe karakter yok, boşluk yok!</p>
+      <p>Sonra projendeki <code>images</code> klasörünün içine koy. (Pygame Zero görselleri SADECE orada arar — geçen dönemki kuralımız.)</p>
+      <div class="hintrow">
+        <button class="hbtn" onclick="showHint(this)">💡 Neden "hedef"?</button>
+      </div>
+      <div class="hint">Çünkü kodumuz temadan bağımsız çalışacak: gezegen de seçsen kurabiye de seçsen kodda hep <code>hedef</code> diyeceğiz. Yarın teman değişirse tek yapman gereken görseli değiştirmek — kod aynı kalır. Buna <b>esnek tasarım</b> denir, ustalar böyle yapar.</div>
+    </div>
+    <div class="checkpoint">
+      <div class="ct">✔ Kontrol Noktası 1</div>
+      <p><code>images</code> klasöründe <code>hedef.png</code> duruyor mu? Hocana ekranını göster.</p>
+    </div>
+    <button class="btn ok" onclick="completeMission(2, 20)">✔ Görsel yerinde! +20 XP</button>
+  </div>
+</div>
+
+<!-- G3: SAHNE -->
+<div class="mission locked" id="m3">
+  <div class="mhead">
+    <div class="mnum">3</div>
+    <div><div class="mtitle">🎬 Sahneyi Kur</div><div class="msub">Kod başlıyor — bu sefer sen yazıyorsun · +25 XP</div></div>
+  </div>
+  <div class="mbody">
+    <div class="note"><b>Yeni kural:</b> Boşluk doldurma yok! Görevi oku, hatırlamaya çalış, takılırsan ipucu aç. Çözümü açmak <b>-10 XP</b> — ama bazen açmak da akıllıcadır, takılıp kalmaktan iyidir.</p></div>
+
+    <div class="task">
+      <div class="th"><span class="tno">KOD-1</span><span class="tt">Boş dosya + pencere</span></div>
+      <p>Yeni bir dosya aç: <code>tiklayici.py</code>. En üste <code>#pgzero</code> yaz. Sonra 500 genişlik, 600 yükseklikte bir pencere tanımla ve oyununa bir isim ver.</p>
+      <div class="hintrow">
+        <button class="hbtn" onclick="showHint(this)">💡 İpucu</button>
+        <button class="hbtn sol" onclick="showSolution(this)">🔓 Çözüm (-10 XP)</button>
+      </div>
+      <div class="hint">Uzay oyununun en üstünde 3 tane BÜYÜK HARFLİ değişken vardı: genişlik, yükseklik ve başlık...</div>
+      <div class="hint sol"><pre class="code">#pgzero
+WIDTH = 500
+HEIGHT = 600
+TITLE = "Poyraz'ın Tıklayıcısı"</pre></div>
+    </div>
+
+    <div class="task">
+      <div class="th"><span class="tno">KOD-2</span><span class="tt">Hedefi sahneye koy</span></div>
+      <p><code>hedef.png</code> görselinden bir Actor oluştur, adı <code>hedef</code> olsun, ekranın ortasında dursun: (250, 280). Bir de <code>puan</code> değişkeni tanımla, 0'dan başlasın.</p>
+      <div class="hintrow">
+        <button class="hbtn" onclick="showHint(this)">💡 İpucu</button>
+        <button class="hbtn sol" onclick="showSolution(this)">🔓 Çözüm (-10 XP)</button>
+      </div>
+      <div class="hint">Uzay oyununda gemiyi nasıl oluşturmuştun? <code>ship = Actor("ship", (300, 380))</code> — aynı kalıp, farklı isimler. Actor'a verilen isim, images klasöründeki DOSYA adıdır (.png yazmadan).</div>
+      <div class="hint sol"><pre class="code">hedef = Actor("hedef", (250, 280))
+puan = 0</pre></div>
+    </div>
+
+    <div class="task">
+      <div class="th"><span class="tno">KOD-3</span><span class="tt">Çiz!</span></div>
+      <p>Bir <code>draw()</code> fonksiyonu yaz: önce ekranı koyu bir renkle doldursun, sonra hedefi çizsin, en üste de puanı yazsın.</p>
+      <div class="hintrow">
+        <button class="hbtn" onclick="showHint(this)">💡 İpucu 1</button>
+        <button class="hbtn" onclick="showHint(this)">💡 İpucu 2</button>
+        <button class="hbtn sol" onclick="showSolution(this)">🔓 Çözüm (-10 XP)</button>
+      </div>
+      <div class="hint">Üç araç lazım: <code>screen.fill(...)</code>, <code>hedef.draw()</code>, <code>screen.draw.text(...)</code>. Sırası önemli: önce zemin, sonra üstündekiler!</div>
+      <div class="hint">Renk için (R, G, B) sayıları: <code>screen.fill((20, 15, 45))</code> gibi. Puanı yazarken sayıyı metne çevirmeyi unutma: <code>str(puan)</code> — uzay oyununda skoru nasıl yazmıştık?</div>
+      <div class="hint sol"><pre class="code">def draw():
+    screen.fill((20, 15, 45))
+    hedef.draw()
+    screen.draw.text("Puan: " + str(puan),
+                     (20, 20), color="white", fontsize=32)</pre></div>
+    </div>
+
+    <div class="checkpoint">
+      <div class="ct">✔ Kontrol Noktası 2</div>
+      <p>Çalıştır! Görmen gereken: koyu zemin, ortada SENİN seçtiğin görsel, üstte "Puan: 0". Görüyorsan sahne hazır demektir. 🎬</p>
+    </div>
+    <button class="btn ok" onclick="completeMission(3, 25)">✔ Sahne kuruldu! +25 XP</button>
+  </div>
+</div>
+
+<!-- G4: MOLA -->
+<div class="mission locked" id="m4">
+  <div class="mhead">
+    <div class="mnum">4</div>
+    <div><div class="mtitle">🎮 Bilet Molası</div><div class="msub">5 dakika şimdi + 2 dakika ders sonunda</div></div>
+  </div>
+  <div class="mbody">
+    <p style="text-align:center">Altın Bilet hakkın: normal 5 dakikan şimdi, bonus 2 dakikan ders bitiminde seni bekliyor. İyi eğlenceler!</p>
+    <div class="timer" id="timer">05:00</div>
+    <div style="text-align:center">
+      <button class="btn" id="startT" onclick="startTimer()">Molayı başlat</button>
+      <button class="btn ok" onclick="completeMission(4, 5)">Molayı atla (+5 XP)</button>
+    </div>
+  </div>
+</div>
+
+<!-- G5: TIKLAMA -->
+<div class="mission locked" id="m5">
+  <div class="mhead">
+    <div class="mnum">5</div>
+    <div><div class="mtitle">⚡ Tıklama Gücü</div><div class="msub">Oyunun kalbi: tıkla → puan · +35 XP</div></div>
+  </div>
+  <div class="mbody">
+    <div class="note"><b>Hatırla:</b> Veri Yağmuru'ndaki son soruda bunu tahmin etmiştin — tıklamayı yakalayan ÖZEL bir fonksiyon var. Şimdi onu gerçekten yazıyorsun.</div>
+
+    <div class="task">
+      <div class="th"><span class="tno">KOD-4</span><span class="tt">Tıklamayı yakala</span></div>
+      <p>Fareye her basıldığında çalışan fonksiyonu yaz. İçinde şunu kontrol et: tıklanan nokta hedefin ÜZERİNDE mi? Öyleyse puan 1 artsın.</p>
+      <div class="hintrow">
+        <button class="hbtn" onclick="showHint(this)">💡 İpucu 1</button>
+        <button class="hbtn" onclick="showHint(this)">💡 İpucu 2</button>
+        <button class="hbtn sol" onclick="showSolution(this)">🔓 Çözüm (-10 XP)</button>
+      </div>
+      <div class="hint">Fonksiyonun adı <code>on_mouse_down(pos)</code> — uzay oyunundaki <code>on_mouse_move(pos)</code> gibi, ama bu sefer "hareket" değil "basma" anını yakalar. <code>pos</code> = tıklanan nokta.</div>
+      <div class="hint">İki şey daha: (1) Bir NOKTANIN actor üzerinde olup olmadığını <code>hedef.collidepoint(pos)</code> söyler — colliderect'in nokta versiyonu! (2) puan'ı fonksiyon içinde değiştireceksen en üste <code>global puan</code> yazman gerek. Uzay oyununda collisions() içinde neden global yazmıştık, hatırla.</div>
+      <div class="hint sol"><pre class="code">def on_mouse_down(pos):
+    global puan
+    if hedef.collidepoint(pos):
+        puan = puan + 1</pre></div>
+    </div>
+
+    <div class="task">
+      <div class="th"><span class="tno">KOD-5</span><span class="tt">Hedefe tepki ver</span></div>
+      <p>Şu an tıklayınca sadece sayı değişiyor — his yok! Hedef her tıklamada hafifçe sağa-sola dönsün (sarsılma efekti). Tek satır yetiyor.</p>
+      <div class="hintrow">
+        <button class="hbtn" onclick="showHint(this)">💡 İpucu</button>
+        <button class="hbtn sol" onclick="showSolution(this)">🔓 Çözüm (-10 XP)</button>
+      </div>
+      <div class="hint">Actor'ların gizli bir özelliği: <code>hedef.angle</code> — derece cinsinden döndürür. <code>random.randint(-12, 12)</code> ile her tıkta rastgele küçük bir açı ver. (Dosyanın en üstüne <code>import random</code> eklemeyi unutma!)</div>
+      <div class="hint sol"><pre class="code"># en üste: import random
+# on_mouse_down içine, puan satırının altına:
+        hedef.angle = random.randint(-12, 12)</pre></div>
+    </div>
+
+    <div class="checkpoint">
+      <div class="ct">✔ Kontrol Noktası 3 — Final</div>
+      <p>Çalıştır! Hedefe tıkla → puan artmalı VE hedef sarsılmalı. Hedefin DIŞINA tıkla → hiçbir şey olmamalı. İkisi de doğruysa: bugün SIFIRDAN çalışan bir oyun yazdın. 🏆</p>
+    </div>
+    <button class="btn ok" onclick="completeMission(5, 35)">✔ OYUNUM ÇALIŞIYOR! +35 XP</button>
+  </div>
+</div>
+
+<!-- G6: KAPANIŞ -->
+<div class="mission locked" id="m6">
+  <div class="mhead">
+    <div class="mnum">6</div>
+    <div><div class="mtitle">🎬 Demo + Gelecek Hafta Fragmanı</div><div class="msub">60 saniye sahne senin · +10 XP</div></div>
+  </div>
+  <div class="mbody">
+    <p><b>60 Saniye Demo:</b> Oyununu hocana sun! Şunları anlat: neye tıklanıyor, puan nerede tutuluyor, tıklamayı hangi fonksiyon yakalıyor.</p>
+    <div class="note gold"><b>🎬 Haftaya:</b> MAĞAZA açılıyor! Puanlarınla güçlendirme satın alacaksın: "tık başına +2 puan" gibi. Ve büyük soru şimdiden aklında dönsün: mağazadaki fiyatları LİSTE ile mi tutarız, SÖZLÜK ile mi? (Veri Yağmuru'nda buna cevap vermiştin... 😉)</div>
+    <p style="margin-top:10px">Bonus 2 dakikalık bilet molan da şimdi — kapanışı oyunla yap! 🎮</p>
+    <button class="btn" onclick="finish()">Görevi tamamla 🏁</button>
+  </div>
+</div>
+
+<!-- FİNAL -->
+<div class="final" id="final">
+  <div class="badge">🏅</div>
+  <h2>Kuruluş Tamamlandı!</h2>
+  <div class="rankname" id="finalRank"></div>
+  <p id="finalMsg"></p>
+  <p style="margin-top:14px">Ödev: Oyununa <b>ikinci bir hedef</b> ekle (küçük olsun, başka köşede dursun) — ona tıklayınca +5 puan versin. İpucu: KOD-2 ve KOD-4'teki kalıpların aynısı, sadece yeni isimle. Ekran görüntüsü + kodunu Salı'ya kadar gönder! 🚀</p>
+</div>
+
+</div>
+
+<div class="toast" id="toast">+10 XP</div>
+
+<script>
+  for (let i = 0; i < 40; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const sz = Math.random() * 2 + 1;
+    s.style.cssText = 'width:'+sz+'px;height:'+sz+'px;left:'+(Math.random()*100)+'vw;top:'+(Math.random()*100)+'vh;animation-delay:'+(Math.random()*3)+'s';
+    document.body.appendChild(s);
+  }
+
+  let xp = 0;
+  const MAXXP = 105;
+  const ranks = [[0,'🚀 KADET'],[35,'🛰️ PİLOT'],[70,'🌟 KOMUTAN'],[105,'👑 UZAY KAPTANI']];
+
+  function addXP(n){
+    xp = Math.max(0, xp + n);
+    document.getElementById('xp').textContent = xp;
+    document.getElementById('xpbar').style.width = Math.min(100, xp/MAXXP*100) + '%';
+    let r = ranks[0][1];
+    for(const [t,name] of ranks) if(xp >= t) r = name;
+    document.getElementById('rank').textContent = r;
+    const t = document.getElementById('toast');
+    t.textContent = (n >= 0 ? '+' : '') + n + ' XP';
+    t.className = 'toast show' + (n < 0 ? ' neg' : '');
+    setTimeout(()=>t.classList.remove('show'), 1400);
+  }
+
+  function pickTheme(el){
+    document.querySelectorAll('.theme').forEach(t => t.classList.remove('sel'));
+    el.classList.add('sel');
+    document.getElementById('m1btn').disabled = false;
+  }
+
+  function showHint(btn){
+    const task = btn.closest('.task');
+    const hints = [...task.querySelectorAll('.hint:not(.sol)')];
+    const btns = [...task.querySelectorAll('.hbtn:not(.sol)')];
+    const idx = btns.indexOf(btn);
+    if(hints[idx]) hints[idx].classList.add('show');
+    btn.disabled = true;
+  }
+
+  function showSolution(btn){
+    const task = btn.closest('.task');
+    task.querySelectorAll('.hint').forEach(h => h.classList.add('show'));
+    task.querySelectorAll('.hbtn').forEach(b => b.disabled = true);
+    addXP(-10);
+  }
+
+  function completeMission(n, bonus){
+    if(bonus) addXP(bonus);
+    const m = document.getElementById('m'+n);
+    m.classList.add('done');
+    const next = document.getElementById('m'+(n+1));
+    if(next){
+      next.classList.remove('locked');
+      next.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+  }
+
+  let tInt = null;
+  function startTimer(){
+    document.getElementById('startT').disabled = true;
+    let sec = 300;
+    tInt = setInterval(()=>{
+      sec--;
+      const m = String(Math.floor(sec/60)).padStart(2,'0');
+      const s = String(sec%60).padStart(2,'0');
+      document.getElementById('timer').textContent = m+':'+s;
+      if(sec <= 0){
+        clearInterval(tInt);
+        document.getElementById('timer').textContent = 'SÜRE DOLDU!';
+        completeMission(4, 0);
+      }
+    }, 1000);
+  }
+
+  function finish(){
+    completeMission(6, 10);
+    document.getElementById('m6').classList.add('done');
+    let r = ranks[0][1];
+    for(const [t,name] of ranks) if(xp >= t) r = name;
+    document.getElementById('finalRank').textContent = r + ' · ' + xp + ' XP';
+    document.getElementById('finalMsg').textContent =
+      xp >= 95 ? 'Neredeyse hiç çözüm açmadan, kendi ellerinle bir oyun kurdun. Bu artık senin oyunun — kimse elinden alamaz.' :
+      xp >= 60 ? 'Sıfırdan çalışan bir oyun yazdın! Çözüm açmak da stratejidir — önemli olan sonunda ÇALIŞIYOR olması.' :
+                 'Bugün zor bir şey yaptın: hazır kod yok, kendi ellerinle yazdın. Her ders biraz daha kolaylaşacak, söz.';
+    const f = document.getElementById('final');
+    f.classList.add('show');
+    f.scrollIntoView({behavior:'smooth'});
+  }
+</script>
+</body>
+</html>
