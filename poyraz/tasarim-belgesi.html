@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oyun Tasarım Belgesi — Tıklayıcı</title>
+<style>
+  :root{
+    --bg:#0b1026; --panel:#151d40; --panel2:#1b244f;
+    --ink:#eef2ff; --dim:#8b96c9;
+    --amber:#ffb545; --cyan:#39d3e6; --ok:#4ade80; --bad:#f4597b;
+    --line:#2a356e;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at 20% -10%, #1a2560 0%, transparent 55%),
+      radial-gradient(ellipse at 90% 110%, #241a4d 0%, transparent 50%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'Trebuchet MS','Segoe UI',sans-serif;
+    line-height:1.55; min-height:100vh;
+  }
+  .star{position:fixed; background:#fff; border-radius:50%; opacity:.7; pointer-events:none; animation:tw 3s ease-in-out infinite;}
+  @keyframes tw{50%{opacity:.15}}
+  @media (prefers-reduced-motion: reduce){ .star{animation:none}}
+
+  .topbar{
+    position:sticky; top:0; z-index:10;
+    background:rgba(11,16,38,.92); backdrop-filter:blur(4px);
+    border-bottom:1px solid var(--line);
+    padding:10px 16px; display:flex; align-items:center; gap:14px;
+  }
+  .tlabel{font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--amber); font-weight:bold; white-space:nowrap;}
+  .xpwrap{flex:1; height:14px; background:var(--panel); border:1px solid var(--line); border-radius:99px; overflow:hidden;}
+  .xpbar{height:100%; width:0%; background:linear-gradient(90deg,var(--cyan),#8ae6f2); border-radius:99px; transition:width .4s;}
+  .pct{font-family:monospace; font-size:14px; color:var(--cyan); min-width:52px; text-align:right;}
+
+  .wrap{max-width:760px; margin:0 auto; padding:28px 18px 80px;}
+
+  header.hero{text-align:center; padding:20px 0 6px;}
+  .eyebrow{font-size:11px; letter-spacing:4px; text-transform:uppercase; color:var(--cyan); margin-bottom:10px;}
+  h1{font-size:28px; line-height:1.25;}
+  h1 .hl{color:var(--amber);}
+  .sub{color:var(--dim); margin-top:8px; font-size:14px; max-width:520px; margin-left:auto; margin-right:auto;}
+
+  .sec{background:var(--panel); border:1px solid var(--line); border-radius:14px; margin-top:20px; overflow:hidden;}
+  .shead{display:flex; align-items:center; gap:12px; padding:13px 18px; border-bottom:1px solid var(--line);}
+  .snum{
+    width:32px; height:32px; border-radius:50%; flex:0 0 32px;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:bold; font-family:monospace; font-size:14px;
+    background:var(--panel2); border:1.5px solid var(--amber); color:var(--amber);
+  }
+  .stitle{font-size:17px; font-weight:bold;}
+  .ssub{font-size:12px; color:var(--dim);}
+  .sbody{padding:16px 18px;}
+
+  .note{background:var(--panel2); border-left:3px solid var(--cyan); padding:8px 13px; border-radius:0 8px 8px 0; font-size:13px; margin-bottom:12px; color:var(--dim);}
+  .note b{color:var(--cyan);}
+  .note.gold{border-left-color:var(--amber);} .note.gold b{color:var(--amber);}
+
+  label.f{display:block; font-size:13px; color:var(--dim); margin:10px 0 4px; font-weight:bold;}
+  input[type=text], textarea{
+    width:100%; background:#0d1330; color:var(--ink);
+    border:1.5px solid var(--line); border-radius:9px;
+    padding:9px 12px; font-size:15px; font-family:inherit;
+  }
+  input[type=text]:focus, textarea:focus{outline:none; border-color:var(--cyan);}
+  input.filled, textarea.filled{border-color:rgba(74,222,128,.55);}
+  textarea{resize:vertical; min-height:56px;}
+  input.mono{font-family:monospace;}
+
+  table.t{width:100%; border-collapse:collapse; margin-top:6px;}
+  table.t th{font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--dim); text-align:left; padding:4px 6px;}
+  table.t td{padding:3px 4px;}
+  table.t input{padding:7px 10px; font-size:14px;}
+  .fixed{color:var(--amber); font-family:monospace; font-size:14px; padding:7px 10px; display:block;}
+
+  /* oyun döngüsü */
+  .loop{display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:6px; margin:10px 0;}
+  .loop .step{background:var(--panel2); border:1.5px solid var(--cyan); border-radius:10px; padding:8px 14px; font-weight:bold; font-size:14px;}
+  .loop .arr{color:var(--amber); font-size:18px;}
+
+  /* ekran planı */
+  .screen{
+    position:relative; border:2px solid var(--line); border-radius:12px;
+    background:#0d1330; height:300px; margin-top:8px;
+  }
+  .screen .slot{position:absolute; width:44%;}
+  .screen .slot input{font-size:12.5px; padding:6px 9px; text-align:center;}
+  .screen .slot .sl{font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--dim); text-align:center; margin-bottom:3px;}
+  .s-tl{top:10px; left:3%;} .s-tr{top:10px; right:3%;}
+  .s-mid{top:42%; left:28%;} 
+  .s-bl{bottom:10px; left:3%;} .s-br{bottom:10px; right:3%;}
+  .screen .hedefbox{
+    position:absolute; top:38%; left:28%; width:44%; height:booster;
+  }
+
+  /* checkboxlar */
+  .chk{display:flex; align-items:center; gap:10px; padding:7px 4px; font-size:14.5px; cursor:pointer;}
+  .chk input{width:20px; height:20px; accent-color:var(--ok); cursor:pointer;}
+
+  .btn{
+    display:inline-block; background:var(--amber); color:#241500;
+    border:none; border-radius:9px; padding:11px 22px;
+    font-size:15px; font-weight:bold; cursor:pointer; font-family:inherit; margin:6px 6px 0 0;
+  }
+  .btn.ghost{background:transparent; color:var(--cyan); border:1.5px solid var(--cyan);}
+
+  .saveinfo{font-size:12px; color:var(--dim); margin-top:8px;}
+  .stamp{
+    display:none; text-align:center; margin-top:22px; padding:20px;
+    border:3px dashed var(--ok); border-radius:14px; color:var(--ok);
+  }
+  .stamp.show{display:block;}
+  .stamp .big{font-size:44px;}
+  .stamp h2{font-size:22px; margin:6px 0;}
+  .stamp p{color:var(--dim); font-size:14px;}
+
+  /* yazdırma */
+  @media print{
+    body{background:#fff; color:#111;}
+    .star, .topbar, .btn, .saveinfo{display:none!important;}
+    .sec{border:1.5px solid #999; break-inside:avoid; background:#fff;}
+    .shead{border-bottom:1px solid #999;}
+    .stitle{color:#111;} .snum{color:#111; border-color:#555; background:#eee;}
+    input, textarea{border:1px solid #999; background:#fff; color:#111;}
+    .note{background:#f3f3f3; color:#333;}
+    .screen{background:#fafafa; border-color:#999;}
+    .fixed{color:#7a5c00;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tlabel">📋 Tasarım Belgesi</div>
+  <div class="xpwrap"><div class="xpbar" id="bar"></div></div>
+  <div class="pct" id="pct">%0</div>
+</div>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">Resmi Oyun Tasarım Belgesi · Tıklayıcı Projesi</div>
+  <h1>OYUNUMUN <span class="hl">PLANI</span> 📋</h1>
+  <div class="sub">Gerçek oyun stüdyoları koda başlamadan önce böyle bir belge yazar — adı <b>Game Design Document</b>. Bu senin belgen: burada ne yazarsa, oyunda o olacak. Kaptan sensin, plan senin.</div>
+</header>
+
+<!-- 1 KİMLİK -->
+<div class="sec">
+  <div class="shead"><div class="snum">1</div><div><div class="stitle">Oyun Kimliği</div><div class="ssub">Ders 1'de doldur</div></div></div>
+  <div class="sbody">
+    <label class="f">🎮 Oyunumun adı</label>
+    <input type="text" data-k="ad" placeholder="Havalı bir isim bul — istersen sonra değiştirirsin">
+    <label class="f">👤 Tasarımcı</label>
+    <input type="text" data-k="tasarimci" placeholder="Poyraz">
+    <label class="f">🪐 Temam (neye tıklanacak?)</label>
+    <input type="text" data-k="tema" placeholder="Kartal Bileti ile SEN seçtin — buraya yaz">
+    <label class="f">✍️ Oyunum tek cümleyle ne? (Bir arkadaşına nasıl anlatırdın?)</label>
+    <textarea data-k="konu" placeholder="Örnek: ...'e tıklayıp puan topluyorsun, puanla güçleniyorsun, durdurmak imkânsız!"></textarea>
+  </div>
+</div>
+
+<!-- 2 DÖNGÜ -->
+<div class="sec">
+  <div class="shead"><div class="snum">2</div><div><div class="stitle">Oyun Döngüsü</div><div class="ssub">Ders 1'de doldur · her tıklayıcının kalbi</div></div></div>
+  <div class="sbody">
+    <div class="loop">
+      <div class="step">👆 TIKLA</div><div class="arr">→</div>
+      <div class="step">⭐ KAZAN</div><div class="arr">→</div>
+      <div class="step">🛒 HARCA</div><div class="arr">→</div>
+      <div class="step">💪 GÜÇLEN</div><div class="arr">↩</div>
+    </div>
+    <label class="f">Bu döngü SENİN oyununda nasıl işleyecek? Kendi cümlelerinle yaz:</label>
+    <textarea data-k="dongu" placeholder="Örnek: Kurabiyeye tıklarım, puan gelir, puanla fırın alırım, fırın bana tıklamadan puan üretir..."></textarea>
+    <label class="f">🤔 Oyuncu neden oynamaya DEVAM etmek ister? (Seni Blooket'e bağlayan şey neyse, senin oyuncunu ne bağlayacak?)</label>
+    <textarea data-k="motivasyon"></textarea>
+  </div>
+</div>
+
+<!-- 3 ASSETLER -->
+<div class="sec">
+  <div class="shead"><div class="snum">3</div><div><div class="stitle">Asset Listem (Görseller)</div><div class="ssub">Ders 1'de başla, her ders güncelle</div></div></div>
+  <div class="sbody">
+    <div class="note"><b>Kural:</b> dosya adları küçük harf, Türkçe karaktersiz, boşluksuz — hepsi <b>images</b> klasöründe.</div>
+    <table class="t">
+      <tr><th>Ne görseli?</th><th>Dosya adı</th><th>Ne işe yarar?</th></tr>
+      <tr>
+        <td><input type="text" data-k="a1n" placeholder="Ana hedefim (temam)"></td>
+        <td><span class="fixed">hedef.png</span></td>
+        <td><input type="text" data-k="a1i" placeholder="Tıklanan şey"></td>
+      </tr>
+      <tr>
+        <td><input type="text" data-k="a2n" placeholder="örn: arka plan"></td>
+        <td><input type="text" class="mono" data-k="a2d" placeholder="arkaplan.png"></td>
+        <td><input type="text" data-k="a2i"></td>
+      </tr>
+      <tr>
+        <td><input type="text" data-k="a3n" placeholder="örn: mağaza butonu"></td>
+        <td><input type="text" class="mono" data-k="a3d"></td>
+        <td><input type="text" data-k="a3i"></td>
+      </tr>
+      <tr>
+        <td><input type="text" data-k="a4n"></td>
+        <td><input type="text" class="mono" data-k="a4d"></td>
+        <td><input type="text" data-k="a4i"></td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- 4 DEĞİŞKENLER -->
+<div class="sec">
+  <div class="shead"><div class="snum">4</div><div><div class="stitle">Değişkenlerim</div><div class="ssub">Ders 1-2 · oyunun hafızası</div></div></div>
+  <div class="sbody">
+    <table class="t">
+      <tr><th>Değişken adı</th><th>Ne tutacak?</th><th>Başlangıç</th></tr>
+      <tr>
+        <td><span class="fixed">puan</span></td>
+        <td><input type="text" data-k="v1" placeholder="Oyuncunun puanı"></td>
+        <td><span class="fixed">0</span></td>
+      </tr>
+      <tr>
+        <td><span class="fixed">tik_gucu</span></td>
+        <td><input type="text" data-k="v2" placeholder="Her tıklamada kaç puan?"></td>
+        <td><span class="fixed">1</span></td>
+      </tr>
+      <tr>
+        <td><input type="text" class="mono" data-k="v3a" placeholder="kendi fikrin..."></td>
+        <td><input type="text" data-k="v3b"></td>
+        <td><input type="text" class="mono" data-k="v3c"></td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- 5 MAĞAZA -->
+<div class="sec">
+  <div class="shead"><div class="snum">5</div><div><div class="stitle">Mağaza Planım 🛒</div><div class="ssub">Ders 2'de doldur · SÖZLÜK burada devreye giriyor!</div></div></div>
+  <div class="sbody">
+    <div class="note gold"><b>Hatırla:</b> "Roket kaç para?" diye ETİKETLE soracağız → fiyatlar bir <b>sözlükte</b> tutulacak: <span class="mono" style="color:var(--amber)">fiyatlar = {"...": ..., "...": ...}</span> — Veri Yağmuru'nda buna sen cevap vermiştin!</div>
+    <table class="t">
+      <tr><th>Güçlendirme adı</th><th>Fiyatı</th><th>Ne yapar?</th></tr>
+      <tr>
+        <td><input type="text" data-k="m1a" placeholder="örn: çelik pençe"></td>
+        <td><input type="text" class="mono" data-k="m1f" placeholder="50"></td>
+        <td><input type="text" data-k="m1i" placeholder="tık gücü +1"></td>
+      </tr>
+      <tr>
+        <td><input type="text" data-k="m2a"></td>
+        <td><input type="text" class="mono" data-k="m2f"></td>
+        <td><input type="text" data-k="m2i"></td>
+      </tr>
+      <tr>
+        <td><input type="text" data-k="m3a"></td>
+        <td><input type="text" class="mono" data-k="m3f"></td>
+        <td><input type="text" data-k="m3i"></td>
+      </tr>
+    </table>
+    <label class="f">💰 Fiyat dengesi: İlk güçlendirme kaç tıklamada alınabilmeli sence? (Çok kolay = sıkıcı, çok zor = bıktırıcı!)</label>
+    <input type="text" data-k="denge" placeholder="örn: 50 tıklamada — yaklaşık 1 dakika">
+  </div>
+</div>
+
+<!-- 6 ÜRETİCİLER -->
+<div class="sec">
+  <div class="shead"><div class="snum">6</div><div><div class="stitle">Otomatik Üreticilerim ⚙️</div><div class="ssub">Ders 3'te doldur · LİSTE burada devreye giriyor!</div></div></div>
+  <div class="sbody">
+    <div class="note"><b>Fikir:</b> Sen hiçbir şey yapmazken puan üreten yardımcılar. Birden fazla olacaklar — aynı türden kalabalık = <b>liste!</b></div>
+    <table class="t">
+      <tr><th>Üretici adı</th><th>Saniyede kaç puan?</th><th>Fiyatı</th></tr>
+      <tr>
+        <td><input type="text" data-k="u1a" placeholder="temana uygun bir yardımcı"></td>
+        <td><input type="text" class="mono" data-k="u1p" placeholder="1"></td>
+        <td><input type="text" class="mono" data-k="u1f" placeholder="100"></td>
+      </tr>
+      <tr>
+        <td><input type="text" data-k="u2a"></td>
+        <td><input type="text" class="mono" data-k="u2p"></td>
+        <td><input type="text" class="mono" data-k="u2f"></td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- 7 EKRAN PLANI -->
+<div class="sec">
+  <div class="shead"><div class="snum">7</div><div><div class="stitle">Ekran Planım 🖼️</div><div class="ssub">Ders 2'de doldur · her şeyin yeri belli olsun</div></div></div>
+  <div class="sbody">
+    <p style="font-size:13.5px; color:var(--dim); margin-bottom:4px;">Aşağıdaki kutu senin oyun penceren (500×600). Her köşeye ne koyacağını yaz — boş kalacaksa boş bırak:</p>
+    <div class="screen">
+      <div class="slot s-tl"><div class="sl">Sol üst</div><input type="text" data-k="e1" placeholder="örn: Puan: 0"></div>
+      <div class="slot s-tr"><div class="sl">Sağ üst</div><input type="text" data-k="e2"></div>
+      <div class="slot s-mid"><div class="sl">Orta — yıldız burada</div><input type="text" data-k="e3" placeholder="HEDEF (tıklanan)"></div>
+      <div class="slot s-bl"><div class="sl">Sol alt</div><input type="text" data-k="e4"></div>
+      <div class="slot s-br"><div class="sl">Sağ alt</div><input type="text" data-k="e5" placeholder="örn: mağaza butonu"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 8 TEST -->
+<div class="sec">
+  <div class="shead"><div class="snum">8</div><div><div class="stitle">Test Pilotu Kontrol Listesi ✔</div><div class="ssub">Her ders sonunda işaretle</div></div></div>
+  <div class="sbody">
+    <label class="chk"><input type="checkbox" data-k="t1"> Hedefe tıklayınca puan artıyor</label>
+    <label class="chk"><input type="checkbox" data-k="t2"> Hedefin DIŞINA tıklayınca hiçbir şey olmuyor</label>
+    <label class="chk"><input type="checkbox" data-k="t3"> Puan ekranda doğru görünüyor</label>
+    <label class="chk"><input type="checkbox" data-k="t4"> Güçlendirme alınca tık gücü gerçekten artıyor</label>
+    <label class="chk"><input type="checkbox" data-k="t5"> Param yetmiyorsa satın alma ÇALIŞMIYOR (önemli!)</label>
+    <label class="chk"><input type="checkbox" data-k="t6"> Otomatik üretici ben dururken puan üretiyor</label>
+    <label class="chk"><input type="checkbox" data-k="t7"> Bir arkadaşım/ailem oynadı ve anlattı: neyi sevdi, neyi anlamadı?</label>
+  </div>
+</div>
+
+<!-- 9 HAYAL -->
+<div class="sec">
+  <div class="shead"><div class="snum">9</div><div><div class="stitle">En Havalı Fikrim 💡</div><div class="ssub">Serbest bölge — çılgınca olabilir</div></div></div>
+  <div class="sbody">
+    <label class="f">Oyunumda olmasını hayal ettiğim EN havalı özellik ne? (Yapabilir miyiz bilmiyorum ama yazıyorum!)</label>
+    <textarea data-k="hayal" placeholder="Sınır yok. Yaz. Ders 4-5'te bunlardan en az birini gerçekten deneyeceğiz."></textarea>
+  </div>
+</div>
+
+<div style="text-align:center; margin-top:18px;">
+  <button class="btn" onclick="save(true)">💾 Kaydet</button>
+  <button class="btn ghost" onclick="window.print()">🖨️ Yazdır / PDF</button>
+  <div class="saveinfo" id="saveinfo">Yazdıkça otomatik kaydedilir (bu cihazda ve bu tarayıcıda saklanır).</div>
+</div>
+
+<div class="stamp" id="stamp">
+  <div class="big">📋✅</div>
+  <h2>BELGE ONAYLANDI</h2>
+  <p>Tasarım belgesi %80'in üzerinde dolu — bu oyunun artık resmi bir planı var. Stüdyolar böyle çalışır, tasarımcı!</p>
+</div>
+
+</div>
+
+<script>
+  for (let i = 0; i < 36; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const sz = Math.random()*2+1;
+    s.style.cssText = 'width:'+sz+'px;height:'+sz+'px;left:'+(Math.random()*100)+'vw;top:'+(Math.random()*100)+'vh;animation-delay:'+(Math.random()*3)+'s';
+    document.body.appendChild(s);
+  }
+
+  const KEY = 'poyraz-tasarim-belgesi';
+  const fields = document.querySelectorAll('[data-k]');
+
+  function collect(){
+    const d = {};
+    fields.forEach(f => { d[f.dataset.k] = f.type === 'checkbox' ? f.checked : f.value; });
+    return d;
+  }
+
+  function save(manual){
+    try{
+      localStorage.setItem(KEY, JSON.stringify(collect()));
+      if(manual){
+        const si = document.getElementById('saveinfo');
+        si.textContent = '✔ Kaydedildi!';
+        setTimeout(()=>{ si.textContent = 'Yazdıkça otomatik kaydedilir (bu cihazda ve bu tarayıcıda saklanır).'; }, 2000);
+      }
+    }catch(e){
+      document.getElementById('saveinfo').textContent = '⚠ Bu tarayıcıda kayıt çalışmıyor — Yazdır/PDF ile sakla.';
+    }
+  }
+
+  function load(){
+    try{
+      const d = JSON.parse(localStorage.getItem(KEY) || '{}');
+      fields.forEach(f => {
+        if(d[f.dataset.k] !== undefined){
+          if(f.type === 'checkbox') f.checked = d[f.dataset.k];
+          else f.value = d[f.dataset.k];
+        }
+      });
+    }catch(e){}
+  }
+
+  function progress(){
+    let done = 0;
+    fields.forEach(f => {
+      const has = f.type === 'checkbox' ? f.checked : f.value.trim().length > 0;
+      if(has) done++;
+      if(f.type !== 'checkbox') f.classList.toggle('filled', has);
+    });
+    const p = Math.round(done / fields.length * 100);
+    document.getElementById('bar').style.width = p + '%';
+    document.getElementById('pct').textContent = '%' + p;
+    document.getElementById('stamp').classList.toggle('show', p >= 80);
+  }
+
+  fields.forEach(f => {
+    f.addEventListener('input', ()=>{ progress(); save(false); });
+    f.addEventListener('change', ()=>{ progress(); save(false); });
+  });
+
+  load();
+  progress();
+</script>
+</body>
+</html>
