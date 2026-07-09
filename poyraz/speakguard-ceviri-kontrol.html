@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SpeakGuard Training Console — Çeviri Kontrolü</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0E14; --panel:#131A26; --panel-2:#0F1520; --line:#232E40;
+    --text:#E6EAF2; --muted:#8A94A6; --muted-2:#5C6678;
+    --xp:#35D07F; --xp-dim:#1c6b44; --hint:#FFB020; --lvl:#4C8DFF;
+    --danger:#FF6B6B;
+    --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+    --disp:'Space Grotesk',system-ui,sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:radial-gradient(1200px 600px at 50% -200px,#16203100,#0B0E14),var(--bg);
+    color:var(--text);font-family:var(--body);line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:var(--lvl)}
+  code{font-family:var(--mono);font-size:.92em;background:#0c121c;border:1px solid var(--line);
+    padding:1px 6px;border-radius:6px;color:#c9d4e6}
+  :focus-visible{outline:2px solid var(--lvl);outline-offset:3px;border-radius:6px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+  /* HUD */
+  .hud{position:sticky;top:0;z-index:40;backdrop-filter:blur(10px);
+    background:rgba(11,14,20,.82);border-bottom:1px solid var(--line)}
+  .hud-in{max-width:860px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;gap:16px}
+  .badge{display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .lvl-ring{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;
+    background:conic-gradient(var(--lvl) var(--ring,0deg),#1b2434 0);position:relative}
+  .lvl-ring span{width:36px;height:36px;border-radius:50%;background:var(--panel);
+    display:grid;place-items:center;font-family:var(--disp);font-weight:700;font-size:15px}
+  .rank-name{font-family:var(--disp);font-weight:600;font-size:15px;letter-spacing:.2px}
+  .rank-sub{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px}
+  .xp-wrap{flex:1;min-width:0}
+  .xp-top{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px}
+  .xp-top b{color:var(--xp);font-family:var(--mono)}
+  .xp-bar{height:9px;background:#101725;border:1px solid var(--line);border-radius:20px;overflow:hidden}
+  .xp-fill{height:100%;width:0;border-radius:20px;
+    background:linear-gradient(90deg,var(--xp-dim),var(--xp));transition:width .6s cubic-bezier(.2,.8,.2,1)}
+
+  .wrap{max-width:860px;margin:0 auto;padding:0 22px}
+
+  /* HERO */
+  .hero{padding:54px 0 20px}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;
+    letter-spacing:2px;color:var(--xp);text-transform:uppercase;
+    border:1px solid var(--line);background:var(--panel-2);padding:7px 13px;border-radius:100px}
+  .shield{width:15px;height:15px}
+  h1{font-family:var(--disp);font-weight:700;font-size:clamp(32px,6vw,50px);line-height:1.05;
+    margin:20px 0 0;letter-spacing:-.5px}
+  h1 .g{color:var(--xp)}
+  .lede{color:var(--muted);font-size:18px;max-width:60ch;margin-top:16px}
+  .brief{margin-top:26px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--lvl);
+    border-radius:14px;padding:18px 20px;font-size:15px}
+  .brief b{color:var(--text)}
+
+  /* MISSION */
+  .missions{margin-top:14px;padding-bottom:10px}
+  .m-head{font-family:var(--disp);font-size:13px;letter-spacing:3px;text-transform:uppercase;
+    color:var(--muted-2);margin:38px 0 16px;display:flex;align-items:center;gap:12px}
+  .m-head::after{content:"";flex:1;height:1px;background:var(--line)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:26px;margin-bottom:18px;
+    position:relative;transition:border-color .3s,box-shadow .3s}
+  .card.done{border-color:var(--xp-dim);box-shadow:0 0 0 1px var(--xp-dim) inset}
+  .m-top{display:flex;align-items:flex-start;gap:14px}
+  .m-no{font-family:var(--disp);font-weight:700;font-size:14px;color:var(--bg);background:var(--xp);
+    width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex-shrink:0;margin-top:2px}
+  .card.done .m-no::after{content:"✓"}
+  .card.done .m-no{font-size:16px}
+  .card.done .m-no .n{display:none}
+  .m-title{font-family:var(--disp);font-weight:600;font-size:21px;margin:0}
+  .m-xp{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--xp);border:1px solid var(--xp-dim);
+    padding:4px 9px;border-radius:8px;white-space:nowrap;flex-shrink:0}
+  .m-body{color:var(--muted);margin:12px 0 0}
+  .m-body strong{color:var(--text)}
+
+  pre{position:relative;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;
+    padding:18px;overflow-x:auto;margin:18px 0 0}
+  pre code{background:none;border:none;padding:0;color:#d4dcea;font-size:13.5px;line-height:1.7;white-space:pre}
+  .tok-c{color:#5c6b82}      /* comment */
+  .tok-s{color:#9ae6a4}      /* string */
+  .tok-k{color:#7aa2ff}      /* keyword */
+  .tok-f{color:#ffd479}      /* func */
+  .copy{position:absolute;top:11px;right:11px;font-family:var(--mono);font-size:11px;color:var(--muted);
+    background:#141c2a;border:1px solid var(--line);padding:5px 10px;border-radius:7px;cursor:pointer}
+  .copy:hover{color:var(--text);border-color:var(--muted-2)}
+
+  .hintbtn{margin-top:16px;background:none;border:1px solid var(--line);color:var(--hint);
+    font-family:var(--body);font-weight:500;font-size:13.5px;padding:8px 14px;border-radius:9px;cursor:pointer}
+  .hintbtn:hover{background:#1a1608;border-color:#4a3b12}
+  .hint{max-height:0;overflow:hidden;transition:max-height .35s ease}
+  .hint.open{max-height:400px}
+  .hint-in{margin-top:12px;background:#160f00;border:1px solid #4a3b12;border-radius:11px;padding:15px 17px;
+    color:#e9d9b3;font-size:14px}
+  .hint-in code{background:#241a05;border-color:#4a3b12;color:#ffd479}
+
+  .complete{margin-top:20px;width:100%;font-family:var(--disp);font-weight:600;font-size:15px;
+    color:var(--bg);background:var(--xp);border:none;padding:13px;border-radius:11px;cursor:pointer;
+    transition:transform .12s,filter .2s}
+  .complete:hover{filter:brightness(1.08)}
+  .complete:active{transform:scale(.99)}
+  .card.done .complete{background:transparent;color:var(--xp);border:1px solid var(--xp-dim)}
+
+  /* TEST */
+  .test label{display:flex;gap:12px;align-items:flex-start;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:11px;padding:14px 16px;margin-top:11px;cursor:pointer;color:var(--muted)}
+  .test input{width:19px;height:19px;margin-top:2px;accent-color:var(--xp);flex-shrink:0}
+  .test label strong{color:var(--text)}
+
+  /* BONUS */
+  .bonus{border-color:#2a3550;background:linear-gradient(180deg,#141c2c,#0f1520)}
+  .bonus .m-no{background:var(--lvl)}
+  .bonus .m-xp{color:var(--lvl);border-color:#2f4a7a}
+
+  .note{color:var(--muted);font-size:14px;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:12px;padding:16px 18px;margin-top:6px}
+  footer{text-align:center;color:var(--muted-2);font-size:13px;padding:40px 0;font-family:var(--mono)}
+
+  /* TOAST */
+  #toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,120px);z-index:60;
+    background:var(--panel);border:1px solid var(--xp-dim);border-radius:14px;padding:14px 20px;
+    display:flex;align-items:center;gap:12px;box-shadow:0 12px 40px #0008;transition:transform .45s cubic-bezier(.2,.9,.2,1)}
+  #toast.show{transform:translate(-50%,0)}
+  #toast .t-lvl{font-family:var(--disp);font-weight:700;color:var(--xp)}
+  #toast .t-sub{font-size:13px;color:var(--muted)}
+  .pop{animation:pop .45s ease}
+  @keyframes pop{0%{transform:scale(.97)}55%{transform:scale(1.02)}100%{transform:scale(1)}}
+</style>
+</head>
+<body>
+
+<!-- HUD -->
+<div class="hud">
+  <div class="hud-in">
+    <div class="badge">
+      <div class="lvl-ring" id="ring"><span id="lvlNum">1</span></div>
+      <div>
+        <div class="rank-name" id="rankName">Çaylak</div>
+        <div class="rank-sub">Seviye <span id="lvlText">1</span></div>
+      </div>
+    </div>
+    <div class="xp-wrap">
+      <div class="xp-top"><span>Deneyim Puanı (XP)</span><span><b id="xpNow">0</b> / 160 XP</span></div>
+      <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <section class="hero">
+    <span class="eyebrow">
+      <svg class="shield" viewBox="0 0 24 24" fill="none"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5l8-3z" stroke="#35D07F" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.5 12l2.3 2.3L15.8 9" stroke="#35D07F" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      SPEAKGUARD TRAINING CONSOLE
+    </span>
+    <h1>Botun artık <span class="g">gerçek çeviriyi</span> kontrol edecek</h1>
+    <p class="lede">Şu ana kadar oyunun Türkçe cümleyi yine Türkçe yazınca doğru sayıyordu. Bu görevlerde botu
+      yükseltip <strong style="color:var(--text)">Türkçe → İngilizce</strong> çeviriyi kontrol etmesini sağlayacaksın.
+      Her görev sana XP kazandırır — seviye atla, Usta ol.</p>
+    <div class="brief">
+      🎯 <b>Bugünkü hedef:</b> Program bir Türkçe cümle göstersin, sen İngilizce çevirisini yaz, bot cevabını
+      kontrol etsin. Zor kısım: bir cümlenin <b>birden fazla doğru İngilizce cevabı</b> olabilir
+      ("merhaba" → <code>hello</code> ya da <code>hi</code>). Bunu çözeceğiz.
+    </div>
+  </section>
+
+  <div class="missions">
+    <div class="m-head">Görevler</div>
+
+    <!-- G1 -->
+    <article class="card" data-mission>
+      <div class="m-top">
+        <div class="m-no"><span class="n">1</span></div>
+        <h2 class="m-title">Veriyi yükselt: kabul edilen cevaplar</h2>
+        <div class="m-xp">+25 XP</div>
+      </div>
+      <p class="m-body">Cümleler artık düz liste değil, bir <strong>sözlük</strong> olacak: her Türkçe cümlenin
+        yanında <strong>kabul edilen İngilizce cevaplar</strong> duracak. "kolay" seviyesini örnek verdim —
+        <strong>"orta" ve "zor"u aynı yapıda sen doldur.</strong></p>
+      <pre><code><span class="tok-k">levels</span> = {
+    <span class="tok-s">"kolay"</span>: {
+        <span class="tok-s">"merhaba"</span>: [<span class="tok-s">"hello"</span>, <span class="tok-s">"hi"</span>],
+        <span class="tok-s">"teşekkür ederim"</span>: [<span class="tok-s">"thank you"</span>, <span class="tok-s">"thanks"</span>],
+        <span class="tok-s">"görüşürüz"</span>: [<span class="tok-s">"see you"</span>, <span class="tok-s">"bye"</span>, <span class="tok-s">"goodbye"</span>],
+    },
+    <span class="tok-c"># GÖREV: "orta" ve "zor"u da aynı yapıda ekle</span>
+    <span class="tok-c"># "orta": { "mesaj silindi": ["the message was deleted", "message deleted"], ... },</span>
+}</code><button class="copy">kopyala</button></pre>
+      <button class="hintbtn">💡 İpucu</button>
+      <div class="hint"><div class="hint-in">
+        Dış sözlüğün anahtarı <code>"kolay"/"orta"/"zor"</code>, değeri ise <b>başka bir sözlük</b>.
+        İç sözlükte anahtar Türkçe cümle, değer ise kabul edilen cevapların <b>listesi</b>. Her İngilizce cevabı
+        küçük harfle yaz — birazdan zaten hepsini temizleyeceğiz. İpucu kullanmak XP'ni düşürmez, çekinme. 😊
+      </div></div>
+      <button class="complete" data-xp="25">Görevi tamamla</button>
+    </article>
+
+    <!-- G2 -->
+    <article class="card" data-mission>
+      <div class="m-top">
+        <div class="m-no"><span class="n">2</span></div>
+        <h2 class="m-title">temizle() — cevabı karşılaştırmaya hazırla</h2>
+        <div class="m-xp">+25 XP</div>
+      </div>
+      <p class="m-body">Oyuncu <code>Hello.</code> ya da <code> hi </code> yazabilir. Karşılaştırmadan önce her cevabı
+        <strong>aynı forma</strong> sokan bir fonksiyon yazacaksın: küçük harf, boşluk kırp, noktalama sil.</p>
+      <pre><code><span class="tok-k">def</span> <span class="tok-f">temizle</span>(metin):
+    metin = metin.<span class="tok-f">lower</span>().<span class="tok-f">strip</span>()
+    <span class="tok-c"># GÖREV: noktalama işaretlerini de sil ( . , ! ? )</span>
+    <span class="tok-c"># ipucu: for isaret in ".,!?": metin = metin.replace(isaret, "")</span>
+    ...
+    <span class="tok-k">return</span> metin</code><button class="copy">kopyala</button></pre>
+      <button class="hintbtn">💡 İpucu</button>
+      <div class="hint"><div class="hint-in">
+        <code>.lower()</code> büyük/küçük harfi eşitler, <code>.strip()</code> baştaki/sondaki boşluğu atar.
+        Noktalama için küçük bir döngü: her işareti <code>.replace(isaret, "")</code> ile boşlukla değiştir.
+        Sonunda temizlenmiş metni <code>return</code> etmeyi unutma.
+      </div></div>
+      <button class="complete" data-xp="25">Görevi tamamla</button>
+    </article>
+
+    <!-- G3 -->
+    <article class="card" data-mission>
+      <div class="m-top">
+        <div class="m-no"><span class="n">3</span></div>
+        <h2 class="m-title">Kontrol döngüsü: birden çok doğru cevap</h2>
+        <div class="m-xp">+40 XP</div>
+      </div>
+      <p class="m-body">Asıl beyin burada. Sözlükte <code>.items()</code> ile gez, İngilizce cevabı al ve
+        <strong>kabul edilenlerden herhangi birine</strong> uyuyor mu diye bak. Uyuyorsa puan, uymuyorsa hata —
+        ve doğruları göster.</p>
+      <pre><code>cumleler = levels[secim]   <span class="tok-c"># bu artık bir sözlük</span>
+score = <span class="tok-s">0</span>
+errors = <span class="tok-s">0</span>
+
+<span class="tok-k">for</span> turkce, kabul_edilenler <span class="tok-k">in</span> cumleler.<span class="tok-f">items</span>():
+    <span class="tok-f">print</span>(<span class="tok-s">"\nTürkçe cümle:"</span>, turkce)
+    cevap = <span class="tok-f">input</span>(<span class="tok-s">"İngilizce çevirisi: "</span>)
+
+    dogru_mu = <span class="tok-k">False</span>
+    <span class="tok-k">for</span> k <span class="tok-k">in</span> kabul_edilenler:
+        <span class="tok-c"># GÖREV: temizle(cevap) == temizle(k) ise dogru_mu = True yap</span>
+        ...
+
+    <span class="tok-k">if</span> dogru_mu:
+        score += <span class="tok-s">1</span>
+        <span class="tok-f">print</span>(<span class="tok-s">"Doğru! ✅"</span>)
+    <span class="tok-k">else</span>:
+        errors += <span class="tok-s">1</span>
+        <span class="tok-f">print</span>(<span class="tok-s">"Yanlış ❌ Kabul edilen:"</span>, <span class="tok-s">", "</span>.<span class="tok-f">join</span>(kabul_edilenler))</code><button class="copy">kopyala</button></pre>
+      <button class="hintbtn">💡 İpucu</button>
+      <div class="hint"><div class="hint-in">
+        <code>.items()</code> sana her turda hem Türkçe cümleyi (<code>turkce</code>) hem de kabul edilen cevap
+        listesini (<code>kabul_edilenler</code>) verir. İç döngüde her cevabı tek tek temizleyip oyuncunun
+        cevabıyla kıyasla; biri bile tutarsa <code>dogru_mu = True</code>. <code>", ".join(liste)</code> listeyi
+        virgülle yan yana yazdırır.
+      </div></div>
+      <button class="complete" data-xp="40">Görevi tamamla</button>
+    </article>
+
+    <!-- TEST -->
+    <div class="m-head">Kontrol</div>
+    <article class="card test" data-mission>
+      <div class="m-top">
+        <div class="m-no"><span class="n">4</span></div>
+        <h2 class="m-title">Çalıştır ve test et</h2>
+        <div class="m-xp">+10 XP</div>
+      </div>
+      <p class="m-body">Kodu çalıştır ve üçünü de dene. Hepsi geçiyorsa görevi tamamla.</p>
+      <label><input type="checkbox" class="tb"><span><strong>"merhaba"</strong> için hem <code>hello</code> hem <code>hi</code> doğru sayılıyor mu?</span></label>
+      <label><input type="checkbox" class="tb"><span>Büyük harfle <strong>"HELLO"</strong> yazınca yine doğru mu? (temizle çalışıyor mu)</span></label>
+      <label><input type="checkbox" class="tb"><span>Yanlış cevapta <strong>kabul edilenler listesi</strong> ekrana yazılıyor mu?</span></label>
+      <button class="complete" data-xp="10">Görevi tamamla</button>
+    </article>
+
+    <!-- BONUS -->
+    <div class="m-head">Bonus — İsteğe bağlı</div>
+
+    <article class="card bonus" data-mission>
+      <div class="m-top">
+        <div class="m-no"><span class="n">5</span></div>
+        <h2 class="m-title">Otomatik çeviri modu (googletrans)</h2>
+        <div class="m-xp">+25 XP</div>
+      </div>
+      <p class="m-body">Kabul listesinde yoksa, programın Türkçeyi kendi çevirip kontrol etmesini sağla.
+        İnternet ister, o yüzden <code>try/except</code> şart.</p>
+      <pre><code><span class="tok-k">from</span> googletrans <span class="tok-k">import</span> Translator
+translator = <span class="tok-f">Translator</span>()
+
+<span class="tok-k">try</span>:
+    otomatik = <span class="tok-f">temizle</span>(translator.<span class="tok-f">translate</span>(turkce, src=<span class="tok-s">"tr"</span>, dest=<span class="tok-s">"en"</span>).text)
+    <span class="tok-c"># otomatik çeviriyi de kabul edilenlere ekleyebilirsin</span>
+<span class="tok-k">except</span> Exception:
+    <span class="tok-f">print</span>(<span class="tok-s">"Çeviri servisine ulaşılamadı, elle kontrol devam."</span>)</code><button class="copy">kopyala</button></pre>
+      <button class="hintbtn">💡 İpucu</button>
+      <div class="hint"><div class="hint-in">
+        Google tek bir çeviri döndürür, o yüzden bunu kabul listenin <b>yerine değil, yanına</b> ekle —
+        kendi listendeki "hi/hey" gibi alternatifleri de korursun. Servis çökerse oyun durmasın diye
+        <code>except</code> içinde sadece uyarı ver, döngü devam etsin.
+      </div></div>
+      <button class="complete" data-xp="25">Görevi tamamla</button>
+    </article>
+
+    <article class="card bonus" data-mission>
+      <div class="m-top">
+        <div class="m-no"><span class="n">6</span></div>
+        <h2 class="m-title">Yanlışta ipucu ver</h2>
+        <div class="m-xp">+15 XP</div>
+      </div>
+      <p class="m-body">Oyuncu yanlış yaptığında doğru cevabı direkt söylemek yerine <strong>ilk harfini</strong> göster:
+        <code>İpucu: h____</code>. (String'in ilk harfi: <code>kelime[0]</code>)</p>
+      <button class="complete" data-xp="15">Görevi tamamla</button>
+    </article>
+
+    <article class="card bonus" data-mission>
+      <div class="m-top">
+        <div class="m-no"><span class="n">7</span></div>
+        <h2 class="m-title">Daha zengin cevap havuzu</h2>
+        <div class="m-xp">+20 XP</div>
+      </div>
+      <p class="m-body">Her Türkçe cümleye en az 1 kabul edilen cevap daha ekle (örn. "görüşürüz" → <code>see ya</code>).
+        Ne kadar çok alternatif, o kadar adil bir oyun.</p>
+      <button class="complete" data-xp="20">Görevi tamamla</button>
+    </article>
+
+    <!-- BRIDGE -->
+    <div class="m-head">Sırada ne var</div>
+    <div class="note">
+      🔎 Bu kontrol mantığı <b>sesten bağımsız</b>. Cevap ister klavyeden (<code>input</code>) ister mikrofondan
+      gelsin, <code>temizle()</code> + kabul listesi aynı şekilde çalışır. Yani gelecek derste sesi eklediğimizde
+      bugün yazdığın beyin hiç değişmeyecek — sadece cevabın <i>nereden geldiği</i> değişecek.
+    </div>
+  </div>
+</div>
+
+<footer>SPEAKGUARD // TRAINING CONSOLE — Kodlayın</footer>
+
+<div id="toast"><div><div class="t-lvl" id="toastLvl"></div><div class="t-sub">Yeni seviye açıldı</div></div></div>
+
+<script>
+  var RANKS = [
+    {min:0,   name:"Çaylak"},
+    {min:50,  name:"Çırak"},
+    {min:100, name:"Kalfa"},
+    {min:150, name:"Usta"}
+  ];
+  var MAX_XP = 160;
+  var xp = 0, level = 1;
+
+  var xpFill=document.getElementById('xpFill'), xpNow=document.getElementById('xpNow');
+  var lvlNum=document.getElementById('lvlNum'), lvlText=document.getElementById('lvlText');
+  var rankName=document.getElementById('rankName'), ring=document.getElementById('ring');
+  var toast=document.getElementById('toast'), toastLvl=document.getElementById('toastLvl');
+  var toastTimer;
+
+  function levelFor(x){ var l=1; for(var i=0;i<RANKS.length;i++){ if(x>=RANKS[i].min) l=i+1; } return l; }
+
+  function render(){
+    var pct=Math.min(100, xp/MAX_XP*100);
+    xpFill.style.width=pct+'%';
+    xpNow.textContent=xp;
+    var newLevel=levelFor(xp);
+    lvlNum.textContent=newLevel; lvlText.textContent=newLevel;
+    rankName.textContent=RANKS[newLevel-1].name;
+    ring.style.setProperty('--ring',(pct*3.6)+'deg');
+    if(newLevel>level){ showToast(RANKS[newLevel-1].name); ring.classList.remove('pop'); void ring.offsetWidth; ring.classList.add('pop'); }
+    level=newLevel;
+  }
+  function showToast(name){
+    toastLvl.textContent="Seviye atladın — "+name+"!";
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){toast.classList.remove('show');},2600);
+  }
+
+  document.querySelectorAll('.complete').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var card=btn.closest('[data-mission]');
+      var val=parseInt(btn.getAttribute('data-xp'),10);
+      var done=card.classList.toggle('done');
+      if(done){ xp+=val; btn.textContent='Tamamlandı ✓'; }
+      else { xp-=val; btn.textContent='Görevi tamamla'; }
+      render();
+    });
+  });
+
+  document.querySelectorAll('.hintbtn').forEach(function(b){
+    b.addEventListener('click',function(){
+      var h=b.nextElementSibling; var open=h.classList.toggle('open');
+      b.textContent=open?'💡 İpucu gizle':'💡 İpucu';
+    });
+  });
+
+  document.querySelectorAll('.copy').forEach(function(b){
+    b.addEventListener('click',function(){
+      var code=b.parentElement.querySelector('code').innerText;
+      navigator.clipboard.writeText(code).then(function(){
+        var o=b.textContent; b.textContent='kopyalandı ✓';
+        setTimeout(function(){b.textContent=o;},1400);
+      }).catch(function(){});
+    });
+  });
+
+  render();
+</script>
+</body>
+</html>
