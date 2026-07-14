@@ -107,6 +107,7 @@
     font-size:15px; font-weight:bold; cursor:pointer; font-family:inherit; margin:6px 6px 0 0;
   }
   .btn.ghost{background:transparent; color:var(--cyan); border:1.5px solid var(--cyan);}
+  .btn.small{padding:8px 16px; font-size:13.5px;}
 
   .saveinfo{font-size:12px; color:var(--dim); margin-top:8px;}
   .stamp{
@@ -192,22 +193,9 @@
         <td><span class="fixed">hedef.png</span></td>
         <td><input type="text" data-k="a1i" placeholder="Tıklanan şey"></td>
       </tr>
-      <tr>
-        <td><input type="text" data-k="a2n" placeholder="örn: arka plan"></td>
-        <td><input type="text" class="mono" data-k="a2d" placeholder="arkaplan.png"></td>
-        <td><input type="text" data-k="a2i"></td>
-      </tr>
-      <tr>
-        <td><input type="text" data-k="a3n" placeholder="örn: mağaza butonu"></td>
-        <td><input type="text" class="mono" data-k="a3d"></td>
-        <td><input type="text" data-k="a3i"></td>
-      </tr>
-      <tr>
-        <td><input type="text" data-k="a4n"></td>
-        <td><input type="text" class="mono" data-k="a4d"></td>
-        <td><input type="text" data-k="a4i"></td>
-      </tr>
+      <tbody id="assetsBody"></tbody>
     </table>
+    <button type="button" class="btn ghost small" onclick="addRow('assets')">+ Görsel Ekle</button>
   </div>
 </div>
 
@@ -227,12 +215,9 @@
         <td><input type="text" data-k="v2" placeholder="Her tıklamada kaç puan?"></td>
         <td><span class="fixed">1</span></td>
       </tr>
-      <tr>
-        <td><input type="text" class="mono" data-k="v3a" placeholder="kendi fikrin..."></td>
-        <td><input type="text" data-k="v3b"></td>
-        <td><input type="text" class="mono" data-k="v3c"></td>
-      </tr>
+      <tbody id="varsBody"></tbody>
     </table>
+    <button type="button" class="btn ghost small" onclick="addRow('vars')">+ Değişken Ekle</button>
   </div>
 </div>
 
@@ -243,22 +228,9 @@
     <div class="note gold"><b>Hatırla:</b> "Roket kaç para?" diye ETİKETLE soracağız → fiyatlar bir <b>sözlükte</b> tutulacak: <span class="mono" style="color:var(--amber)">fiyatlar = {"...": ..., "...": ...}</span> — Veri Yağmuru'nda buna sen cevap vermiştin!</div>
     <table class="t">
       <tr><th>Güçlendirme adı</th><th>Fiyatı</th><th>Ne yapar?</th></tr>
-      <tr>
-        <td><input type="text" data-k="m1a" placeholder="örn: çelik pençe"></td>
-        <td><input type="text" class="mono" data-k="m1f" placeholder="50"></td>
-        <td><input type="text" data-k="m1i" placeholder="tık gücü +1"></td>
-      </tr>
-      <tr>
-        <td><input type="text" data-k="m2a"></td>
-        <td><input type="text" class="mono" data-k="m2f"></td>
-        <td><input type="text" data-k="m2i"></td>
-      </tr>
-      <tr>
-        <td><input type="text" data-k="m3a"></td>
-        <td><input type="text" class="mono" data-k="m3f"></td>
-        <td><input type="text" data-k="m3i"></td>
-      </tr>
+      <tbody id="magazaBody"></tbody>
     </table>
+    <button type="button" class="btn ghost small" onclick="addRow('magaza')">+ Güçlendirme Ekle</button>
     <label class="f">💰 Fiyat dengesi: İlk güçlendirme kaç tıklamada alınabilmeli sence? (Çok kolay = sıkıcı, çok zor = bıktırıcı!)</label>
     <input type="text" data-k="denge" placeholder="örn: 50 tıklamada — yaklaşık 1 dakika">
   </div>
@@ -271,17 +243,9 @@
     <div class="note"><b>Fikir:</b> Sen hiçbir şey yapmazken puan üreten yardımcılar. Birden fazla olacaklar — aynı türden kalabalık = <b>liste!</b></div>
     <table class="t">
       <tr><th>Üretici adı</th><th>Saniyede kaç puan?</th><th>Fiyatı</th></tr>
-      <tr>
-        <td><input type="text" data-k="u1a" placeholder="temana uygun bir yardımcı"></td>
-        <td><input type="text" class="mono" data-k="u1p" placeholder="1"></td>
-        <td><input type="text" class="mono" data-k="u1f" placeholder="100"></td>
-      </tr>
-      <tr>
-        <td><input type="text" data-k="u2a"></td>
-        <td><input type="text" class="mono" data-k="u2p"></td>
-        <td><input type="text" class="mono" data-k="u2f"></td>
-      </tr>
+      <tbody id="ureticilerBody"></tbody>
     </table>
+    <button type="button" class="btn ghost small" onclick="addRow('ureticiler')">+ Üretici Ekle</button>
   </div>
 </div>
 
@@ -347,11 +311,81 @@
   }
 
   const KEY = 'poyraz-tasarim-belgesi';
-  const fields = document.querySelectorAll('[data-k]');
+
+  // Her tablo satırı için: hangi index'ten başlar, sayfa ilk açıldığında kaç satır
+  // gösterilsin (eskiden sabit olan satır sayısıyla aynı — böylece önceden
+  // girilmiş veriler aynı alan adlarıyla eşleşip kaybolmadan geri yüklenir).
+  const dynSections = {
+    assets: {
+      tbody: document.getElementById('assetsBody'), start: 2, defaultCount: 3,
+      tpl: n => `<tr>
+        <td><input type="text" data-k="a${n}n" placeholder="örn: ekstra görsel"></td>
+        <td><input type="text" class="mono" data-k="a${n}d" placeholder="dosya.png"></td>
+        <td><input type="text" data-k="a${n}i"></td>
+      </tr>`
+    },
+    vars: {
+      tbody: document.getElementById('varsBody'), start: 3, defaultCount: 1,
+      tpl: n => `<tr>
+        <td><input type="text" class="mono" data-k="v${n}a" placeholder="kendi fikrin..."></td>
+        <td><input type="text" data-k="v${n}b"></td>
+        <td><input type="text" class="mono" data-k="v${n}c"></td>
+      </tr>`
+    },
+    magaza: {
+      tbody: document.getElementById('magazaBody'), start: 1, defaultCount: 3,
+      tpl: n => `<tr>
+        <td><input type="text" data-k="m${n}a" placeholder="${n===1?'örn: çelik pençe':''}"></td>
+        <td><input type="text" class="mono" data-k="m${n}f" placeholder="${n===1?'50':''}"></td>
+        <td><input type="text" data-k="m${n}i" placeholder="${n===1?'tık gücü +1':''}"></td>
+      </tr>`
+    },
+    ureticiler: {
+      tbody: document.getElementById('ureticilerBody'), start: 1, defaultCount: 2,
+      tpl: n => `<tr>
+        <td><input type="text" data-k="u${n}a" placeholder="${n===1?'temana uygun bir yardımcı':''}"></td>
+        <td><input type="text" class="mono" data-k="u${n}p" placeholder="${n===1?'1':''}"></td>
+        <td><input type="text" class="mono" data-k="u${n}f" placeholder="${n===1?'100':''}"></td>
+      </tr>`
+    }
+  };
+
+  const rowCounts = {};
+  Object.keys(dynSections).forEach(name => { rowCounts[name] = dynSections[name].defaultCount; });
+  try{
+    const raw = JSON.parse(localStorage.getItem(KEY) || '{}');
+    if(raw.__rowCounts){
+      Object.keys(rowCounts).forEach(name => {
+        if(raw.__rowCounts[name] > rowCounts[name]) rowCounts[name] = raw.__rowCounts[name];
+      });
+    }
+  }catch(e){}
+
+  function bindField(f){
+    f.addEventListener('input', ()=>{ progress(); save(false); });
+    f.addEventListener('change', ()=>{ progress(); save(false); });
+  }
+
+  function renderRows(name){
+    const sec = dynSections[name];
+    sec.tbody.innerHTML = '';
+    for(let n = sec.start; n < sec.start + rowCounts[name]; n++){
+      sec.tbody.insertAdjacentHTML('beforeend', sec.tpl(n));
+    }
+    sec.tbody.querySelectorAll('[data-k]').forEach(bindField);
+  }
+
+  function addRow(name){
+    rowCounts[name]++;
+    renderRows(name);
+    load();
+    progress();
+    save(false);
+  }
 
   function collect(){
-    const d = {};
-    fields.forEach(f => { d[f.dataset.k] = f.type === 'checkbox' ? f.checked : f.value; });
+    const d = { __rowCounts: rowCounts };
+    document.querySelectorAll('[data-k]').forEach(f => { d[f.dataset.k] = f.type === 'checkbox' ? f.checked : f.value; });
     return d;
   }
 
@@ -371,7 +405,7 @@
   function load(){
     try{
       const d = JSON.parse(localStorage.getItem(KEY) || '{}');
-      fields.forEach(f => {
+      document.querySelectorAll('[data-k]').forEach(f => {
         if(d[f.dataset.k] !== undefined){
           if(f.type === 'checkbox') f.checked = d[f.dataset.k];
           else f.value = d[f.dataset.k];
@@ -381,21 +415,23 @@
   }
 
   function progress(){
+    const allFields = document.querySelectorAll('[data-k]');
     let done = 0;
-    fields.forEach(f => {
+    allFields.forEach(f => {
       const has = f.type === 'checkbox' ? f.checked : f.value.trim().length > 0;
       if(has) done++;
       if(f.type !== 'checkbox') f.classList.toggle('filled', has);
     });
-    const p = Math.round(done / fields.length * 100);
+    const p = Math.round(done / allFields.length * 100);
     document.getElementById('bar').style.width = p + '%';
     document.getElementById('pct').textContent = '%' + p;
     document.getElementById('stamp').classList.toggle('show', p >= 80);
   }
 
-  fields.forEach(f => {
-    f.addEventListener('input', ()=>{ progress(); save(false); });
-    f.addEventListener('change', ()=>{ progress(); save(false); });
+  Object.keys(dynSections).forEach(renderRows);
+
+  document.querySelectorAll('[data-k]').forEach(f => {
+    if(!f.closest('#assetsBody, #varsBody, #magazaBody, #ureticilerBody')) bindField(f);
   });
 
   load();
