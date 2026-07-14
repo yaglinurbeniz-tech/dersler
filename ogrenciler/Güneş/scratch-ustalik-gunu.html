@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Büyük Gösteri: Scratch Ustalık Günü</title>
+<style>
+  :root{
+    --bg:#0b1026; --panel:#151d40; --panel2:#1b244f;
+    --ink:#eef2ff; --dim:#8b96c9;
+    --amber:#ffb545; --cyan:#39d3e6; --ok:#4ade80; --bad:#f4597b;
+    --line:#2a356e;
+    /* Scratch renkleri */
+    --sc-event:#ffbf00; --sc-loop:#ffab19; --sc-motion:#4c97ff;
+    --sc-custom:#ff6680; --sc-control:#ffab19; --sc-var:#ff8c1a; --sc-sense:#5cb1d6;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  body{
+    background:
+      radial-gradient(ellipse at 20% -10%, #1a2560 0%, transparent 55%),
+      radial-gradient(ellipse at 90% 110%, #241a4d 0%, transparent 50%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'Trebuchet MS','Segoe UI',sans-serif;
+    line-height:1.55; min-height:100vh;
+    user-select:none; -webkit-user-select:none;
+  }
+  .star{position:fixed; background:#fff; border-radius:50%; opacity:.7; pointer-events:none; animation:tw 3s ease-in-out infinite;}
+  @keyframes tw{50%{opacity:.15}}
+  @media (prefers-reduced-motion: reduce){ .star{animation:none} *{transition:none!important; animation:none!important} }
+
+  .topbar{
+    position:sticky; top:0; z-index:10;
+    background:rgba(11,16,38,.92); backdrop-filter:blur(4px);
+    border-bottom:1px solid var(--line);
+    padding:10px 16px; display:flex; align-items:center; gap:14px;
+  }
+  .rank{font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--amber); font-weight:bold; white-space:nowrap;}
+  .xpwrap{flex:1; height:14px; background:var(--panel); border:1px solid var(--line); border-radius:99px; overflow:hidden;}
+  .xpbar{height:100%; width:0%; background:linear-gradient(90deg,var(--amber),#ffd98a); border-radius:99px; transition:width .5s;}
+  .xpnum{font-family:monospace; font-size:14px; color:var(--amber); min-width:70px; text-align:right;}
+
+  .wrap{max-width:720px; margin:0 auto; padding:28px 18px 90px;}
+
+  header.hero{text-align:center; padding:20px 0 8px;}
+  .eyebrow{font-size:11px; letter-spacing:4px; text-transform:uppercase; color:var(--cyan); margin-bottom:10px;}
+  h1{font-size:28px; line-height:1.25;}
+  h1 .hl{color:var(--amber);}
+  .sub{color:var(--dim); margin-top:8px; font-size:14.5px;}
+
+  .mission{background:var(--panel); border:1px solid var(--line); border-radius:14px; margin-top:22px; overflow:hidden;}
+  .mission.locked{opacity:.38; pointer-events:none;}
+  .mhead{display:flex; align-items:center; gap:12px; padding:14px 18px; border-bottom:1px solid var(--line);}
+  .mnum{
+    width:34px; height:34px; border-radius:50%; flex:0 0 34px;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:bold; font-family:monospace; font-size:15px;
+    background:var(--panel2); border:1.5px solid var(--cyan); color:var(--cyan);
+  }
+  .mission.done .mnum{background:var(--ok); border-color:var(--ok); color:#06210f;}
+  .mtitle{font-size:18px; font-weight:bold;}
+  .msub{font-size:12px; color:var(--dim);}
+  .mbody{padding:18px;}
+
+  .note{background:var(--panel2); border-left:3px solid var(--cyan); padding:10px 14px; border-radius:0 8px 8px 0; font-size:14px; margin-bottom:14px;}
+  .note b{color:var(--cyan);}
+  .note.gold{border-left-color:var(--amber);} .note.gold b{color:var(--amber);}
+
+  /* ============ SCRATCH BLOKLARI (CSS) ============ */
+  .blk{
+    display:inline-block; position:relative;
+    color:#fff; font-weight:bold; font-size:14px;
+    padding:9px 16px; border-radius:6px;
+    box-shadow:0 2px 0 rgba(0,0,0,.35);
+    font-family:'Trebuchet MS',sans-serif;
+    text-align:left; line-height:1.3;
+  }
+  .blk::after{ /* alt çentik */
+    content:''; position:absolute; bottom:-5px; left:14px;
+    width:22px; height:6px; background:inherit; border-radius:0 0 5px 5px;
+  }
+  .blk.hat{border-radius:18px 18px 6px 6px; padding-top:11px;} /* olay/şapka */
+  .blk.hat::before{content:''; position:absolute; top:-1px; left:0; right:0;}
+  .blk.ev{background:var(--sc-event); color:#4d3a00;}
+  .blk.ev::after{background:var(--sc-event);}
+  .blk.lp{background:var(--sc-loop); color:#4d3000;}
+  .blk.lp::after{background:var(--sc-loop);}
+  .blk.mo{background:var(--sc-motion);}
+  .blk.mo::after{background:var(--sc-motion);}
+  .blk.cu{background:var(--sc-custom);}
+  .blk.cu::after{background:var(--sc-custom);}
+  .blk.se{background:var(--sc-sense); color:#0d3a4a;}
+  .blk.se::after{background:var(--sc-sense);}
+  .blk.va{background:var(--sc-var); color:#4d2600;}
+  .blk.va::after{background:var(--sc-var);}
+  /* C-blok (döngü) görünümü */
+  .cblock{display:inline-block; text-align:left;}
+  .cblock .ctop{display:block; background:var(--sc-loop); color:#4d3000; font-weight:bold; font-size:14px; padding:8px 16px; border-radius:6px 6px 0 0; box-shadow:0 2px 0 rgba(0,0,0,.2);}
+  .cblock .cside{display:flex;}
+  .cblock .cbar{width:14px; background:var(--sc-loop); border-radius:0 0 0 4px;}
+  .cblock .cgap{flex:1; min-width:90px; min-height:26px; background:rgba(255,255,255,.06); border:1.5px dashed rgba(255,255,255,.25); border-left:none; margin:3px 0;}
+  .cblock .cbot{display:block; background:var(--sc-loop); height:12px; width:70%; border-radius:0 0 6px 6px;}
+  .blk .oval{background:rgba(255,255,255,.9); color:#333; border-radius:99px; padding:1px 9px; font-size:12.5px; margin:0 2px;}
+  .blk .hex{background:rgba(0,0,0,.18); border-radius:4px; padding:1px 8px; font-size:12.5px; clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 50%,calc(100% - 8px) 100%,8px 100%,0 50%); margin:0 2px;}
+
+  /* quiz */
+  .q{margin:20px 0;}
+  .qt{font-weight:bold; margin-bottom:10px; font-size:15.5px;}
+  .qt .qn{color:var(--cyan); font-family:monospace; margin-right:6px;}
+  .opts{display:flex; flex-direction:column; gap:10px; align-items:flex-start;}
+  .opt{
+    background:transparent; border:2px solid transparent; border-radius:10px;
+    padding:6px; cursor:pointer; font-family:inherit;
+    transition:border-color .15s; text-align:left;
+  }
+  .opt:hover{border-color:var(--cyan);}
+  .opt.right{border-color:var(--ok); background:rgba(74,222,128,.08);}
+  .opt.wrong{border-color:var(--bad); background:rgba(244,89,123,.08);}
+  .opt:disabled{cursor:default;}
+  .exp{display:none; font-size:13.5px; color:var(--dim); margin-top:8px; border-left:2px solid var(--amber); padding:6px 10px;}
+  .exp.show{display:block;} .exp b{color:var(--amber);}
+
+  /* ============ MİNİ OYUN ============ */
+  .hud{display:flex; justify-content:space-between; align-items:center; font-family:monospace; font-size:15px; margin-bottom:10px;}
+  .hud .score{color:var(--amber); font-weight:bold;}
+  .hud .combo{color:var(--ok);}
+  #arena{
+    position:relative; height:330px; border-radius:12px; overflow:hidden;
+    background:linear-gradient(180deg, #0d1330 0%, #131b45 100%);
+    border:1px solid var(--line);
+  }
+  #arena .gline{position:absolute; left:0; right:0; bottom:86px; border-top:2px dashed rgba(244,89,123,.5);}
+  #fcard{position:absolute; left:50%; transform:translateX(-50%); white-space:nowrap;}
+  .pads{position:absolute; left:0; right:0; bottom:0; height:80px; display:flex; gap:8px; padding:8px;}
+  .pad{
+    flex:1; border-radius:12px; border:2px solid; cursor:pointer;
+    font-size:17px; font-weight:bold; font-family:inherit;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    color:var(--ink); background:rgba(11,16,38,.7); transition:transform .08s;
+  }
+  .pad:active{transform:scale(.96);}
+  .pad small{font-size:11px; font-weight:normal; color:var(--dim);}
+  .pad.p1{border-color:var(--sc-loop);} .pad.p1:active{background:rgba(255,171,25,.25);}
+  .pad.p2{border-color:var(--sc-event);} .pad.p2:active{background:rgba(255,191,0,.22);}
+  .pad.flash-ok{background:rgba(74,222,128,.35)!important;}
+  .pad.flash-bad{background:rgba(244,89,123,.35)!important;}
+  #overlay{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:12px;
+    background:rgba(11,16,38,.9); text-align:center; padding:20px; z-index:5;
+  }
+  #overlay h3{font-size:21px;}
+  #overlay p{color:var(--dim); font-size:14px; max-width:380px;}
+  #overlay .big{font-size:40px;}
+  #feedback{position:absolute; top:8px; left:0; right:0; text-align:center; font-size:13px; color:var(--dim); min-height:20px; padding:0 10px;}
+  #feedback b{color:var(--amber);}
+
+  /* ============ YENİ YOL KAPILARI ============ */
+  .doors{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0;}
+  .door{
+    background:var(--panel2); border:2px solid var(--line); border-radius:14px;
+    padding:16px 14px; text-align:center; cursor:pointer; font-family:inherit; color:var(--ink);
+    transition:border-color .15s, transform .15s; font-size:14.5px;
+  }
+  .door:hover{border-color:var(--amber); transform:translateY(-3px);}
+  .door.sel{border-color:var(--amber); background:rgba(255,181,69,.1);}
+  .door .de{font-size:34px; display:block; margin-bottom:6px;}
+  .door b{display:block; font-size:16px; margin-bottom:4px;}
+  .door small{color:var(--dim); line-height:1.4; display:block;}
+
+  .btn{
+    display:inline-block; background:var(--amber); color:#241500;
+    border:none; border-radius:9px; padding:11px 22px;
+    font-size:15px; font-weight:bold; cursor:pointer; font-family:inherit; margin-top:12px;
+  }
+  .btn:hover{filter:brightness(1.08);}
+  .btn.ghost{background:transparent; color:var(--cyan); border:1.5px solid var(--cyan);}
+  .btn:disabled{opacity:.4; cursor:default;}
+
+  .toast{
+    position:fixed; right:16px; bottom:16px; background:var(--amber); color:#241500;
+    font-weight:bold; padding:10px 18px; border-radius:10px; font-size:15px;
+    opacity:0; transform:translateY(10px); transition:all .3s; pointer-events:none; z-index:60;
+  }
+  .toast.show{opacity:1; transform:translateY(0);}
+
+  /* ============ MOLA DÜĞMESİ (her an) ============ */
+  #molaBtn{
+    position:fixed; left:14px; bottom:14px; z-index:40;
+    background:var(--panel2); color:var(--cyan); border:1.5px solid var(--cyan);
+    border-radius:99px; padding:10px 16px; font-size:14px; font-weight:bold;
+    cursor:pointer; font-family:inherit; box-shadow:0 4px 14px rgba(0,0,0,.4);
+  }
+  #molaWrap{
+    position:fixed; inset:0; z-index:50; display:none;
+    align-items:center; justify-content:center; background:rgba(5,8,20,.93); text-align:center;
+  }
+  #molaWrap.show{display:flex;}
+  #molaWrap .mtimer{font-family:monospace; font-size:72px; color:var(--cyan); letter-spacing:4px;}
+  #molaWrap p{color:var(--dim); margin-top:8px;}
+  #molaWrap .inner{padding:20px;}
+
+  .final{display:none; text-align:center; padding:34px 18px;}
+  .final.show{display:block;}
+  .badge{font-size:64px;}
+  .final h2{font-size:26px; margin:10px 0 6px;}
+  .final .rankname{color:var(--amber); font-size:20px; font-weight:bold;}
+  .final p{color:var(--dim); max-width:460px; margin:10px auto 0;}
+  .conf{position:fixed; top:-20px; z-index:49; pointer-events:none; font-size:20px; animation:fall linear forwards;}
+  @keyframes fall{to{transform:translateY(110vh) rotate(720deg);}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="rank" id="rank">🐱 SCRATCH KÂŞİFİ</div>
+  <div class="xpwrap"><div class="xpbar" id="xpbar"></div></div>
+  <div class="xpnum"><span id="xp">0</span> XP</div>
+</div>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">Büyük Gösteri · Ustalık Günü</div>
+  <h1>SCRATCH <span class="hl">USTALIK RÜTBESİ</span> 🏆</h1>
+  <div class="sub">Bugün sınav yok, ders yok. Bugün kanıtlama günü: Scratch'te ustalaştığını göster, <b>Ustalık Rütbeni</b> kap — ve sana açılacak <b>yeni kapıları</b> gör. Yorulursan sol alttaki mola düğmesi hep orada. <span onclick="egg(this)" style="cursor:pointer">🐱</span></div>
+</header>
+
+<!-- G1: HAFIZA ŞOVU -->
+<div class="mission" id="m1">
+  <div class="mhead">
+    <div class="mnum">1</div>
+    <div><div class="mtitle">🎬 Hafıza Şovu</div><div class="msub">Projelerini SEN anlatıyorsun · +10 XP</div></div>
+  </div>
+  <div class="mbody">
+    <p>Hocanla birlikte eski projelerini açın — Noel Baba'nın yıldız topladığı oyun dahil! Ama bu sefer anlatan <b>sensin</b>: nasıl yaptın, hangi blok ne iş yapıyordu? Sen yapımcısın, hocan seyirci. 🎥</p>
+    <div class="note"><b>Görev:</b> En az 2 projeni anlat. Anlatırken "şurayı şimdi olsa farklı yapardım" dediğin bir yer bulursan +5 bonus — çünkü bunu sadece gerçek ustalar görebilir.</div>
+    <button class="btn" onclick="completeMission(1, 10)">Anlattım, ben yaptım bunları! →</button>
+  </div>
+</div>
+
+<!-- G2: BLOK TESTİ -->
+<div class="mission locked" id="m2">
+  <div class="mhead">
+    <div class="mnum">2</div>
+    <div><div class="mtitle">🧩 Blok Ustası Testi</div><div class="msub">Gerçek bloklarla · her doğru +10 XP</div></div>
+  </div>
+  <div class="mbody">
+
+    <div class="q"><div class="qt"><span class="qn">S1</span>Noel Baba oyununda yıldızların TEKRAR TEKRAR düşmesini hangisi sağlıyordu?</div>
+      <div class="opts">
+        <button class="opt" onclick="answer(this,false)"><span class="blk hat ev">🚩 yeşil bayrak tıklanınca</span></button>
+        <button class="opt" onclick="answer(this,true)"><span class="cblock"><span class="ctop">sürekli tekrarla</span><span class="cside"><span class="cbar"></span><span class="cgap"></span></span><span class="cbot"></span></span></button>
+        <button class="opt" onclick="answer(this,false)"><span class="blk mo">🐾 <span class="oval">10</span> adım git</span></button>
+      </div>
+      <div class="exp"><b>Neden:</b> Turuncu C şeklindeki blok = döngü. İçine ne koyarsan onu durmadan tekrarlar — yıldız yağmurunun motoru buydu!</div>
+    </div>
+
+    <div class="q"><div class="qt"><span class="qn">S2</span>Oyunun ne zaman BAŞLAYACAĞINA hangi blok karar veriyordu?</div>
+      <div class="opts">
+        <button class="opt" onclick="answer(this,false)"><span class="blk mo">🐾 <span class="oval">1</span> sn bekle</span></button>
+        <button class="opt" onclick="answer(this,false)"><span class="blk va">📊 puan'ı <span class="oval">1</span> artır</span></button>
+        <button class="opt" onclick="answer(this,true)"><span class="blk hat ev">🚩 yeşil bayrak tıklanınca</span></button>
+      </div>
+      <div class="exp"><b>Neden:</b> Üstü yuvarlak sarı bloklar = OLAY blokları. "Ne zaman?" sorusunun cevabı hep onlarda — her kodun kapı zili!</div>
+    </div>
+
+    <div class="q"><div class="qt"><span class="qn">S3</span>Noel Baba yıldıza DEĞDİ Mİ diye hangisiyle kontrol ederdik?</div>
+      <div class="opts">
+        <button class="opt" onclick="answer(this,true)"><span class="blk lp">eğer <span class="hex">yıldız'a değiyor mu?</span> ise</span></button>
+        <button class="opt" onclick="answer(this,false)"><span class="blk cu">⭐ kutlama</span></button>
+        <button class="opt" onclick="answer(this,false)"><span class="blk mo">🐾 rastgele konuma git</span></button>
+      </div>
+      <div class="exp"><b>Neden:</b> "eğer ... ise" = koşul: oyunun karar anları. Değdiyse puan, değmediyse hiçbir şey. Oyunlara zekâsını veren blok bu.</div>
+    </div>
+
+    <div class="q"><div class="qt"><span class="qn">S4</span>Skoru kim hatırlıyordu? Oyun boyunca puanı içinde taşıyan şey:</div>
+      <div class="opts">
+        <button class="opt" onclick="answer(this,false)">🎨 Kostüm</button>
+        <button class="opt" onclick="answer(this,true)"><span class="blk va">📊 değişken: <span class="oval">puan</span></span></button>
+        <button class="opt" onclick="answer(this,false)">🔊 Ses efekti</button>
+      </div>
+      <div class="exp"><b>Neden:</b> Değişken = oyunun hafıza kutusu. İçine sayı koyarsın, artırırsın, ekranda gösterirsin. Puan, can, seviye — hepsi değişkende yaşar.</div>
+    </div>
+
+    <div class="q"><div class="qt"><span class="qn">S5</span>Büyük soru: "kutlama"yı oyunun 5 farklı yerinde kullanmak istiyorum. En akıllıca yol?</div>
+      <div class="opts">
+        <button class="opt" onclick="answer(this,false)">Aynı blokları 5 kere tek tek dizerim</button>
+        <button class="opt" onclick="answer(this,true)"><span class="blk cu">⭐ kutlama</span> &nbsp;← kendi bloğumu yapar, 5 yerde çağırırım</button>
+      </div>
+      <div class="exp"><b>İşte ustalık burada:</b> Pembe bloklar = "Bloklarım" — kendi icadın! Bir kere tarif edersin, istediğin yerde tek blokla çağırırsın. Bugün derste BİR tane yapacaksınız... ve sana bir sır: büyüklerin kod dünyasında bunun adı <b>fonksiyon</b>. Yani bugün büyüklerin işini yapıyorsun. 😎</div>
+    </div>
+
+    <button class="btn" id="m2btn" disabled onclick="completeMission(2, 0)">Test bitti → Oyun zamanı!</button>
+  </div>
+</div>
+
+<!-- G3: MİNİ OYUN -->
+<div class="mission locked" id="m3">
+  <div class="mhead">
+    <div class="mnum">3</div>
+    <div><div class="mtitle">🕹️ BLOK YAĞMURU</div><div class="msub">Mini oyun · 3 can · combo sistemi</div></div>
+  </div>
+  <div class="mbody">
+    <div class="hud">
+      <div class="score">SKOR <span id="gscore">0</span></div>
+      <div class="combo" id="gcombo"></div>
+      <div class="lives" id="glives">❤️❤️❤️</div>
+    </div>
+    <div id="arena">
+      <div class="gline"></div>
+      <div id="feedback"></div>
+      <div id="fcard" style="display:none"></div>
+      <div class="pads">
+        <button class="pad p1" onclick="choose('dongu')">🔁 TEKRARLAR<small>döngü blokları</small></button>
+        <button class="pad p2" onclick="choose('olay')">🚩 BAŞLATIR<small>olay blokları</small></button>
+      </div>
+      <div id="overlay">
+        <div class="big">🌧️</div>
+        <h3>Bloklar yağıyor!</h3>
+        <p>Düşen blok bir şeyi <b>TEKRARLATIYOR</b> mu, yoksa kodu <b>BAŞLATIYOR</b> mu? Yere değmeden doğru tarafa bas! Her doğru +10, üst üste doğrular combo. 3 yanlış hakkın var — gittikçe hızlanır!</p>
+        <button class="btn" onclick="startGame()">BAŞLAT ▶</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- G4: YENİ YOL -->
+<div class="mission locked" id="m4">
+  <div class="mhead">
+    <div class="mnum">4</div>
+    <div><div class="mtitle">🚪 Yeni Kapılar</div><div class="msub">Scratch'i bitiren nereye gider? · +20 XP</div></div>
+  </div>
+  <div class="mbody">
+    <div class="note gold"><b>Bir gerçeği söyleme zamanı:</b> Scratch'te öğrenecek çok az şeyin kaldı. Bu "bitti" demek değil — <b>"hazırsın"</b> demek. Döngü, koşul, değişken, kendi blokların... Bunlar aslında TÜM programlama dillerinin temeli. Sen farkında olmadan büyüklerin alfabesini öğrendin. Şimdi kapılara bak:</div>
+    <div class="doors">
+      <button class="door" onclick="pickDoor(this)">
+        <span class="de">🐍</span>
+        <b>Python</b>
+        <small>Gerçek kod yazmak — blok yok, klavye var. Profesyonellerin dili. Kendi oyunlarını SIFIRDAN kodlarsın.</small>
+      </button>
+      <button class="door" onclick="pickDoor(this)">
+        <span class="de">🎮</span>
+        <b>Büyük Oyun Projesi</b>
+        <small>Scratch'te son bir dev proje: klonlarla yüzlerce karakter, seviyeler, kendi tasarımın — sonra Python'a geç.</small>
+      </button>
+      <button class="door" onclick="pickDoor(this)">
+        <span class="de">🌐</span>
+        <b>Web Tasarımı</b>
+        <small>İnternet siteleri yapmak — bu gördüğün site gibi! Renkler, butonlar, animasyonlar senin elinden çıksın.</small>
+      </button>
+      <button class="door" onclick="pickDoor(this)">
+        <span class="de">🤔</span>
+        <b>Kararsızım</b>
+        <small>Sorun değil! Hocanla konuş — sana en uygun yolu birlikte bulursunuz. Belki karışık bir yol bile olur.</small>
+      </button>
+    </div>
+    <p style="font-size:13.5px; color:var(--dim)">Bir kapı seç ve hocana NEDEN onu seçtiğini söyle. Bu bir söz değil, bir pusula — fikrini her zaman değiştirebilirsin.</p>
+    <button class="btn" id="m4btn" disabled onclick="completeMission(4, 20)">Kapımı seçtim! →</button>
+  </div>
+</div>
+
+<!-- G5: KAPANIŞ -->
+<div class="mission locked" id="m5">
+  <div class="mhead">
+    <div class="mnum">5</div>
+    <div><div class="mtitle">🎬 Bugünün Son Görevi</div><div class="msub">Derste: kendi bloğunu yap · +25 XP</div></div>
+  </div>
+  <div class="mbody">
+    <p>Site burada duruyor, şimdi Scratch'e geçiyorsunuz: hocanla birlikte <b>ilk kendi bloğunu</b> yapacaksın — <span class="blk cu" style="font-size:13px; padding:6px 12px">⭐ kutlama</span> — döndürsün, renk değiştirsin, ses çalsın. Sonra onu projende 2-3 yerde kullan ve büyüklerin sırrını yaşa: <b>bir kere yaz, her yerde kullan.</b></p>
+    <div class="note">Bitirince buraya dön ve butona bas — Ustalık Rütbesi seni bekliyor. 🏆</div>
+    <button class="btn" onclick="finish()">Kendi bloğumu YAPTIM! 🏁</button>
+  </div>
+</div>
+
+<!-- FİNAL -->
+<div class="final" id="final">
+  <div class="badge">🏆</div>
+  <h2>SCRATCH USTALIK RÜTBESİ</h2>
+  <div class="rankname" id="finalRank"></div>
+  <p id="finalMsg"></p>
+  <p style="margin-top:14px">Bu rütbeyle Scratch faslı tamamlanıyor — ama hikâye asıl şimdi başlıyor. Seçtiğin kapının arkasında ne var, gelecek derste göreceksin. Hocan hazırlığa başladı bile... 😏</p>
+</div>
+
+</div>
+
+<!-- MOLA -->
+<button id="molaBtn" onclick="openMola()">☕ 2 dk mola</button>
+<div id="molaWrap">
+  <div class="inner">
+    <div style="font-size:40px">🧘</div>
+    <div class="mtimer" id="mtimer">02:00</div>
+    <p>Gözlerini ekrandan ayır, su iç, gerin.<br>Süre bitince kaldığın yerden devam — panel seni bekliyor.</p>
+    <button class="btn ghost" onclick="closeMola()" style="margin-top:14px">Hazırım, devam →</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">+10 XP</div>
+
+<script>
+  for (let i = 0; i < 38; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const sz = Math.random()*2+1;
+    s.style.cssText = 'width:'+sz+'px;height:'+sz+'px;left:'+(Math.random()*100)+'vw;top:'+(Math.random()*100)+'vh;animation-delay:'+(Math.random()*3)+'s';
+    document.body.appendChild(s);
+  }
+
+  // ses
+  let AC = null;
+  function beep(freq, dur, type){
+    try{
+      AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+      const o = AC.createOscillator(), g = AC.createGain();
+      o.type = type || 'square'; o.frequency.value = freq;
+      g.gain.setValueAtTime(.08, AC.currentTime);
+      g.gain.exponentialRampToValueAtTime(.001, AC.currentTime + dur);
+      o.connect(g); g.connect(AC.destination);
+      o.start(); o.stop(AC.currentTime + dur);
+    }catch(e){}
+  }
+  const sOK = ()=>{beep(660,.09); setTimeout(()=>beep(880,.12),80);};
+  const sBAD = ()=>beep(160,.25,'sawtooth');
+  const sLVL = ()=>{beep(523,.1); setTimeout(()=>beep(659,.1),100); setTimeout(()=>beep(784,.18),200);};
+
+  let xp = 0;
+  const MAXXP = 155;
+  const ranks = [[0,'🐱 SCRATCH KÂŞİFİ'],[50,'🧩 BLOK USTASI'],[100,'🌟 PROJE MİMARI'],[155,'🏆 SCRATCH EFSANESİ']];
+
+  function addXP(n){
+    if(n <= 0) return;
+    xp += n;
+    document.getElementById('xp').textContent = xp;
+    document.getElementById('xpbar').style.width = Math.min(100, xp/MAXXP*100) + '%';
+    let r = ranks[0][1];
+    for(const [t,name] of ranks) if(xp >= t) r = name;
+    document.getElementById('rank').textContent = r;
+    const t = document.getElementById('toast');
+    t.textContent = '+' + n + ' XP';
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 1400);
+  }
+
+  function completeMission(n, bonus){
+    if(bonus) addXP(bonus);
+    const m = document.getElementById('m'+n);
+    m.classList.add('done');
+    const next = document.getElementById('m'+(n+1));
+    if(next){
+      next.classList.remove('locked');
+      next.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+  }
+
+  // quiz
+  function answer(btn, correct){
+    const opts = btn.parentElement.querySelectorAll('.opt');
+    opts.forEach(o => o.disabled = true);
+    if(correct){ btn.classList.add('right'); addXP(10); sOK(); }
+    else{
+      btn.classList.add('wrong'); sBAD();
+      opts.forEach(o => { if(o.getAttribute('onclick').includes('true')) o.classList.add('right'); });
+    }
+    btn.closest('.q').querySelector('.exp').classList.add('show');
+    const mission = btn.closest('.mission');
+    const total = mission.querySelectorAll('.q').length;
+    const done = [...mission.querySelectorAll('.q')].filter(q => q.querySelector('.opt:disabled')).length;
+    if(done === total){
+      const b = mission.querySelector('.btn[id$="btn"]');
+      if(b) b.disabled = false;
+    }
+  }
+
+  // kapılar
+  function pickDoor(el){
+    document.querySelectorAll('.door').forEach(d => d.classList.remove('sel'));
+    el.classList.add('sel');
+    document.getElementById('m4btn').disabled = false;
+  }
+
+  // ============ MİNİ OYUN ============
+  const POOL = [
+    {h:'<span class="blk lp" style="font-size:13px">sürekli tekrarla ⟲</span>', t:'dongu', why:'C-blok = döngü: içindekini durmadan tekrarlar'},
+    {h:'<span class="blk hat ev" style="font-size:13px">🚩 yeşil bayrak tıklanınca</span>', t:'olay', why:'Şapka blok = olay: kodu başlatır'},
+    {h:'<span class="blk lp" style="font-size:13px"><span class="oval">10</span> defa tekrarla ⟲</span>', t:'dongu', why:'Sayılı tekrar da bir döngüdür'},
+    {h:'<span class="blk hat ev" style="font-size:13px">⌨️ boşluk tuşuna basılınca</span>', t:'olay', why:'Tuş basımı = olay: "ne zaman?" sorusuna cevap'},
+    {h:'<span class="blk hat ev" style="font-size:13px">🖱️ bu kukla tıklanınca</span>', t:'olay', why:'Tıklama anını yakalayan olay bloğu'},
+    {h:'<span class="blk lp" style="font-size:13px"><span class="hex">değene kadar</span> tekrarla ⟲</span>', t:'dongu', why:'"...olana kadar tekrarla" = koşullu döngü'},
+    {h:'<span class="blk hat ev" style="font-size:13px">📨 mesajı aldığımda</span>', t:'olay', why:'Mesaj almak da bir olaydır — kuklalar böyle haberleşir'},
+    {h:'<span class="blk lp" style="font-size:13px">sürekli tekrarla: kontrol et ⟲</span>', t:'dongu', why:'Oyunların kalbi: sürekli kontrol döngüsü'},
+  ];
+
+  let deck = [], cur = null, lives = 3, score = 0, combo = 0;
+  let y = 0, speed = 0.9, raf = null, playing = false, answered = 0;
+  const LINE_Y = 330 - 86 - 48;
+  const $ = id => document.getElementById(id);
+  function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+
+  function startGame(){
+    $('overlay').style.display = 'none';
+    deck = shuffle([...POOL]);
+    lives = 3; score = 0; combo = 0; speed = 0.9; answered = 0;
+    updateHUD(); nextCard();
+    playing = true;
+    raf = requestAnimationFrame(tick);
+    beep(440,.1);
+  }
+  function nextCard(){
+    if(deck.length === 0) deck = shuffle([...POOL]);
+    cur = deck.pop();
+    const c = $('fcard');
+    c.innerHTML = cur.h;
+    c.style.display = 'block';
+    y = -50;
+  }
+  function tick(){
+    if(!playing) return;
+    y += speed;
+    $('fcard').style.top = y + 'px';
+    if(y >= LINE_Y){ miss('Yere düştü!'); }
+    raf = requestAnimationFrame(tick);
+  }
+  function choose(side){
+    if(!playing || !cur) return;
+    if(side === cur.t){
+      combo++;
+      const mult = combo >= 9 ? 3 : combo >= 5 ? 2 : 1;
+      score += 10 * mult; answered++;
+      sOK();
+      flash(side === 'dongu' ? '.p1' : '.p2', 'flash-ok');
+      $('feedback').innerHTML = '✔ <b>+' + (10*mult) + '</b> · ' + cur.why;
+      if(answered % 5 === 0){ speed += 0.35; sLVL(); $('feedback').innerHTML += ' · <b>HIZLANIYOR!</b> 🔥'; }
+      updateHUD(); nextCard();
+    } else {
+      flash(side === 'dongu' ? '.p1' : '.p2', 'flash-bad');
+      miss('Yanlış taraf!');
+    }
+  }
+  function miss(reason){
+    lives--; combo = 0; sBAD();
+    $('feedback').innerHTML = '✘ ' + reason + ' Doğrusu: <b>' + (cur.t === 'dongu' ? '🔁 TEKRARLAR' : '🚩 BAŞLATIR') + '</b> — ' + cur.why;
+    updateHUD();
+    if(lives <= 0){ endGame(); } else { nextCard(); }
+  }
+  function flash(sel, cls){
+    const el = document.querySelector(sel);
+    el.classList.add(cls);
+    setTimeout(()=>el.classList.remove(cls), 250);
+  }
+  function updateHUD(){
+    $('gscore').textContent = score;
+    $('glives').textContent = '❤️'.repeat(lives) + '🖤'.repeat(3-lives);
+    const mult = combo >= 9 ? 'x3 🔥🔥' : combo >= 5 ? 'x2 🔥' : '';
+    $('gcombo').textContent = combo >= 2 ? 'COMBO ' + combo + ' ' + mult : '';
+  }
+  function endGame(){
+    playing = false;
+    cancelAnimationFrame(raf);
+    $('fcard').style.display = 'none';
+    addXP(Math.min(40, Math.round(score/10)));
+    const ov = $('overlay');
+    ov.style.display = 'flex';
+    ov.innerHTML =
+      '<div class="big">' + (score >= 200 ? '🏆' : score >= 100 ? '💪' : '🌧️') + '</div>' +
+      '<h3>Skor: ' + score + '</h3>' +
+      '<p>' + (score >= 200 ? 'Bloklar senden kaçamıyor!' : score >= 100 ? 'Sağlam skor! Bir tur daha atıp rekor kırabilirsin.' : 'Isınma turuydu — bir tur daha!') + '</p>' +
+      '<div><button class="btn" onclick="startGame()">↻ Tekrar oyna</button> ' +
+      '<button class="btn ghost" onclick="completeMission(3, 0)">Devam et →</button></div>';
+  }
+
+  // mola
+  let mInt = null, mSec = 120;
+  function openMola(){
+    $('molaWrap').classList.add('show');
+    clearInterval(mInt);
+    mSec = 120;
+    $('mtimer').textContent = '02:00';
+    mInt = setInterval(()=>{
+      mSec--;
+      const m = String(Math.floor(mSec/60)).padStart(2,'0');
+      const s = String(mSec%60).padStart(2,'0');
+      $('mtimer').textContent = m+':'+s;
+      if(mSec <= 0){
+        clearInterval(mInt);
+        $('mtimer').textContent = 'BİTTİ!';
+        sLVL();
+      }
+    }, 1000);
+  }
+  function closeMola(){
+    clearInterval(mInt);
+    $('molaWrap').classList.remove('show');
+  }
+
+  // gizli sürpriz: kediye 5 dokunuş
+  let catTaps = 0, eggFound = false;
+  function egg(el){
+    catTaps++;
+    el.style.display = 'inline-block';
+    el.style.transform = 'scale(' + (1 + catTaps*0.2) + ')';
+    if(catTaps >= 5 && !eggFound){
+      eggFound = true;
+      addXP(20); sLVL();
+      const em = ['🎉','✨','⭐','🐱','💛'];
+      for(let i = 0; i < 40; i++){
+        setTimeout(()=>{
+          const c = document.createElement('div');
+          c.className = 'conf';
+          c.textContent = em[Math.floor(Math.random()*em.length)];
+          c.style.left = Math.random()*100 + 'vw';
+          c.style.animationDuration = (2 + Math.random()*2.5) + 's';
+          document.body.appendChild(c);
+          setTimeout(()=>c.remove(), 5000);
+        }, i * 50);
+      }
+      const t = document.getElementById('toast');
+      t.textContent = '🐱 GİZLİ GÖREV BULUNDU! +20 XP';
+      t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'), 2500);
+    }
+  }
+
+  function finish(){
+    addXP(25);
+    document.getElementById('m5').classList.add('done');
+    let r = ranks[0][1];
+    for(const [t,name] of ranks) if(xp >= t) r = name;
+    document.getElementById('finalRank').textContent = r + ' · ' + xp + ' XP';
+    document.getElementById('finalMsg').textContent =
+      xp >= 140 ? 'Muhteşem bir performans! Scratch sana artık küçük geliyor — yeni kapının arkasındakiler seni bekliyor.' :
+      xp >= 90  ? 'Ustalık kanıtlandı! Blokların dilini söküp bitirdin. Sıradaki dünya seni çağırıyor.' :
+                  'Rütbe senin! Bugün hem hatırladın hem oynadın hem de yeni yolunu seçtin — büyük gün.';
+    const f = document.getElementById('final');
+    f.classList.add('show');
+    f.scrollIntoView({behavior:'smooth'});
+    sLVL(); setTimeout(sLVL, 300);
+  }
+</script>
+</body>
+</html>
