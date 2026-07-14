@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oyunuma Menü Ekliyorum — Çalışma Kağıdı</title>
+<style>
+  :root{
+    --bg:#12141c; --panel:#1c2030; --panel2:#232840;
+    --ink:#eef0f8; --muted:#9aa3c0;
+    --accent:#ffb347; --accent2:#6ee7b7; --danger:#ff7b7b;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:"Segoe UI",system-ui,sans-serif;
+    background:var(--bg); color:var(--ink);
+    padding:24px; max-width:860px; margin:0 auto; line-height:1.55;
+  }
+  header{
+    background:linear-gradient(135deg,#2a2f4a,#1c2030);
+    border:2px solid var(--accent); border-radius:var(--radius);
+    padding:22px 26px; margin-bottom:26px; position:relative; overflow:hidden;
+  }
+  header h1{font-size:1.5rem; letter-spacing:.5px;}
+  header p{color:var(--muted); margin-top:6px;}
+  .tag{display:inline-block; background:var(--accent); color:#1c1608;
+    font-weight:700; font-size:.75rem; padding:3px 10px; border-radius:99px; margin-bottom:10px;}
+  section{
+    background:var(--panel); border-radius:var(--radius);
+    padding:20px 22px; margin-bottom:22px; border:1px solid #2d3350;
+  }
+  h2{font-size:1.08rem; color:var(--accent); margin-bottom:12px;
+     display:flex; align-items:center; gap:8px;}
+  h2 .num{background:var(--accent); color:#1c1608; width:26px; height:26px;
+     border-radius:8px; display:inline-flex; align-items:center; justify-content:center;
+     font-size:.9rem;}
+  .hint{color:var(--muted); font-size:.9rem; margin-bottom:12px;}
+  table{width:100%; border-collapse:collapse; margin-top:6px;}
+  th,td{border:1px solid #343b5e; padding:8px 10px; text-align:left; font-size:.92rem;}
+  th{background:var(--panel2); color:var(--accent2);}
+  input[type=text]{
+    width:100%; background:#12141c; border:1px solid #3a4166; color:var(--ink);
+    border-radius:8px; padding:7px 10px; font-size:.92rem; font-family:inherit;
+  }
+  input[type=text]:focus{outline:2px solid var(--accent); border-color:transparent;}
+  .quiz .q{margin-bottom:16px;}
+  .quiz .q p{margin-bottom:8px; font-weight:600;}
+  .opt{
+    display:block; background:var(--panel2); border:1px solid #3a4166;
+    border-radius:10px; padding:9px 12px; margin-bottom:7px; cursor:pointer;
+    transition:.15s; font-size:.92rem;
+  }
+  .opt:hover{border-color:var(--accent);}
+  .opt.correct{background:#14352a; border-color:var(--accent2); color:var(--accent2);}
+  .opt.wrong{background:#3a2030; border-color:var(--danger); color:var(--danger);}
+  .stage{
+    display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-top:8px;
+  }
+  .screen-card{
+    background:var(--panel2); border:1px dashed #4a527e; border-radius:12px; padding:12px;
+  }
+  .screen-card b{color:var(--accent2); font-size:.85rem; text-transform:uppercase; letter-spacing:1px;}
+  .drop{min-height:64px; margin-top:8px; border-radius:8px; padding:6px;
+    display:flex; flex-wrap:wrap; gap:6px; background:#12141c;}
+  .chipbank{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; padding:10px;
+    background:#12141c; border-radius:10px; min-height:48px;}
+  .chip{
+    background:#3b2f6e; border:1px solid #6d5bd0; padding:5px 11px; border-radius:99px;
+    font-size:.82rem; cursor:grab; user-select:none;
+  }
+  .chip.placed-ok{background:#14352a; border-color:var(--accent2);}
+  .chip.placed-bad{background:#3a2030; border-color:var(--danger);}
+  .btn{
+    background:var(--accent); border:none; color:#1c1608; font-weight:700;
+    padding:9px 18px; border-radius:10px; cursor:pointer; font-size:.9rem; margin-top:12px;
+  }
+  .btn:hover{filter:brightness(1.1);}
+  .result{margin-top:10px; font-weight:700;}
+  .block{
+    font-family:Consolas,monospace; font-size:.86rem; background:#0d0f16;
+    border-left:4px solid var(--accent); border-radius:8px; padding:12px 14px;
+    white-space:pre-wrap; margin-top:8px; color:#c9d4ff;
+  }
+  .blank{
+    display:inline-block; min-width:110px; background:#12141c; border:1px solid #3a4166;
+    color:var(--ink); border-radius:6px; padding:2px 8px; font-family:inherit; font-size:.85rem;
+  }
+  footer{color:var(--muted); text-align:center; font-size:.8rem; margin:30px 0 10px;}
+  @media(max-width:600px){ .stage{grid-template-columns:1fr;} body{padding:14px;} }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="tag">SCRATCH · MENÜ SİSTEMİ</span>
+  <h1>🎮 Oyunuma Menü Ekliyorum</h1>
+  <p>Ad: <input type="text" style="width:200px" placeholder="adını yaz"> &nbsp; Tarih: <input type="text" style="width:120px" placeholder="__ / __ / __"></p>
+</header>
+
+<section>
+  <h2><span class="num">1</span> Ekran Haritası — Tiyatro Sahnesi 🎭</h2>
+  <p class="hint">Her ekran bir sahnedir. Hangi kuklalar hangi sahnede görünmeli? Kuklaları doğru ekrana sürükle!</p>
+  <div class="stage" id="screens">
+    <div class="screen-card"><b>🏠 Menü</b><div class="drop" data-screen="menu"></div></div>
+    <div class="screen-card"><b>⚔️ Oyun</b><div class="drop" data-screen="oyun"></div></div>
+    <div class="screen-card"><b>⚙️ Ayarlar</b><div class="drop" data-screen="ayarlar"></div></div>
+    <div class="screen-card"><b>🛒 Mağaza</b><div class="drop" data-screen="magaza"></div></div>
+  </div>
+  <p class="hint" style="margin-top:12px">Kukla kutusu:</p>
+  <div class="chipbank" id="bank">
+    <span class="chip" draggable="true" data-ans="menu">OYNA butonu</span>
+    <span class="chip" draggable="true" data-ans="oyun">Ana karakter</span>
+    <span class="chip" draggable="true" data-ans="oyun">Upgrade butonları</span>
+    <span class="chip" draggable="true" data-ans="ayarlar">Ses aç/kapa</span>
+    <span class="chip" draggable="true" data-ans="magaza">Kostüm kartı</span>
+    <span class="chip" draggable="true" data-ans="menu">MAĞAZA butonu</span>
+  </div>
+  <button class="btn" onclick="checkDrag()">Kontrol Et ✔</button>
+  <div class="result" id="dragResult"></div>
+</section>
+
+<section>
+  <h2><span class="num">2</span> Yeni Bloğumuz: <span style="color:var(--accent2)">dekor ... olduğunda</span></h2>
+  <p class="hint">Boşlukları doldur — karakter sadece OYUN ekranında görünsün:</p>
+  <div class="block">dekor [ <input class="blank" id="b1" placeholder="?"> ] olduğunda
+  <input class="blank" id="b2" placeholder="göster mi gizle mi?">
+
+dekor [ menu ] olduğunda
+  <input class="blank" id="b3" placeholder="göster mi gizle mi?"></div>
+  <button class="btn" onclick="checkBlanks()">Kontrol Et ✔</button>
+  <div class="result" id="blankResult"></div>
+</section>
+
+<section class="quiz">
+  <h2><span class="num">3</span> Mimarlık Soruları 🏗️</h2>
+
+  <div class="q">
+    <p>1) Ekranı (dekoru) değiştiren tek yetkili kim olmalı?</p>
+    <span class="opt" data-c="0">OYNA butonu direkt dekoru değiştirsin</span>
+    <span class="opt" data-c="1">Butonlar haber salsın, Sahne dekoru değiştirsin</span>
+    <span class="opt" data-c="0">Her kukla istediği zaman dekoru değiştirsin</span>
+  </div>
+
+  <div class="q">
+    <p>2) Bir kuklanın hangi ekranda görüneceğine kim karar verir?</p>
+    <span class="opt" data-c="0">Sahne bütün kuklaları tek tek gizler</span>
+    <span class="opt" data-c="1">Her kukla kendini gösterir / gizler</span>
+    <span class="opt" data-c="0">OYNA butonu hepsini yönetir</span>
+  </div>
+
+  <div class="q">
+    <p>3) Menüye dönünce düşen kılıç klonlarına ne olmalı?</p>
+    <span class="opt" data-c="0">Sadece gizlenmeli, sorun yok</span>
+    <span class="opt" data-c="1">"bu ikizi sil" ile temizlenmeli</span>
+    <span class="opt" data-c="0">Hiçbir şey, kendiliğinden kaybolurlar</span>
+  </div>
+
+  <div class="q">
+    <p>4) Yarın "Nasıl Oynanır" ekranı eklemek istesen nelere ihtiyacın var?</p>
+    <span class="opt" data-c="0">Projeyi baştan yazmam gerekir</span>
+    <span class="opt" data-c="1">1 dekor + 1 haber + Sahneye 1 kod + 1 buton + göster/gizle</span>
+    <span class="opt" data-c="0">Sadece yeni bir kukla yeter</span>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">4</span> Tasarım Görevi ✏️</h2>
+  <p class="hint">Kendi oyununun menü ekranını hayal et ve yaz:</p>
+  <table>
+    <tr><th>Sorum</th><th>Cevabım</th></tr>
+    <tr><td>Menümde hangi butonlar olacak?</td><td><input type="text"></td></tr>
+    <tr><td>Menü dekorumun adı ne olacak?</td><td><input type="text"></td></tr>
+    <tr><td>Hangi haberleri oluşturacağım?</td><td><input type="text"></td></tr>
+    <tr><td>Oyundan menüye nasıl döneceğim?</td><td><input type="text"></td></tr>
+  </table>
+</section>
+
+<section>
+  <h2><span class="num">5</span> 🚀 Meydan Okuma</h2>
+  <p class="hint">Erken bitirdiysen: <b>puan değişkeni</b> menü ekranında görünmesin, sadece oyun ekranında görünsün. Hangi blokları kullanırsın? (İpucu: Değişkenler kategorisinde "değişkenini göster / gizle" blokları var!)</p>
+</section>
+
+<footer>Kodlayın · Scratch Game Development · Menü Sistemi Çalışma Kağıdı</footer>
+
+<script>
+// Drag & drop
+let dragged=null;
+document.querySelectorAll('.chip').forEach(c=>{
+  c.addEventListener('dragstart',()=>dragged=c);
+});
+document.querySelectorAll('.drop, #bank').forEach(z=>{
+  z.addEventListener('dragover',e=>e.preventDefault());
+  z.addEventListener('drop',e=>{
+    e.preventDefault();
+    if(dragged){ z.appendChild(dragged); dragged.classList.remove('placed-ok','placed-bad'); }
+  });
+});
+function checkDrag(){
+  let ok=0, total=0;
+  document.querySelectorAll('.drop .chip').forEach(c=>{
+    total++;
+    const good = c.dataset.ans === c.parentElement.dataset.screen;
+    c.classList.toggle('placed-ok', good);
+    c.classList.toggle('placed-bad', !good);
+    if(good) ok++;
+  });
+  const left = document.querySelectorAll('#bank .chip').length;
+  const r = document.getElementById('dragResult');
+  if(left>0){ r.textContent = '🎒 Kutuda hâlâ '+left+' kukla var, hepsini yerleştir!'; r.style.color='var(--accent)'; }
+  else if(ok===total){ r.textContent='🌟 Mükemmel! Ekran haritan hazır!'; r.style.color='var(--accent2)'; }
+  else { r.textContent='💪 '+ok+'/'+total+' doğru — kırmızıları tekrar düşün!'; r.style.color='var(--danger)'; }
+}
+// Blanks
+function norm(s){return s.trim().toLowerCase().replace(/i̇/g,'i');}
+function checkBlanks(){
+  const b1=norm(document.getElementById('b1').value);
+  const b2=norm(document.getElementById('b2').value);
+  const b3=norm(document.getElementById('b3').value);
+  const ok1 = b1==='oyun';
+  const ok2 = b2==='göster'||b2==='goster';
+  const ok3 = b3==='gizle';
+  const r=document.getElementById('blankResult');
+  const n=[ok1,ok2,ok3].filter(Boolean).length;
+  if(n===3){ r.textContent='🌟 Süper! Yeni bloğu çözdün!'; r.style.color='var(--accent2)'; }
+  else { r.textContent='💪 '+n+'/3 doğru. İpucu: karakter OYUN ekranında görünmeli, MENÜ ekranında görünmemeli.'; r.style.color='var(--accent)'; }
+}
+// Quiz
+document.querySelectorAll('.opt').forEach(o=>{
+  o.addEventListener('click',()=>{
+    const q=o.parentElement;
+    q.querySelectorAll('.opt').forEach(x=>x.classList.remove('correct','wrong'));
+    o.classList.add(o.dataset.c==='1'?'correct':'wrong');
+    if(o.dataset.c!=='1') q.querySelector('[data-c="1"]').classList.add('correct');
+  });
+});
+</script>
+</body>
+</html>
