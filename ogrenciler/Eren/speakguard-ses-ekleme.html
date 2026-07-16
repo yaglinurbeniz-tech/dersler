@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SpeakGuard Training Console — Ses Ekleme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0E14; --panel:#131A26; --panel-2:#0F1520; --line:#232E40;
+    --text:#E6EAF2; --muted:#8A94A6; --muted-2:#5C6678;
+    --xp:#35D07F; --xp-dim:#1c6b44; --hint:#FFB020; --lvl:#4C8DFF;
+    --mic:#FF6B6B; --mic-dim:#6b2b2b;
+    --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+    --disp:'Space Grotesk',system-ui,sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:radial-gradient(1200px 600px at 50% -200px,#16203100,#0B0E14),var(--bg);
+    color:var(--text);font-family:var(--body);line-height:1.6;-webkit-font-smoothing:antialiased}
+  code{font-family:var(--mono);font-size:.92em;background:#0c121c;border:1px solid var(--line);
+    padding:1px 6px;border-radius:6px;color:#c9d4e6}
+  :focus-visible{outline:2px solid var(--lvl);outline-offset:3px;border-radius:6px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+  .hud{position:sticky;top:0;z-index:40;backdrop-filter:blur(10px);
+    background:rgba(11,14,20,.82);border-bottom:1px solid var(--line)}
+  .hud-in{max-width:860px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;gap:16px}
+  .badge{display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .lvl-ring{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;
+    background:conic-gradient(var(--lvl) var(--ring,0deg),#1b2434 0)}
+  .lvl-ring span{width:36px;height:36px;border-radius:50%;background:var(--panel);
+    display:grid;place-items:center;font-family:var(--disp);font-weight:700;font-size:15px}
+  .rank-name{font-family:var(--disp);font-weight:600;font-size:15px}
+  .rank-sub{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px}
+  .xp-wrap{flex:1;min-width:0}
+  .xp-top{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px}
+  .xp-top b{color:var(--xp);font-family:var(--mono)}
+  .xp-bar{height:9px;background:#101725;border:1px solid var(--line);border-radius:20px;overflow:hidden}
+  .xp-fill{height:100%;width:0;border-radius:20px;
+    background:linear-gradient(90deg,var(--xp-dim),var(--xp));transition:width .6s cubic-bezier(.2,.8,.2,1)}
+
+  .wrap{max-width:860px;margin:0 auto;padding:0 22px}
+  .hero{padding:54px 0 20px}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;
+    letter-spacing:2px;color:var(--mic);text-transform:uppercase;
+    border:1px solid var(--line);background:var(--panel-2);padding:7px 13px;border-radius:100px}
+  h1{font-family:var(--disp);font-weight:700;font-size:clamp(32px,6vw,50px);line-height:1.05;
+    margin:20px 0 0;letter-spacing:-.5px}
+  h1 .g{color:var(--mic)}
+  .lede{color:var(--muted);font-size:18px;max-width:60ch;margin-top:16px}
+  .brief{margin-top:26px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--lvl);
+    border-radius:14px;padding:18px 20px;font-size:15px}
+  .brief b{color:var(--text)}
+
+  /* seam diagram */
+  .seam{margin-top:18px;background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .seam-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:var(--mono);font-size:12.5px}
+  .chip{border:1px solid var(--line);border-radius:9px;padding:8px 12px;background:#111826;color:var(--muted)}
+  .chip.on{border-color:var(--mic);color:#ffc9c9;background:#1d1114}
+  .chip.keep{border-color:var(--xp-dim);color:#a6e9c5;background:#0f1a15}
+  .arrow{color:var(--muted-2)}
+  .seam-note{margin-top:12px;font-size:13.5px;color:var(--muted)}
+
+  .m-head{font-family:var(--disp);font-size:13px;letter-spacing:3px;text-transform:uppercase;
+    color:var(--muted-2);margin:38px 0 16px;display:flex;align-items:center;gap:12px}
+  .m-head::after{content:"";flex:1;height:1px;background:var(--line)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:26px;margin-bottom:18px;
+    transition:border-color .3s,box-shadow .3s}
+  .card.done{border-color:var(--xp-dim);box-shadow:0 0 0 1px var(--xp-dim) inset}
+  .m-top{display:flex;align-items:flex-start;gap:14px}
+  .m-no{font-family:var(--disp);font-weight:700;font-size:14px;color:var(--bg);background:var(--xp);
+    width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex-shrink:0;margin-top:2px}
+  .card.done .m-no::after{content:"✓";font-size:16px}
+  .card.done .m-no .n{display:none}
+  .m-title{font-family:var(--disp);font-weight:600;font-size:21px;margin:0}
+  .m-xp{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--xp);border:1px solid var(--xp-dim);
+    padding:4px 9px;border-radius:8px;white-space:nowrap;flex-shrink:0}
+  .m-body{color:var(--muted);margin:12px 0 0}
+  .m-body strong{color:var(--text)}
+
+  pre{position:relative;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;
+    padding:18px;overflow-x:auto;margin:18px 0 0}
+  pre code{background:none;border:none;padding:0;color:#d4dcea;font-size:13.5px;line-height:1.7;white-space:pre}
+  .tok-c{color:#5c6b82} .tok-s{color:#9ae6a4} .tok-k{color:#7aa2ff} .tok-f{color:#ffd479}
+  .copy{position:absolute;top:11px;right:11px;font-family:var(--mono);font-size:11px;color:var(--muted);
+    background:#141c2a;border:1px solid var(--line);padding:5px 10px;border-radius:7px;cursor:pointer}
+  .copy:hover{color:var(--text);border-color:var(--muted-2)}
+
+  .hintbtn{margin-top:16px;background:none;border:1px solid var(--line);color:var(--hint);
+    font-family:var(--body);font-weight:500;font-size:13.5px;padding:8px 14px;border-radius:9px;cursor:pointer}
+  .hintbtn:hover{background:#1a1608;border-color:#4a3b12}
+  .hint{max-height:0;overflow:hidden;transition:max-height .4s ease}
+  .hint.open{max-height:460px}
+  .hint-in{margin-top:12px;background:#160f00;border:1px solid #4a3b12;border-radius:11px;padding:15px 17px;
+    color:#e9d9b3;font-size:14px}
+  .hint-in code{background:#241a05;border-color:#4a3b12;color:#ffd479}
+
+  .complete{margin-top:20px;width:100%;font-family:var(--disp);font-weight:600;font-size:15px;
+    color:var(--bg);background:var(--xp);border:none;padding:13px;border-radius:11px;cursor:pointer;
+    transition:transform .12s,filter .2s}
+  .complete:hover{filter:brightness(1.08)}
+  .complete:active{transform:scale(.99)}
+  .card.done .complete{background:transparent;color:var(--xp);border:1px solid var(--xp-dim)}
+
+  .test label{display:flex;gap:12px;align-items:flex-start;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:11px;padding:14px 16px;margin-top:11px;cursor:pointer;color:var(--muted)}
+  .test input{width:19px;height:19px;margin-top:2px;accent-color:var(--xp);flex-shrink:0}
+  .test label strong{color:var(--text)}
+
+  .bonus{border-color:#2a3550;background:linear-gradient(180deg,#141c2c,#0f1520)}
+  .bonus .m-no{background:var(--lvl)}
+  .bonus .m-xp{color:var(--lvl);border-color:#2f4a7a}
+
+  .warn{background:#1d1114;border:1px solid var(--mic-dim);border-radius:12px;padding:15px 17px;
+    margin-top:18px;font-size:14px;color:#f3c9c9}
+  .warn b{color:#ffdede}
+  .note{color:var(--muted);font-size:14px;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:12px;padding:16px 18px}
+  footer{text-align:center;color:var(--muted-2);font-size:13px;padding:40px 0;font-family:var(--mono)}
+
+  #toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,120px);z-index:60;
+    background:var(--panel);border:1px solid var(--xp-dim);border-radius:14px;padding:14px 20px;
+    box-shadow:0 12px 40px #0008;transition:transform .45s cubic-bezier(.2,.9,.2,1)}
+  #toast.show{transform:translate(-50%,0)}
+  #toast .t-lvl{font-family:var(--disp);font-weight:700;color:var(--xp)}
+  #toast .t-sub{font-size:13px;color:var(--muted)}
+  .pop{animation:pop .45s ease}
+  @keyframes pop{0%{transform:scale(.97)}55%{transform:scale(1.02)}100%{transform:scale(1)}}
+</style>
+</head>
+<body>
+
+<div class="hud">
+  <div class="hud-in">
+    <div class="badge">
+      <div class="lvl-ring" id="ring"><span id="lvlNum">1</span></div>
+      <div>
+        <div class="rank-name" id="rankName">Çaylak</div>
+        <div class="rank-sub">Seviye <span id="lvlText">1</span></div>
+      </div>
+    </div>
+    <div class="xp-wrap">
+      <div class="xp-top"><span>Deneyim Puanı (XP)</span><span><b id="xpNow">0</b> / 210 XP</span></div>
+      <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <section class="hero">
+    <span class="eyebrow">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="9" y="2" width="6" height="12" rx="3" stroke="#FF6B6B" stroke-width="1.6"/><path d="M5 11a7 7 0 0014 0M12 18v4" stroke="#FF6B6B" stroke-width="1.6" stroke-linecap="round"/></svg>
+      SPEAKGUARD // SES MODÜLÜ
+    </span>
+    <h1>Artık klavye değil, <span class="g">sesin</span> konuşacak</h1>
+    <p class="lede">Çeviri kontrolünü bitirdin — bot İngilizce cevabını doğru yargılıyor. Şimdi son parçayı
+      takıyoruz: cevabı <strong style="color:var(--text)">mikrofondan</strong> alacağız. Ve bu sefer kodu
+      <strong style="color:var(--text)">temiz</strong> yazacağız.</p>
+
+    <div class="brief">
+      🎯 <b>Bugünkü hedef:</b> Türkçe cümle ekranda çıksın → sen İngilizce çevirisini <b>söyle</b> →
+      program sesini kaydetsin, yazıya çevirsin, ve <b>zaten yazdığın kontrol beynine</b> versin.
+    </div>
+
+    <div class="seam">
+      <div class="seam-row">
+        <span class="chip on">🎤 Mikrofon</span><span class="arrow">→</span>
+        <span class="chip on">kaydet()</span><span class="arrow">→</span>
+        <span class="chip on">dinle()</span><span class="arrow">→</span>
+        <span class="chip keep">temizle()</span><span class="arrow">→</span>
+        <span class="chip keep">kontrol_et()</span><span class="arrow">→</span>
+        <span class="chip keep">puan</span>
+      </div>
+      <p class="seam-note"><span style="color:#ffc9c9">Kırmızılar</span> bugün yazacakların.
+        <span style="color:#a6e9c5">Yeşiller</span> geçen ders yazdıkların — <b style="color:var(--text)">hiç
+        değişmeyecekler</b>. Çünkü onlar cevabın <i>nereden</i> geldiğini bilmiyor, sadece bir metin alıp
+        karar veriyorlar. İşte iyi kod tam olarak budur.</p>
+    </div>
+  </section>
+
+  <div class="m-head">Hazırlık</div>
+
+  <article class="card" data-mission>
+    <div class="m-top">
+      <div class="m-no"><span class="n">1</span></div>
+      <h2 class="m-title">Kütüphaneleri kur ve içeri al</h2>
+      <div class="m-xp">+20 XP</div>
+    </div>
+    <p class="m-body">Terminale şunu yaz (Jarvis'te <code>speech_recognition</code>'ı zaten kullanmıştın —
+      tanıdık gelecek):</p>
+    <pre><code>pip install sounddevice scipy SpeechRecognition</code><button class="copy">kopyala</button></pre>
+    <p class="m-body" style="margin-top:14px">Sonra dosyanın en üstüne import'ları ekle:</p>
+    <pre><code><span class="tok-k">import</span> sounddevice <span class="tok-k">as</span> sd          <span class="tok-c"># mikrofondan ses kaydeder</span>
+<span class="tok-k">import</span> scipy.io.wavfile <span class="tok-k">as</span> wav    <span class="tok-c"># kaydı .wav dosyası yapar</span>
+<span class="tok-k">import</span> speech_recognition <span class="tok-k">as</span> sr  <span class="tok-c"># sesi yazıya çevirir</span>
+
+recognizer = sr.<span class="tok-f">Recognizer</span>()
+SAMPLE_RATE = <span class="tok-s">44100</span>   <span class="tok-c"># saniyede kaç ses örneği alınacak</span>
+DURATION = <span class="tok-s">4</span>          <span class="tok-c"># kaç saniye kayıt yapılacak</span></code><button class="copy">kopyala</button></pre>
+    <button class="hintbtn">💡 İpucu</button>
+    <div class="hint"><div class="hint-in">
+      <b>Neden 3 kütüphane?</b> Her biri tek bir iş yapıyor: <code>sounddevice</code> mikrofonu dinler,
+      <code>scipy</code> o sesi dosyaya yazar, <code>speech_recognition</code> dosyayı okuyup metne çevirir.
+      <br><br><b>SAMPLE_RATE ve DURATION neden BÜYÜK harf?</b> Python'da "bu değer değişmeyecek, ayardır"
+      demenin yolu. Kod okuyan herkes bunu anlar — temiz kodun ilk kuralı.
+    </div></div>
+    <button class="complete" data-xp="20">Görevi tamamla</button>
+  </article>
+
+  <div class="m-head">Ses motoru</div>
+
+  <article class="card" data-mission>
+    <div class="m-top">
+      <div class="m-no"><span class="n">2</span></div>
+      <h2 class="m-title">kaydet() — mikrofonu aç, dosyaya yaz</h2>
+      <div class="m-xp">+30 XP</div>
+    </div>
+    <p class="m-body">Tek işi olan bir fonksiyon: <strong>belirtilen saniye kadar kaydet, wav dosyası olarak
+      kaydet, dosya adını döndür.</strong></p>
+    <pre><code><span class="tok-k">def</span> <span class="tok-f">kaydet</span>(dosya_adi=<span class="tok-s">"cevap.wav"</span>):
+    <span class="tok-f">print</span>(<span class="tok-s">"🎤 Konuş... (%d saniye)"</span> % DURATION)
+
+    kayit = sd.<span class="tok-f">rec</span>(
+        <span class="tok-f">int</span>(DURATION * SAMPLE_RATE),
+        samplerate=SAMPLE_RATE,
+        channels=<span class="tok-s">1</span>,
+        dtype=<span class="tok-s">"int16"</span>
+    )
+    sd.<span class="tok-f">wait</span>()              <span class="tok-c"># kayıt bitene kadar bekle</span>
+
+    <span class="tok-c"># GÖREV: kaydı dosyaya yaz -> wav.write(dosya_adi, SAMPLE_RATE, kayit)</span>
+    ...
+    <span class="tok-c"># GÖREV: dosya_adi'ni return et</span>
+    ...</code><button class="copy">kopyala</button></pre>
+    <button class="hintbtn">💡 İpucu</button>
+    <div class="hint"><div class="hint-in">
+      <code>int(DURATION * SAMPLE_RATE)</code> → "4 saniye × 44100 örnek = kaç örnek alacağım" hesabı.
+      <code>sd.wait()</code> olmazsa program kayıt bitmeden devam eder ve elinde boş ses kalır.
+      <code>channels=1</code> tek mikrofon (mono) demek. Fonksiyon <b>dosya adını döndürsün</b> ki bir sonraki
+      fonksiyon o dosyayı bulabilsin.
+    </div></div>
+    <button class="complete" data-xp="30">Görevi tamamla</button>
+  </article>
+
+  <article class="card" data-mission>
+    <div class="m-top">
+      <div class="m-no"><span class="n">3</span></div>
+      <h2 class="m-title">dinle() — sesi yazıya çevir (ve çökme!)</h2>
+      <div class="m-xp">+35 XP</div>
+    </div>
+    <p class="m-body">Kaydedilen dosyayı okuyup metne çevir. Ama internet kesilebilir, sen sessiz kalabilirsin —
+      <strong>program çökmemeli</strong>. Bu yüzden <code>try/except</code> şart.</p>
+    <pre><code><span class="tok-k">def</span> <span class="tok-f">dinle</span>(dosya_adi):
+    <span class="tok-k">with</span> sr.<span class="tok-f">AudioFile</span>(dosya_adi) <span class="tok-k">as</span> kaynak:
+        ses = recognizer.<span class="tok-f">record</span>(kaynak)
+
+    <span class="tok-k">try</span>:
+        metin = recognizer.<span class="tok-f">recognize_google</span>(ses, language=<span class="tok-s">"en-US"</span>)
+        <span class="tok-f">print</span>(<span class="tok-s">"Duyduğum:"</span>, metin)
+        <span class="tok-c"># GÖREV: metni return et</span>
+        ...
+    <span class="tok-k">except</span> sr.UnknownValueError:
+        <span class="tok-f">print</span>(<span class="tok-s">"Seni anlayamadım 🤔"</span>)
+        <span class="tok-k">return</span> <span class="tok-s">""</span>
+    <span class="tok-k">except</span> sr.RequestError:
+        <span class="tok-c"># GÖREV: "İnternet/servis sorunu" yazdır ve "" döndür</span>
+        ...</code><button class="copy">kopyala</button></pre>
+    <button class="hintbtn">💡 İpucu</button>
+    <div class="hint"><div class="hint-in">
+      <b>Neden <code>language="en-US"</code>?</b> Jarvis'te <code>"tr-TR"</code> yazmıştın çünkü Türkçe
+      konuşuyordun. Burada <b>İngilizce çeviri</b> söyleyeceksin, o yüzden İngilizce.
+      <br><br><b>İki farklı except neden?</b> İkisi farklı dert: <code>UnknownValueError</code> = "ses vardı ama
+      anlamadım" (sessiz kaldın), <code>RequestError</code> = "servise ulaşamadım" (internet yok). Ayrı ayrı
+      yakalarsan oyuncuya doğru mesajı verirsin.
+      <br><br><b>Neden boş string <code>""</code> döndürüyoruz?</b> Jarvis'te de öyle yapmıştın! Böylece çağıran
+      taraf "boş geldi, demek ki anlaşılmadı" diyebilir.
+    </div></div>
+    <button class="complete" data-xp="35">Görevi tamamla</button>
+  </article>
+
+  <div class="m-head">Bağlama — asıl an</div>
+
+  <article class="card" data-mission>
+    <div class="m-top">
+      <div class="m-no"><span class="n">4</span></div>
+      <h2 class="m-title">cevap_al() — input()'un yerine geç</h2>
+      <div class="m-xp">+30 XP</div>
+    </div>
+    <p class="m-body">İşte dersin can alıcı kısmı. Oyun döngüsündeki <code>input(...)</code> satırını silip
+      yerine <strong>tek bir fonksiyon çağrısı</strong> koyacaksın. Kontrol beynine dokunmuyoruz.</p>
+    <pre><code><span class="tok-k">def</span> <span class="tok-f">cevap_al</span>():
+    <span class="tok-c"># GÖREV: önce kaydet(), dönen dosya adını dinle()'ye ver, sonucu return et</span>
+    dosya = ...
+    <span class="tok-k">return</span> ...
+
+
+<span class="tok-c"># --- oyun döngüsünde SADECE bu satır değişiyor ---</span>
+<span class="tok-c"># ESKİ:  cevap = input("İngilizce çevirisi: ")</span>
+<span class="tok-c"># YENİ:</span>
+cevap = <span class="tok-f">cevap_al</span>()
+
+<span class="tok-c"># Aşağısı GEÇEN DERSTEN AYNI — hiç dokunma:</span>
+dogru_mu = <span class="tok-k">False</span>
+<span class="tok-k">for</span> k <span class="tok-k">in</span> kabul_edilenler:
+    <span class="tok-k">if</span> <span class="tok-f">temizle</span>(cevap) == <span class="tok-f">temizle</span>(k):
+        dogru_mu = <span class="tok-k">True</span></code><button class="copy">kopyala</button></pre>
+    <button class="hintbtn">💡 İpucu</button>
+    <div class="hint"><div class="hint-in">
+      <code>cevap_al()</code> iki satır: <code>dosya = kaydet()</code> ve <code>return dinle(dosya)</code>.
+      <br><br><b>Buradaki büyük fikir:</b> <code>temizle()</code> ve kontrol döngüsü, cevabın klavyeden mi
+      mikrofondan mı geldiğini <b>bilmiyor</b> — sadece bir metin alıyor. Bu yüzden değiştirmene gerek yok.
+      Fonksiyonları böyle ayırınca bir parçayı sökülüp yenisini takabiliyorsun. Buna
+      <b>"tek sorumluluk"</b> denir ve profesyonel kodun temelidir.
+    </div></div>
+    <button class="complete" data-xp="30">Görevi tamamla</button>
+  </article>
+
+  <div class="m-head">Temiz kod turu</div>
+
+  <article class="card" data-mission>
+    <div class="m-top">
+      <div class="m-no"><span class="n">5</span></div>
+      <h2 class="m-title">Dosyayı düzene sok</h2>
+      <div class="m-xp">+25 XP</div>
+    </div>
+    <p class="m-body">Kod büyüdü. Şimdi profesyonel geliştiriciler gibi <strong>sıraya</strong> koy. Hedef şu yapı:</p>
+    <pre><code><span class="tok-c"># 1) import'lar</span>
+<span class="tok-c"># 2) ayarlar (SAMPLE_RATE, DURATION)</span>
+<span class="tok-c"># 3) veri (levels sözlüğü)</span>
+<span class="tok-c"># 4) fonksiyonlar: temizle, kaydet, dinle, cevap_al, kontrol_et, show_result</span>
+<span class="tok-c"># 5) oyunu çalıştıran kısım</span>
+
+<span class="tok-k">def</span> <span class="tok-f">kontrol_et</span>(cevap, kabul_edilenler):
+    <span class="tok-c"># GÖREV: geçen dersin kontrol döngüsünü buraya taşı, True/False döndür</span>
+    ...
+
+<span class="tok-k">def</span> <span class="tok-f">oyunu_oynat</span>(secim):
+    <span class="tok-c"># GÖREV: seviye seçildikten sonraki tüm oyun döngüsü buraya gelsin</span>
+    ...</code><button class="copy">kopyala</button></pre>
+    <button class="hintbtn">💡 İpucu</button>
+    <div class="hint"><div class="hint-in">
+      Kural: <b>bir fonksiyon = bir iş.</b> <code>kaydet</code> sadece kaydeder, <code>dinle</code> sadece
+      çevirir, <code>kontrol_et</code> sadece karar verir. Bir fonksiyonun adını söylerken "ve" demen
+      gerekiyorsa (“kaydeder ve çevirir ve puanlar”), o fonksiyon bölünmelidir.
+      <br><br>Bu düzen sana Faz 2'de (OOP) çok yarayacak — sınıflara geçerken bu fonksiyonlar hazır tuğla olacak.
+    </div></div>
+    <button class="complete" data-xp="25">Görevi tamamla</button>
+  </article>
+
+  <div class="m-head">Kontrol</div>
+
+  <article class="card test" data-mission>
+    <div class="m-top">
+      <div class="m-no"><span class="n">6</span></div>
+      <h2 class="m-title">Çalıştır ve test et</h2>
+      <div class="m-xp">+10 XP</div>
+    </div>
+    <p class="m-body">Brief'teki üç testi yap:</p>
+    <label><input type="checkbox" class="tb"><span><strong>Test 1:</strong> "kolay" seç, "merhaba" için <code>hello</code> de → doğru saymalı.</span></label>
+    <label><input type="checkbox" class="tb"><span><strong>Test 2:</strong> Bilerek <strong>sessiz kal</strong> → program çökmemeli, hata sayısı artmalı.</span></label>
+    <label><input type="checkbox" class="tb"><span><strong>Test 3:</strong> Yanlış bir şey söyle → kabul edilen cevapları göstermeli.</span></label>
+    <div class="warn">
+      <b>⚠️ Kayıt ipuçları:</b> Mikrofon izni açık olsun · sessiz bir odada ol · "Konuş..." yazısını
+      <b>gördükten sonra</b> konuş (önce başlarsan ilk kelime kaybolur) · net telaffuz et ·
+      ses tanıma <b>internet ister</b>.
+    </div>
+    <button class="complete" data-xp="10">Görevi tamamla</button>
+  </article>
+
+  <div class="m-head">Bonus — İsteğe bağlı</div>
+
+  <article class="card bonus" data-mission>
+    <div class="m-top">
+      <div class="m-no"><span class="n">7</span></div>
+      <h2 class="m-title">Geri sayım ekle</h2>
+      <div class="m-xp">+20 XP</div>
+    </div>
+    <p class="m-body">Kayıt başlamadan "3... 2... 1... Konuş!" saydır. İpucu: <code>import time</code> ve
+      <code>time.sleep(1)</code> — Jarvis'te kullanmıştın.</p>
+    <button class="complete" data-xp="20">Görevi tamamla</button>
+  </article>
+
+  <article class="card bonus" data-mission>
+    <div class="m-top">
+      <div class="m-no"><span class="n">8</span></div>
+      <h2 class="m-title">Tekrar deneme hakkı</h2>
+      <div class="m-xp">+20 XP</div>
+    </div>
+    <p class="m-body">Ses anlaşılmazsa (<code>dinle()</code> boş <code>""</code> döndürürse) hata yazmak yerine
+      <strong>bir kez daha</strong> kayıt al. İpucu: küçük bir <code>for</code> ya da <code>while</code> ile
+      2 deneme hakkı.</p>
+    <button class="complete" data-xp="20">Görevi tamamla</button>
+  </article>
+
+  <article class="card bonus" data-mission>
+    <div class="m-top">
+      <div class="m-no"><span class="n">9</span></div>
+      <h2 class="m-title">Zorluğa göre süre</h2>
+      <div class="m-xp">+20 XP</div>
+    </div>
+    <p class="m-body">Zor cümleler daha uzun — kayıt süresi de öyle olsun. "kolay" → 3 sn, "orta" → 4 sn,
+      "zor" → 6 sn. İpucu: <code>kaydet(sure)</code> parametresi ve bir ayar sözlüğü.</p>
+    <button class="complete" data-xp="20">Görevi tamamla</button>
+  </article>
+
+  <div class="m-head">Sırada ne var</div>
+  <div class="note">
+    🏁 Bu görevleri bitirince SpeakGuard <b>tamamlanmış</b> olacak: ses → yazı → çeviri kontrolü → puan.
+    Sonraki derste onu <b>GitHub'a</b> koyup dünyaya göstereceğiz — portfolyonun ilk gerçek projesi.
+    Sonrasında ise aynı projeyi <b>sınıflarla (OOP)</b> yeniden kuracağız. Bugün fonksiyonları düzgün
+    ayırdıysan o ders çok kolay geçecek. 😉
+  </div>
+</div>
+
+<footer>SPEAKGUARD // TRAINING CONSOLE — Kodlayın</footer>
+
+<div id="toast"><div class="t-lvl" id="toastLvl"></div><div class="t-sub">Yeni seviye açıldı</div></div>
+
+<script>
+  var RANKS=[{min:0,name:"Çaylak"},{min:60,name:"Çırak"},{min:120,name:"Kalfa"},{min:180,name:"Usta"}];
+  var MAX_XP=210, xp=0, level=1;
+  var xpFill=document.getElementById('xpFill'), xpNow=document.getElementById('xpNow');
+  var lvlNum=document.getElementById('lvlNum'), lvlText=document.getElementById('lvlText');
+  var rankName=document.getElementById('rankName'), ring=document.getElementById('ring');
+  var toast=document.getElementById('toast'), toastLvl=document.getElementById('toastLvl'), tTimer;
+
+  function levelFor(x){var l=1;for(var i=0;i<RANKS.length;i++){if(x>=RANKS[i].min)l=i+1;}return l;}
+  function render(){
+    var pct=Math.min(100,xp/MAX_XP*100);
+    xpFill.style.width=pct+'%'; xpNow.textContent=xp;
+    var nl=levelFor(xp);
+    lvlNum.textContent=nl; lvlText.textContent=nl; rankName.textContent=RANKS[nl-1].name;
+    ring.style.setProperty('--ring',(pct*3.6)+'deg');
+    if(nl>level){toastLvl.textContent="Seviye atladın — "+RANKS[nl-1].name+"!";
+      toast.classList.add('show'); clearTimeout(tTimer);
+      tTimer=setTimeout(function(){toast.classList.remove('show');},2600);
+      ring.classList.remove('pop'); void ring.offsetWidth; ring.classList.add('pop');}
+    level=nl;
+  }
+  document.querySelectorAll('.complete').forEach(function(b){
+    b.addEventListener('click',function(){
+      var c=b.closest('[data-mission]'), v=parseInt(b.getAttribute('data-xp'),10);
+      if(c.classList.toggle('done')){xp+=v;b.textContent='Tamamlandı ✓';}
+      else{xp-=v;b.textContent='Görevi tamamla';}
+      render();
+    });
+  });
+  document.querySelectorAll('.hintbtn').forEach(function(b){
+    b.addEventListener('click',function(){
+      var h=b.nextElementSibling;
+      b.textContent=h.classList.toggle('open')?'💡 İpucu gizle':'💡 İpucu';
+    });
+  });
+  document.querySelectorAll('.copy').forEach(function(b){
+    b.addEventListener('click',function(){
+      navigator.clipboard.writeText(b.parentElement.querySelector('code').innerText).then(function(){
+        var o=b.textContent; b.textContent='kopyalandı ✓';
+        setTimeout(function(){b.textContent=o;},1400);
+      }).catch(function(){});
+    });
+  });
+  render();
+</script>
+</body>
+</html>
