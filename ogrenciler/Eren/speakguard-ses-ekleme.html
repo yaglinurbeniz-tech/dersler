@@ -429,6 +429,33 @@ dogru_mu = <span class="tok-k">False</span>
   var rankName=document.getElementById('rankName'), ring=document.getElementById('ring');
   var toast=document.getElementById('toast'), toastLvl=document.getElementById('toastLvl'), tTimer;
 
+  var STORAGE_KEY='ffx:eren:speakguard-ses-ekleme';
+  var missions=document.querySelectorAll('[data-mission]');
+  var testboxes=document.querySelectorAll('.tb');
+
+  function loadState(){
+    try{ return JSON.parse(localStorage.getItem(STORAGE_KEY))||{}; }catch(e){ return {}; }
+  }
+  function saveState(){
+    var done=[]; missions.forEach(function(m,i){ done[i]=m.classList.contains('done'); });
+    var checks=[]; testboxes.forEach(function(cb,i){ checks[i]=cb.checked; });
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({xp:xp, done:done, checks:checks})); }catch(e){}
+  }
+  function restoreState(){
+    var saved=loadState();
+    if(typeof saved.xp==='number') xp=saved.xp;
+    missions.forEach(function(m,i){
+      if(saved.done && saved.done[i]){
+        m.classList.add('done');
+        var btn=m.querySelector('.complete');
+        if(btn) btn.textContent='Tamamlandı ✓';
+      }
+    });
+    testboxes.forEach(function(cb,i){
+      if(saved.checks && saved.checks[i]) cb.checked=true;
+    });
+  }
+
   function levelFor(x){var l=1;for(var i=0;i<RANKS.length;i++){if(x>=RANKS[i].min)l=i+1;}return l;}
   function render(){
     var pct=Math.min(100,xp/MAX_XP*100);
@@ -448,6 +475,7 @@ dogru_mu = <span class="tok-k">False</span>
       if(c.classList.toggle('done')){xp+=v;b.textContent='Tamamlandı ✓';}
       else{xp-=v;b.textContent='Görevi tamamla';}
       render();
+      saveState();
     });
   });
   document.querySelectorAll('.hintbtn').forEach(function(b){
@@ -464,6 +492,10 @@ dogru_mu = <span class="tok-k">False</span>
       }).catch(function(){});
     });
   });
+  testboxes.forEach(function(cb){
+    cb.addEventListener('change', saveState);
+  });
+  restoreState();
   render();
 </script>
 </body>

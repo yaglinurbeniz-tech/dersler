@@ -403,6 +403,8 @@ const LINE_Y = 340 - 86 - 46; // arena - pad alanı - kart yüksekliği payı
 
 const $ = id => document.getElementById(id);
 
+var STORAGE_KEY='ffx:poyraz:veri-yagmuru';
+
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
 
 function startGame(){
@@ -414,6 +416,7 @@ function startGame(){
   playing = true;
   raf = requestAnimationFrame(tick);
   beep(440,.1);
+  saveState();
 }
 
 function nextCard(){
@@ -453,6 +456,7 @@ function choose(side){
   }
   updateHUD();
   nextCard();
+  saveState();
 }
 
 function miss(reason){
@@ -481,6 +485,7 @@ function endGame(){
   cancelAnimationFrame(raf);
   $('card').style.display = 'none';
   best = Math.max(best, score);
+  saveState();
   const ov = $('overlay');
   ov.style.display = 'flex';
   ov.innerHTML =
@@ -494,29 +499,38 @@ function endGame(){
 }
 
 function openBoss(){
+  bossOpened = true;
   $('boss').style.display = 'block';
   $('boss').scrollIntoView({behavior:'smooth'});
+  saveState();
 }
 
 // ------- BOSS -------
-let bossDone = 0, bossRight = 0;
+let bossDone = 0, bossRight = 0, bossOpened = false, resultShown = false;
+let bossAnswers = [null, null, null, null, null];
 function answer(btn, correct){
-  const opts = btn.parentElement.querySelectorAll('.opt');
+  const qEl = btn.closest('.q');
+  const opts = qEl.querySelectorAll('.opt');
+  const qIndex = Array.prototype.indexOf.call(document.querySelectorAll('#boss .q'), qEl);
+  const chosenIndex = Array.prototype.indexOf.call(opts, btn);
   opts.forEach(o => o.disabled = true);
   if(correct){ btn.classList.add('right'); bossRight++; score += 20; sOK(); }
   else{
     btn.classList.add('wrong'); sBAD();
     opts.forEach(o => { if(o.getAttribute('onclick').includes('true')) o.classList.add('right'); });
   }
-  btn.closest('.q').querySelector('.exp').classList.add('show');
+  qEl.querySelector('.exp').classList.add('show');
   updateHUD();
   bossDone++;
+  bossAnswers[qIndex] = {chosenIndex: chosenIndex, correct: correct};
   if(bossDone === 5) $('bossBtn').disabled = false;
+  saveState();
 }
 
-function showResult(){
+function showResult(silent){
   const r = $('result');
   r.style.display = 'block';
+  resultShown = true;
   const total = score;
   let rank, emoji, msg;
   if(bossRight === 5 && total >= 250){ rank='🥇 VERİ EFSANESİ'; emoji='👑'; msg='Liste ve sözlük artık senin için ayrı gezegenler değil — ikisini de yönetiyorsun. Haftaya tıklayıcıda ikisini BİRLİKTE kullanacağız.'; }
@@ -526,8 +540,11 @@ function showResult(){
   $('rEmoji').textContent = emoji;
   $('rRank').textContent = rank + ' · TOPLAM ' + total + ' PUAN';
   $('rMsg').textContent = msg;
-  r.scrollIntoView({behavior:'smooth'});
-  sLVL();
+  if(!silent){
+    r.scrollIntoView({behavior:'smooth'});
+    sLVL();
+  }
+  saveState();
 }
 
 // ------- EASTER EGG: ZAP + ALTIN BİLET -------
@@ -637,6 +654,7 @@ function openGoldenTicket(){
   $('goldenOverlay').style.display = 'flex';
   spawnConfetti();
   sLVL();
+  saveState();
 }
 
 function closeGoldenTicket(){
@@ -648,6 +666,59 @@ function closeGoldenTicket(){
 try{
   if(localStorage.getItem('vy_altinBiletBulundu') === '1') $('zap').classList.add('found');
 }catch(e){}
+
+// ------- İLERLEME KAYDI (localStorage) -------
+function loadState(){
+  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; }
+}
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      score: score,
+      best: best,
+      bossDone: bossDone,
+      bossRight: bossRight,
+      bossAnswers: bossAnswers,
+      bossOpened: bossOpened,
+      resultShown: resultShown
+    }));
+  }catch(e){}
+}
+function restoreState(){
+  const saved = loadState();
+  if(typeof saved.score === 'number'){ score = saved.score; }
+  if(typeof saved.best === 'number'){ best = saved.best; }
+  if(typeof saved.bossDone === 'number'){ bossDone = saved.bossDone; }
+  if(typeof saved.bossRight === 'number'){ bossRight = saved.bossRight; }
+  if(Array.isArray(saved.bossAnswers)){ bossAnswers = saved.bossAnswers; }
+  updateHUD();
+
+  if(saved.bossOpened){
+    bossOpened = true;
+    $('boss').style.display = 'block';
+  }
+
+  const qEls = document.querySelectorAll('#boss .q');
+  qEls.forEach((qEl, i) => {
+    const a = bossAnswers[i];
+    if(!a) return;
+    const opts = qEl.querySelectorAll('.opt');
+    opts.forEach(o => o.disabled = true);
+    const chosen = opts[a.chosenIndex];
+    if(chosen) chosen.classList.add(a.correct ? 'right' : 'wrong');
+    if(!a.correct){
+      opts.forEach(o => { if(o.getAttribute('onclick').includes('true')) o.classList.add('right'); });
+    }
+    qEl.querySelector('.exp').classList.add('show');
+  });
+  if(bossDone >= 5) $('bossBtn').disabled = false;
+
+  if(saved.resultShown){
+    showResult(true);
+  }
+}
+
+restoreState();
 </script>
 </body>
 </html>

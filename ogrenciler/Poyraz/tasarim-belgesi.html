@@ -310,7 +310,7 @@
     document.body.appendChild(s);
   }
 
-  const KEY = 'poyraz-tasarim-belgesi';
+  var STORAGE_KEY = 'ffx:poyraz:tasarim-belgesi';
 
   // Her tablo satırı için: hangi index'ten başlar, sayfa ilk açıldığında kaç satır
   // gösterilsin (eskiden sabit olan satır sayısıyla aynı — böylece önceden
@@ -353,7 +353,7 @@
   const rowCounts = {};
   Object.keys(dynSections).forEach(name => { rowCounts[name] = dynSections[name].defaultCount; });
   try{
-    const raw = JSON.parse(localStorage.getItem(KEY) || '{}');
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
     if(raw.__rowCounts){
       Object.keys(rowCounts).forEach(name => {
         if(raw.__rowCounts[name] > rowCounts[name]) rowCounts[name] = raw.__rowCounts[name];
@@ -391,7 +391,7 @@
 
   function save(manual){
     try{
-      localStorage.setItem(KEY, JSON.stringify(collect()));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(collect()));
       if(manual){
         const si = document.getElementById('saveinfo');
         si.textContent = '✔ Kaydedildi!';
@@ -404,7 +404,7 @@
 
   function load(){
     try{
-      const d = JSON.parse(localStorage.getItem(KEY) || '{}');
+      const d = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
       document.querySelectorAll('[data-k]').forEach(f => {
         if(d[f.dataset.k] !== undefined){
           if(f.type === 'checkbox') f.checked = d[f.dataset.k];

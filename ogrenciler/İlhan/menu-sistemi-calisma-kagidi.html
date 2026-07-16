@@ -95,7 +95,7 @@
 <header>
   <span class="tag">SCRATCH · MENÜ SİSTEMİ</span>
   <h1>🎮 Oyunuma Menü Ekliyorum</h1>
-  <p>Ad: <input type="text" style="width:200px" placeholder="adını yaz"> &nbsp; Tarih: <input type="text" style="width:120px" placeholder="__ / __ / __"></p>
+  <p>Ad: <input type="text" id="studentName" style="width:200px" placeholder="adını yaz"> &nbsp; Tarih: <input type="text" id="studentDate" style="width:120px" placeholder="__ / __ / __"></p>
 </header>
 
 <section>
@@ -169,10 +169,10 @@ dekor [ menu ] olduğunda
   <p class="hint">Kendi oyununun menü ekranını hayal et ve yaz:</p>
   <table>
     <tr><th>Sorum</th><th>Cevabım</th></tr>
-    <tr><td>Menümde hangi butonlar olacak?</td><td><input type="text"></td></tr>
-    <tr><td>Menü dekorumun adı ne olacak?</td><td><input type="text"></td></tr>
-    <tr><td>Hangi haberleri oluşturacağım?</td><td><input type="text"></td></tr>
-    <tr><td>Oyundan menüye nasıl döneceğim?</td><td><input type="text"></td></tr>
+    <tr><td>Menümde hangi butonlar olacak?</td><td><input type="text" id="qa1"></td></tr>
+    <tr><td>Menü dekorumun adı ne olacak?</td><td><input type="text" id="qa2"></td></tr>
+    <tr><td>Hangi haberleri oluşturacağım?</td><td><input type="text" id="qa3"></td></tr>
+    <tr><td>Oyundan menüye nasıl döneceğim?</td><td><input type="text" id="qa4"></td></tr>
   </table>
 </section>
 
@@ -184,6 +184,7 @@ dekor [ menu ] olduğunda
 <footer>Kodlayın · Scratch Game Development · Menü Sistemi Çalışma Kağıdı</footer>
 
 <script>
+var STORAGE_KEY='ffx:ilhan:menu-sistemi-calisma-kagidi';
 // Drag & drop
 let dragged=null;
 document.querySelectorAll('.chip').forEach(c=>{
@@ -234,6 +235,29 @@ document.querySelectorAll('.opt').forEach(o=>{
     if(o.dataset.c!=='1') q.querySelector('[data-c="1"]').classList.add('correct');
   });
 });
+// Auto-save / restore text answers
+var savedInputIds=['studentName','studentDate','b1','b2','b3','qa1','qa2','qa3','qa4'];
+function saveInputs(){
+  var data={};
+  savedInputIds.forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) data[id]=el.value;
+  });
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){}
+}
+function restoreInputs(){
+  var data={};
+  try{ data=JSON.parse(localStorage.getItem(STORAGE_KEY))||{}; }catch(e){ data={}; }
+  savedInputIds.forEach(function(id){
+    var el=document.getElementById(id);
+    if(el && typeof data[id]==='string') el.value=data[id];
+  });
+}
+savedInputIds.forEach(function(id){
+  var el=document.getElementById(id);
+  if(el) el.addEventListener('input', saveInputs);
+});
+restoreInputs();
 </script>
 </body>
 </html>

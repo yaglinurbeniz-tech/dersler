@@ -392,14 +392,43 @@
   const MAXXP = 120;
   const ranks = [[0,'🚀 KADET'],[40,'🛰️ PİLOT'],[80,'🌟 KOMUTAN'],[120,'👑 UZAY KAPTANI']];
 
-  function addXP(n){
-    if(n <= 0) return;
-    xp += n;
+  var STORAGE_KEY = 'ffx:poyraz:poyraz-gorev-paneli';
+  const allOpts = document.querySelectorAll('.opt');
+  allOpts.forEach((o,i) => o.dataset.idx = i);
+  let answeredIdx = [];
+
+  function loadState(){
+    try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; }
+  }
+
+  function saveState(){
+    try{
+      const doneMissions = [];
+      for(let i=1;i<=6;i++) doneMissions.push(document.getElementById('m'+i).classList.contains('done'));
+      const openedBoxes = Array.from(document.querySelectorAll('#flow .fbox')).map(el => el.classList.contains('open'));
+      const finished = document.getElementById('final').classList.contains('show');
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        xp: xp,
+        doneMissions: doneMissions,
+        openedBoxes: openedBoxes,
+        answeredIdx: answeredIdx,
+        finished: finished
+      }));
+    }catch(e){}
+  }
+
+  function renderXP(){
     document.getElementById('xp').textContent = xp;
     document.getElementById('xpbar').style.width = Math.min(100, xp/MAXXP*100) + '%';
     let r = ranks[0][1];
     for(const [t,name] of ranks) if(xp >= t) r = name;
     document.getElementById('rank').textContent = r;
+  }
+
+  function addXP(n){
+    if(n <= 0) return;
+    xp += n;
+    renderXP();
     const t = document.getElementById('toast');
     t.textContent = '+' + n + ' XP';
     t.classList.add('show');
@@ -416,22 +445,29 @@
         document.getElementById('flowNote').style.display = 'block';
         document.getElementById('m2btn').disabled = false;
       }
+      saveState();
     }
   }
 
   // quiz cevapları
-  function answer(btn, correct){
+  function applyAnswer(btn, correct){
     const opts = btn.parentElement.querySelectorAll('.opt');
     opts.forEach(o => o.disabled = true);
     if(correct){
       btn.classList.add('right');
-      addXP(10);
     } else {
       btn.classList.add('wrong');
       opts.forEach(o => { if(o.getAttribute('onclick').includes('true')) o.classList.add('right'); });
     }
     btn.closest('.q').querySelector('.exp').classList.add('show');
+  }
+
+  function answer(btn, correct){
+    applyAnswer(btn, correct);
+    if(correct) addXP(10);
+    answeredIdx.push(parseInt(btn.dataset.idx, 10));
     checkSection(btn.closest('.mission'));
+    saveState();
   }
 
   function checkSection(mission){
@@ -445,15 +481,19 @@
     }
   }
 
-  function completeMission(n, bonus){
-    addXP(bonus);
+  function applyMissionDone(n){
     const m = document.getElementById('m'+n);
     m.classList.add('done');
     const next = document.getElementById('m'+(n+1));
-    if(next){
-      next.classList.remove('locked');
-      next.scrollIntoView({behavior:'smooth', block:'start'});
-    }
+    if(next) next.classList.remove('locked');
+  }
+
+  function completeMission(n, bonus){
+    addXP(bonus);
+    applyMissionDone(n);
+    const next = document.getElementById('m'+(n+1));
+    if(next) next.scrollIntoView({behavior:'smooth', block:'start'});
+    saveState();
   }
 
   // mola sayacı
@@ -474,8 +514,7 @@
     }, 1000);
   }
 
-  function finish(){
-    document.getElementById('m6').classList.add('done');
+  function renderFinal(){
     let r = ranks[0][1];
     for(const [t,name] of ranks) if(xp >= t) r = name;
     document.getElementById('finalRank').textContent = r + ' · ' + xp + ' XP';
@@ -483,10 +522,63 @@
       xp >= 120 ? 'Tam puan bölgesi! Bu paneli senden iyi bilen yok.' :
       xp >= 80  ? 'Müthiş bir görevdi. Kaptanlık çok yakın — haftaya XP devam ediyor!' :
                   'Görev tamam! Yanlışlar da XP kadar değerli: her biri haftaya soru olarak geri gelecek 😏';
+  }
+
+  function finish(){
+    document.getElementById('m6').classList.add('done');
+    renderFinal();
     const f = document.getElementById('final');
     f.classList.add('show');
     f.scrollIntoView({behavior:'smooth'});
+    saveState();
   }
+
+  function restoreState(){
+    const saved = loadState();
+
+    if(typeof saved.xp === 'number') xp = saved.xp;
+    renderXP();
+
+    if(saved.openedBoxes){
+      const boxes = document.querySelectorAll('#flow .fbox');
+      let count = 0;
+      boxes.forEach((el,i) => {
+        if(saved.openedBoxes[i]){ el.classList.add('open'); count++; }
+      });
+      opened = count;
+      if(opened === 4){
+        document.getElementById('flowNote').style.display = 'block';
+        document.getElementById('m2btn').disabled = false;
+      }
+    }
+
+    if(Array.isArray(saved.answeredIdx)){
+      answeredIdx = saved.answeredIdx.slice();
+      answeredIdx.forEach(idx => {
+        const opt = allOpts[idx];
+        if(!opt) return;
+        const correct = opt.getAttribute('onclick').includes('true');
+        applyAnswer(opt, correct);
+      });
+      ['m3','m5','m6'].forEach(id => {
+        const mission = document.getElementById(id);
+        if(mission) checkSection(mission);
+      });
+    }
+
+    if(saved.doneMissions){
+      for(let i=1;i<=6;i++){
+        if(saved.doneMissions[i-1]) applyMissionDone(i);
+      }
+    }
+
+    if(saved.finished){
+      renderFinal();
+      document.getElementById('final').classList.add('show');
+    }
+  }
+
+  restoreState();
 </script>
 </body>
 </html>

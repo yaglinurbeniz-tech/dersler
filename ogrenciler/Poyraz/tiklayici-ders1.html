@@ -359,6 +359,90 @@ puan = 0</pre></div>
   const MAXXP = 105;
   const ranks = [[0,'🚀 KADET'],[35,'🛰️ PİLOT'],[70,'🌟 KOMUTAN'],[105,'👑 UZAY KAPTANI']];
 
+  var STORAGE_KEY='ffx:poyraz:tiklayici-ders1';
+  let finished = false;
+
+  function loadState(){
+    try{ return JSON.parse(localStorage.getItem(STORAGE_KEY))||{}; }catch(e){ return {}; }
+  }
+
+  function saveState(){
+    var missionEls = document.querySelectorAll('.mission');
+    var missionsDone = [];
+    missionEls.forEach(function(m){ missionsDone.push(m.classList.contains('done')); });
+
+    var themeEls = document.querySelectorAll('.theme');
+    var themeIndex = -1;
+    themeEls.forEach(function(t, i){ if(t.classList.contains('sel')) themeIndex = i; });
+
+    var taskEls = document.querySelectorAll('.task');
+    var solutionsUsed = [];
+    taskEls.forEach(function(t){
+      var solBtn = t.querySelector('.hbtn.sol');
+      solutionsUsed.push(!!(solBtn && solBtn.disabled));
+    });
+
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        xp: xp,
+        missionsDone: missionsDone,
+        themeIndex: themeIndex,
+        solutionsUsed: solutionsUsed,
+        finished: finished
+      }));
+    }catch(e){}
+  }
+
+  function restoreState(){
+    var saved = loadState();
+    if(typeof saved.xp === 'number') xp = saved.xp;
+
+    var missionEls = document.querySelectorAll('.mission');
+    if(saved.missionsDone){
+      missionEls.forEach(function(m, i){
+        if(saved.missionsDone[i]){
+          m.classList.add('done');
+          var next = missionEls[i+1];
+          if(next) next.classList.remove('locked');
+        }
+      });
+    }
+
+    var themeEls = document.querySelectorAll('.theme');
+    if(typeof saved.themeIndex === 'number' && saved.themeIndex >= 0 && themeEls[saved.themeIndex]){
+      themeEls[saved.themeIndex].classList.add('sel');
+      var m1btn = document.getElementById('m1btn');
+      if(m1btn) m1btn.disabled = false;
+    }
+
+    var taskEls = document.querySelectorAll('.task');
+    if(saved.solutionsUsed){
+      taskEls.forEach(function(t, i){
+        if(saved.solutionsUsed[i]){
+          t.querySelectorAll('.hint').forEach(function(h){ h.classList.add('show'); });
+          t.querySelectorAll('.hbtn').forEach(function(b){ b.disabled = true; });
+        }
+      });
+    }
+
+    document.getElementById('xp').textContent = xp;
+    document.getElementById('xpbar').style.width = Math.min(100, xp/MAXXP*100) + '%';
+    let r0 = ranks[0][1];
+    for(const [t,name] of ranks) if(xp >= t) r0 = name;
+    document.getElementById('rank').textContent = r0;
+
+    if(saved.finished){
+      finished = true;
+      document.getElementById('m6').classList.add('done');
+      document.getElementById('finalRank').textContent = r0 + ' · ' + xp + ' XP';
+      document.getElementById('finalMsg').textContent =
+        xp >= 95 ? 'Neredeyse hiç çözüm açmadan, kendi ellerinle bir oyun kurdun. Bu artık senin oyunun — kimse elinden alamaz.' :
+        xp >= 60 ? 'Sıfırdan çalışan bir oyun yazdın! Çözüm açmak da stratejidir — önemli olan sonunda ÇALIŞIYOR olması.' :
+                   'Bugün zor bir şey yaptın: hazır kod yok, kendi ellerinle yazdın. Her ders biraz daha kolaylaşacak, söz.';
+      document.getElementById('final').classList.add('show');
+    }
+  }
+
   function addXP(n){
     xp = Math.max(0, xp + n);
     document.getElementById('xp').textContent = xp;
@@ -376,6 +460,7 @@ puan = 0</pre></div>
     document.querySelectorAll('.theme').forEach(t => t.classList.remove('sel'));
     el.classList.add('sel');
     document.getElementById('m1btn').disabled = false;
+    saveState();
   }
 
   function showHint(btn){
@@ -392,6 +477,7 @@ puan = 0</pre></div>
     task.querySelectorAll('.hint').forEach(h => h.classList.add('show'));
     task.querySelectorAll('.hbtn').forEach(b => b.disabled = true);
     addXP(-10);
+    saveState();
   }
 
   function completeMission(n, bonus){
@@ -403,6 +489,7 @@ puan = 0</pre></div>
       next.classList.remove('locked');
       next.scrollIntoView({behavior:'smooth', block:'start'});
     }
+    saveState();
   }
 
   let tInt = null;
@@ -435,7 +522,11 @@ puan = 0</pre></div>
     const f = document.getElementById('final');
     f.classList.add('show');
     f.scrollIntoView({behavior:'smooth'});
+    finished = true;
+    saveState();
   }
+
+  restoreState();
 </script>
 </body>
 </html>

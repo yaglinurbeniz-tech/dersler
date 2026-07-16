@@ -427,14 +427,128 @@
   const MAXXP = 155;
   const ranks = [[0,'🐱 SCRATCH KÂŞİFİ'],[50,'🧩 BLOK USTASI'],[100,'🌟 PROJE MİMARI'],[155,'🏆 SCRATCH EFSANESİ']];
 
-  function addXP(n){
-    if(n <= 0) return;
-    xp += n;
+  // ============ KALICI KAYIT (localStorage) ============
+  var STORAGE_KEY = 'ffx:gunes:scratch-ustalik-gunu';
+
+  function loadState(){
+    try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; }
+  }
+
+  function getMissionsDone(){
+    var arr = [];
+    for(let i=1;i<=5;i++){
+      var m = document.getElementById('m'+i);
+      arr.push(!!(m && m.classList.contains('done')));
+    }
+    return arr;
+  }
+
+  function getQuizState(){
+    var qs = document.querySelectorAll('#m2 .q');
+    var state = [];
+    qs.forEach(function(q){
+      var opts = q.querySelectorAll('.opt');
+      var answered = false;
+      var classes = [];
+      opts.forEach(function(o){
+        if(o.disabled) answered = true;
+        classes.push(o.classList.contains('right') ? 'right' : (o.classList.contains('wrong') ? 'wrong' : ''));
+      });
+      state.push({answered: answered, classes: classes});
+    });
+    return state;
+  }
+
+  function getDoorIndex(){
+    var doors = document.querySelectorAll('.door');
+    for(var i=0;i<doors.length;i++){ if(doors[i].classList.contains('sel')) return i; }
+    return null;
+  }
+
+  function saveState(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        xp: xp,
+        missionsDone: getMissionsDone(),
+        quiz: getQuizState(),
+        doorIndex: getDoorIndex(),
+        finalShown: document.getElementById('final').classList.contains('show'),
+        eggFound: eggFound,
+        catTaps: catTaps
+      }));
+    }catch(e){}
+  }
+
+  function restoreState(){
+    var saved = loadState();
+    if(typeof saved.xp === 'number') xp = saved.xp;
+
+    if(saved.missionsDone){
+      for(let i=1;i<=5;i++){
+        if(saved.missionsDone[i-1]){
+          var m = document.getElementById('m'+i);
+          if(m) m.classList.add('done');
+          var next = document.getElementById('m'+(i+1));
+          if(next) next.classList.remove('locked');
+        }
+      }
+    }
+
+    if(saved.quiz){
+      var qs = document.querySelectorAll('#m2 .q');
+      qs.forEach(function(q, i){
+        var s = saved.quiz[i];
+        if(!s || !s.answered) return;
+        var opts = q.querySelectorAll('.opt');
+        opts.forEach(function(o, j){
+          o.disabled = true;
+          var cls = s.classes[j];
+          if(cls === 'right') o.classList.add('right');
+          if(cls === 'wrong') o.classList.add('wrong');
+        });
+        var exp = q.querySelector('.exp');
+        if(exp) exp.classList.add('show');
+      });
+      var mission2 = document.getElementById('m2');
+      var total = mission2.querySelectorAll('.q').length;
+      var doneCount = [...mission2.querySelectorAll('.q')].filter(function(q){ return q.querySelector('.opt:disabled'); }).length;
+      if(doneCount === total){
+        var b2 = document.getElementById('m2btn');
+        if(b2) b2.disabled = false;
+      }
+    }
+
+    if(typeof saved.doorIndex === 'number'){
+      var doors = document.querySelectorAll('.door');
+      if(doors[saved.doorIndex]){
+        doors[saved.doorIndex].classList.add('sel');
+        var b4 = document.getElementById('m4btn');
+        if(b4) b4.disabled = false;
+      }
+    }
+
+    eggFound = !!saved.eggFound;
+    catTaps = saved.catTaps || 0;
+
+    updateXPUI();
+
+    if(saved.finalShown){
+      renderFinalPanel();
+    }
+  }
+
+  function updateXPUI(){
     document.getElementById('xp').textContent = xp;
     document.getElementById('xpbar').style.width = Math.min(100, xp/MAXXP*100) + '%';
     let r = ranks[0][1];
     for(const [t,name] of ranks) if(xp >= t) r = name;
     document.getElementById('rank').textContent = r;
+  }
+
+  function addXP(n){
+    if(n <= 0) return;
+    xp += n;
+    updateXPUI();
     const t = document.getElementById('toast');
     t.textContent = '+' + n + ' XP';
     t.classList.add('show');
@@ -450,6 +564,7 @@
       next.classList.remove('locked');
       next.scrollIntoView({behavior:'smooth', block:'start'});
     }
+    saveState();
   }
 
   // quiz
@@ -469,6 +584,7 @@
       const b = mission.querySelector('.btn[id$="btn"]');
       if(b) b.disabled = false;
     }
+    saveState();
   }
 
   // kapılar
@@ -476,6 +592,7 @@
     document.querySelectorAll('.door').forEach(d => d.classList.remove('sel'));
     el.classList.add('sel');
     document.getElementById('m4btn').disabled = false;
+    saveState();
   }
 
   // ============ MİNİ OYUN ============
@@ -558,6 +675,7 @@
     cancelAnimationFrame(raf);
     $('fcard').style.display = 'none';
     addXP(Math.min(40, Math.round(score/10)));
+    saveState();
     const ov = $('overlay');
     ov.style.display = 'flex';
     ov.innerHTML =
@@ -618,11 +736,10 @@
       t.classList.add('show');
       setTimeout(()=>t.classList.remove('show'), 2500);
     }
+    saveState();
   }
 
-  function finish(){
-    addXP(25);
-    document.getElementById('m5').classList.add('done');
+  function renderFinalPanel(){
     let r = ranks[0][1];
     for(const [t,name] of ranks) if(xp >= t) r = name;
     document.getElementById('finalRank').textContent = r + ' · ' + xp + ' XP';
@@ -630,11 +747,20 @@
       xp >= 140 ? 'Muhteşem bir performans! Scratch sana artık küçük geliyor — yeni kapının arkasındakiler seni bekliyor.' :
       xp >= 90  ? 'Ustalık kanıtlandı! Blokların dilini söküp bitirdin. Sıradaki dünya seni çağırıyor.' :
                   'Rütbe senin! Bugün hem hatırladın hem oynadın hem de yeni yolunu seçtin — büyük gün.';
+    document.getElementById('final').classList.add('show');
+  }
+
+  function finish(){
+    addXP(25);
+    document.getElementById('m5').classList.add('done');
+    renderFinalPanel();
     const f = document.getElementById('final');
-    f.classList.add('show');
     f.scrollIntoView({behavior:'smooth'});
     sLVL(); setTimeout(sLVL, 300);
+    saveState();
   }
+
+  restoreState();
 </script>
 </body>
 </html>
