@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SpeakGuard — Bug Avı</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0E14; --panel:#131A26; --panel-2:#0F1520; --line:#232E40;
+    --text:#E6EAF2; --muted:#8A94A6; --muted-2:#5C6678;
+    --hunt:#E5484D; --hunt-dim:#6b2226; --ok:#35D07F; --ok-dim:#1c6b44; --hint:#FFB020;
+    --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+    --disp:'Space Grotesk',system-ui,sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:radial-gradient(1100px 560px at 50% -200px,#20101200,#0B0E14),var(--bg);
+    color:var(--text);font-family:var(--body);line-height:1.6;-webkit-font-smoothing:antialiased}
+  code{font-family:var(--mono);font-size:.92em;background:#0c121c;border:1px solid var(--line);
+    padding:1px 6px;border-radius:6px;color:#c9d4e6}
+  :focus-visible{outline:2px solid var(--hunt);outline-offset:3px;border-radius:6px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+  .hud{position:sticky;top:0;z-index:40;backdrop-filter:blur(10px);
+    background:rgba(11,14,20,.85);border-bottom:1px solid var(--line)}
+  .hud-in{max-width:820px;margin:0 auto;padding:13px 22px;display:flex;align-items:center;gap:14px}
+  .rank{flex-shrink:0}
+  .rank-name{font-family:var(--disp);font-weight:700;font-size:14px;line-height:1.1}
+  .rank-sub{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px}
+  .xp-wrap{flex:1;min-width:0}
+  .xp-top{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px}
+  .xp-top b{color:var(--hunt);font-family:var(--mono)}
+  .xp-bar{height:9px;background:#101725;border:1px solid var(--line);border-radius:20px;overflow:hidden}
+  .xp-fill{height:100%;width:0;border-radius:20px;
+    background:linear-gradient(90deg,var(--hunt-dim),var(--hunt));transition:width .6s cubic-bezier(.2,.8,.2,1)}
+  .caught{font-family:var(--mono);font-size:12px;color:var(--muted);flex-shrink:0}
+  .caught b{color:var(--hunt)}
+
+  .wrap{max-width:820px;margin:0 auto;padding:0 22px}
+  .hero{padding:48px 0 10px}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;
+    letter-spacing:2px;color:var(--hunt);text-transform:uppercase;
+    border:1px solid var(--line);background:var(--panel-2);padding:7px 13px;border-radius:100px}
+  h1{font-family:var(--disp);font-weight:700;font-size:clamp(32px,6vw,50px);line-height:1.05;
+    margin:20px 0 0;letter-spacing:-.5px}
+  h1 .g{color:var(--hunt)}
+  .lede{color:var(--muted);font-size:17px;max-width:60ch;margin-top:14px}
+  .how{margin-top:22px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+  .how ol{margin:0;padding-left:20px;color:var(--muted);font-size:14.5px}
+  .how li{margin:5px 0}
+  .how b{color:var(--text)}
+
+  .m-head{font-family:var(--disp);font-size:13px;letter-spacing:3px;text-transform:uppercase;
+    color:var(--muted-2);margin:40px 0 16px;display:flex;align-items:center;gap:12px}
+  .m-head::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  .case{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:16px;
+    transition:border-color .3s,box-shadow .3s}
+  .case.solved{border-color:var(--ok-dim);box-shadow:0 0 0 1px var(--ok-dim) inset}
+  .c-top{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-bottom:4px}
+  .c-no{font-family:var(--mono);font-size:12px;color:var(--hunt);border:1px solid var(--hunt-dim);
+    padding:4px 9px;border-radius:7px;letter-spacing:.5px}
+  .tier{font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;
+    color:var(--muted);border:1px solid var(--line);padding:4px 9px;border-radius:7px}
+  .c-xp{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--hunt);border:1px solid var(--hunt-dim);
+    padding:4px 9px;border-radius:8px}
+  .case.solved .c-xp{color:var(--ok);border-color:var(--ok-dim)}
+  .c-goal{font-size:15px;color:var(--text);margin:8px 0 2px}
+  .c-symptom{font-size:13.5px;color:var(--hunt);background:#1a1012;border:1px solid var(--hunt-dim);
+    border-radius:9px;padding:9px 12px;margin:12px 0 0;font-family:var(--mono)}
+  .c-symptom b{color:#ffb3b5;font-family:var(--body);font-weight:600}
+
+  .codewrap{margin-top:14px;background:var(--panel-2);border:1px solid var(--line);border-radius:11px;
+    padding:8px 0;overflow:hidden}
+  .cl{display:flex;width:100%;text-align:left;background:none;border:none;cursor:pointer;
+    font-family:var(--mono);font-size:13px;line-height:1.9;color:#d4dcea;padding:0;transition:background .15s}
+  .cl:hover:not(:disabled){background:#182234}
+  .cl:disabled{cursor:default}
+  .cl .ln{width:38px;flex-shrink:0;text-align:right;padding-right:14px;color:#3d475a;user-select:none}
+  .cl .code{white-space:pre;padding-right:16px}
+  .cl.wrong{background:#231015;animation:shake .3s}
+  .cl.hit{background:#12251b}
+  .cl.hit .ln{color:var(--ok)}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+  .tok-c{color:#5c6b82} .tok-s{color:#9ae6a4} .tok-k{color:#7aa2ff} .tok-f{color:#ffd479} .tok-n{color:#e0a86b}
+
+  .feedback{font-size:13.5px;font-weight:500;margin-top:12px;min-height:20px}
+  .feedback.ok{color:var(--ok)} .feedback.no{color:var(--hunt)} .feedback.tip{color:var(--muted)}
+  .tries-ind{font-family:var(--mono);font-size:12px;color:var(--hunt);background:#1a1012;
+    border:1px solid var(--hunt-dim);border-radius:7px;padding:3px 9px;margin-top:8px}
+
+  .hintbtn{margin-top:12px;background:none;border:1px solid var(--line);color:var(--hint);
+    font-family:var(--body);font-weight:500;font-size:13px;padding:7px 13px;border-radius:9px;cursor:pointer}
+  .hintbtn:hover:not([disabled]){background:#1a1608;border-color:#4a3b12}
+  .hintbtn[disabled]{opacity:.35;cursor:not-allowed}
+  .hintbox{max-height:0;overflow:hidden;transition:max-height .4s ease}
+  .hintbox.open{max-height:200px}
+  .hint-in{margin-top:10px;background:#160f00;border:1px solid #4a3b12;border-radius:11px;padding:12px 14px;
+    color:#e9d9b3;font-size:14px}
+  .hint-in code{background:#241a05;border-color:#4a3b12;color:#ffd479}
+
+  .reason{max-height:0;overflow:hidden;transition:max-height .45s ease}
+  .reason.open{max-height:320px}
+  .reason-in{margin-top:14px;background:#0d1a14;border:1px solid var(--ok-dim);border-radius:12px;padding:15px}
+  .reason-in .v-lbl{font-size:13px;font-weight:600;color:var(--ok);margin-bottom:3px}
+  .reason-in .v-sub{font-size:12.5px;color:var(--muted-2);margin-bottom:10px}
+  .r-input{width:100%;background:#0a0f18;border:1px solid var(--line);border-radius:9px;padding:11px 13px;
+    color:var(--text);font-family:var(--body);font-size:14px;resize:vertical;min-height:60px;line-height:1.5}
+  .r-input:focus{border-color:var(--ok);outline:none}
+  .r-row{display:flex;gap:9px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .r-btn{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--bg);background:var(--ok);
+    border:none;padding:9px 18px;border-radius:9px;cursor:pointer}
+  .r-btn:hover{filter:brightness(1.08)}
+
+  .report{background:var(--panel);border:1px solid var(--hunt-dim);border-radius:16px;padding:22px;margin-top:20px}
+  .report h3{font-family:var(--disp);margin:0 0 6px;font-size:19px}
+  .report p{color:var(--muted);font-size:14px;margin:0 0 14px}
+  .r-report{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--bg);background:var(--hunt);
+    border:none;padding:10px 20px;border-radius:9px;cursor:pointer}
+  .r-report:hover{filter:brightness(1.08)}
+  .reportOut{width:100%;margin-top:12px;display:none;min-height:150px;background:#0a0f18;border:1px solid var(--line);
+    border-radius:9px;padding:12px;color:var(--text);font-family:var(--mono);font-size:12.5px}
+  .msg{font-size:13px;font-weight:500;margin-left:10px}
+  .msg.ok{color:var(--ok)} .msg.tip{color:var(--muted)}
+
+  .note{color:var(--muted);font-size:14px;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:12px;padding:15px 17px;margin-top:16px}
+  footer{text-align:center;color:var(--muted-2);font-size:13px;padding:38px 0;font-family:var(--mono)}
+
+  #saveInd{position:fixed;left:18px;bottom:18px;z-index:70;font-family:var(--mono);font-size:12px;
+    background:#131A26;border:1px solid var(--ok-dim);color:var(--ok);padding:9px 14px;border-radius:10px;
+    opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;pointer-events:none;
+    box-shadow:0 8px 24px #0006}
+  #saveInd.show{opacity:1;transform:translateY(0)}
+  #saveInd.warn{border-color:var(--hunt-dim);color:var(--hunt)}
+  #resetBtn{margin-top:14px;background:none;border:1px solid var(--line);color:var(--muted-2);
+    font-family:var(--mono);font-size:11px;padding:7px 13px;border-radius:8px;cursor:pointer}
+  #resetBtn:hover{color:var(--muted);border-color:var(--muted-2)}
+
+  #toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,120px);z-index:60;
+    background:var(--panel);border:1px solid var(--hunt-dim);border-radius:14px;padding:14px 20px;
+    box-shadow:0 12px 40px #0008;transition:transform .45s cubic-bezier(.2,.9,.2,1);text-align:center}
+  #toast.show{transform:translate(-50%,0)}
+  #toast .t-lvl{font-family:var(--disp);font-weight:700;color:var(--hunt)}
+  #toast .t-sub{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="hud">
+  <div class="hud-in">
+    <div class="rank">
+      <div class="rank-name" id="rankName">Acemi Avcı</div>
+      <div class="rank-sub">Bug Avcısı</div>
+    </div>
+    <div class="xp-wrap">
+      <div class="xp-top"><span>Av Puanı</span><span><b id="xpNow">0</b> / 100</span></div>
+      <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+    </div>
+    <div class="caught">🎯 <b id="caught">0</b>/5</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <section class="hero">
+    <span class="eyebrow">🐞 SPEAKGUARD // BUG AVI</span>
+    <h1>Kodda <span class="g">5 hata</span> saklanıyor. Yakala.</h1>
+    <p class="lede">Bu kodlar çalışmıyor ya da yanlış çalışıyor. Her birinde <strong style="color:var(--text)">tam
+      olarak bir hatalı satır</strong> var. Dedektif ol: hatalı satıra tıkla, sonra <strong style="color:var(--text)">neden</strong>
+      hatalı olduğunu yaz.</p>
+    <div class="how">
+      <ol>
+        <li>Kodun <b>ne yapması gerektiğini</b> ve <b>belirtiyi</b> oku.</li>
+        <li>Hatalı olduğunu düşündüğün <b>satıra tıkla</b>.</li>
+        <li>Yakaladıysan, <b>neden hatalı olduğunu</b> bir cümleyle yaz — asıl avcılık bu.</li>
+        <li>Takıldıysan ipucu var (2 yanlış denemeden sonra açılır). Kod verilmez, sadece yön. 🧭</li>
+      </ol>
+    </div>
+  </section>
+
+  <div class="m-head">Vakalar</div>
+
+  <!-- V1 -->
+  <article class="case" data-case data-xp="15" data-bug="MQ==">
+    <div class="c-top"><span class="c-no">VAKA 1</span><span class="tier">Isınma</span><span class="c-xp">+15</span></div>
+    <p class="c-goal"><b>Ne yapmalı:</b> Her doğru cevapta puan artmalı, sonda toplam puanı göstermeli.</p>
+    <div class="c-symptom"><b>Belirti:</b> Puan hep 0 ya da 1 çıkıyor, birikmiyor.</div>
+    <div class="codewrap">
+      <button class="cl" data-i="0"><span class="ln">1</span><span class="code"><span class="tok-k">for</span> cumle <span class="tok-k">in</span> cumleler:</span></button>
+      <button class="cl" data-i="1"><span class="ln">2</span><span class="code">    score = <span class="tok-n">0</span></span></button>
+      <button class="cl" data-i="2"><span class="ln">3</span><span class="code">    cevap = <span class="tok-f">input</span>(<span class="tok-s">"Cevabın: "</span>)</span></button>
+      <button class="cl" data-i="3"><span class="ln">4</span><span class="code">    <span class="tok-k">if</span> cevap == cumle:</span></button>
+      <button class="cl" data-i="4"><span class="ln">5</span><span class="code">        score += <span class="tok-n">1</span></span></button>
+      <button class="cl" data-i="5"><span class="ln">6</span><span class="code"><span class="tok-f">print</span>(<span class="tok-s">"Puan:"</span>, score)</span></button>
+    </div>
+    <div class="feedback tip"></div>
+    <button class="hintbtn" disabled>🔒 İpucu (2 denemede açılır)</button>
+    <div class="hintbox"><div class="hint-in">Belirti "birikmiyor" diyor. Bir sayacın birikmesi için başlangıç değeri <b>tek bir kez</b>, doğru yerde verilmeli. Her turda tekrar verilirse ne olur?</div></div>
+    <div class="reason"><div class="reason-in">
+      <div class="v-lbl">🎯 Yakaladın! Peki neden hatalı?</div>
+      <div class="v-sub">Bir cümleyle açıkla — düzeltmeyi de söyleyebilirsin.</div>
+      <textarea class="r-input" placeholder="Bu satır ... olduğu için hatalı, çünkü ..."></textarea>
+      <div class="r-row"><button class="r-btn">Avı tamamla</button><span class="feedback tip r-msg"></span></div>
+    </div></div>
+  </article>
+
+  <!-- V2 -->
+  <article class="case" data-case data-xp="15" data-bug="Mg==">
+    <div class="c-top"><span class="c-no">VAKA 2</span><span class="tier">Isınma</span><span class="c-xp">+15</span></div>
+    <p class="c-goal"><b>Ne yapmalı:</b> Metni küçük harfe çevirip noktaları silmeli.</p>
+    <div class="c-symptom"><b>Belirti:</b> Küçültme oluyor ama noktalar hâlâ duruyor.</div>
+    <div class="codewrap">
+      <button class="cl" data-i="0"><span class="ln">1</span><span class="code"><span class="tok-k">def</span> <span class="tok-f">temizle</span>(metin):</span></button>
+      <button class="cl" data-i="1"><span class="ln">2</span><span class="code">    metin = metin.<span class="tok-f">lower</span>()</span></button>
+      <button class="cl" data-i="2"><span class="ln">3</span><span class="code">    metin.<span class="tok-f">replace</span>(<span class="tok-s">"."</span>, <span class="tok-s">""</span>)</span></button>
+      <button class="cl" data-i="3"><span class="ln">4</span><span class="code">    <span class="tok-k">return</span> metin</span></button>
+    </div>
+    <div class="feedback tip"></div>
+    <button class="hintbtn" disabled>🔒 İpucu (2 denemede açılır)</button>
+    <div class="hintbox"><div class="hint-in">2. satırda bir atama var (<code>metin = ...</code>). 3. satırda aynı şey var mı? String metotları metni <b>yerinde değiştirmez</b>, yeni bir metin döndürür. O yeni metne ne oluyor?</div></div>
+    <div class="reason"><div class="reason-in">
+      <div class="v-lbl">🎯 Yakaladın! Peki neden hatalı?</div>
+      <div class="v-sub">Bir cümleyle açıkla.</div>
+      <textarea class="r-input" placeholder="Bu satır ... çünkü ..."></textarea>
+      <div class="r-row"><button class="r-btn">Avı tamamla</button><span class="feedback tip r-msg"></span></div>
+    </div></div>
+  </article>
+
+  <!-- V3 -->
+  <article class="case" data-case data-xp="20" data-bug="MQ==">
+    <div class="c-top"><span class="c-no">VAKA 3</span><span class="tier">Orta</span><span class="c-xp">+20</span></div>
+    <p class="c-goal"><b>Ne yapmalı:</b> Seçilen seviye "kolay" ise ekrana yazmalı.</p>
+    <div class="c-symptom"><b>Belirti:</b> Program hiç çalışmadan hata veriyor (SyntaxError).</div>
+    <div class="codewrap">
+      <button class="cl" data-i="0"><span class="ln">1</span><span class="code">secim = <span class="tok-f">input</span>(<span class="tok-s">"Seviye: "</span>)</span></button>
+      <button class="cl" data-i="1"><span class="ln">2</span><span class="code"><span class="tok-k">if</span> secim = <span class="tok-s">"kolay"</span>:</span></button>
+      <button class="cl" data-i="2"><span class="ln">3</span><span class="code">    <span class="tok-f">print</span>(<span class="tok-s">"Kolay seçildi"</span>)</span></button>
+    </div>
+    <div class="feedback tip"></div>
+    <button class="hintbtn" disabled>🔒 İpucu (2 denemede açılır)</button>
+    <div class="hintbox"><div class="hint-in">Bir şeye değer <b>atamak</b> ile iki şeyin <b>eşit olup olmadığını sormak</b> aynı işaret mi? Karşılaştırma yaparken hangi işareti kullanıyorduk?</div></div>
+    <div class="reason"><div class="reason-in">
+      <div class="v-lbl">🎯 Yakaladın! Peki neden hatalı?</div>
+      <div class="v-sub">Düzeltmeyi de yazabilirsin.</div>
+      <textarea class="r-input" placeholder="Bu satırda ... olmalıydı çünkü ..."></textarea>
+      <div class="r-row"><button class="r-btn">Avı tamamla</button><span class="feedback tip r-msg"></span></div>
+    </div></div>
+  </article>
+
+  <!-- V4 -->
+  <article class="case" data-case data-xp="25" data-bug="NA==">
+    <div class="c-top"><span class="c-no">VAKA 4</span><span class="tier">Zor</span><span class="c-xp">+25</span></div>
+    <p class="c-goal"><b>Ne yapmalı:</b> Kısaltmayı üretip <b>döndürmeli</b> ki dışarıda kullanılabilsin.</p>
+    <div class="c-symptom"><b>Belirti:</b> Ekrana <code>Rozet: None</code> yazıyor.</div>
+    <div class="codewrap">
+      <button class="cl" data-i="0"><span class="ln">1</span><span class="code"><span class="tok-k">def</span> <span class="tok-f">kisaltma</span>(cumle):</span></button>
+      <button class="cl" data-i="1"><span class="ln">2</span><span class="code">    sonuc = <span class="tok-s">""</span></span></button>
+      <button class="cl" data-i="2"><span class="ln">3</span><span class="code">    <span class="tok-k">for</span> kelime <span class="tok-k">in</span> cumle.<span class="tok-f">split</span>():</span></button>
+      <button class="cl" data-i="3"><span class="ln">4</span><span class="code">        sonuc += kelime[<span class="tok-n">0</span>].<span class="tok-f">upper</span>()</span></button>
+      <button class="cl" data-i="4"><span class="ln">5</span><span class="code">    <span class="tok-f">print</span>(sonuc)</span></button>
+      <button class="cl" data-i="5"><span class="ln">6</span><span class="code">rozet = <span class="tok-f">kisaltma</span>(<span class="tok-s">"kullanıcı uyarıldı"</span>)</span></button>
+      <button class="cl" data-i="6"><span class="ln">7</span><span class="code"><span class="tok-f">print</span>(<span class="tok-s">"Rozet:"</span>, rozet)</span></button>
+    </div>
+    <div class="feedback tip"></div>
+    <button class="hintbtn" disabled>🔒 İpucu (2 denemede açılır)</button>
+    <div class="hintbox"><div class="hint-in">Fonksiyon <code>sonuc</code>'u güzelce hesaplıyor ama dışarıya <b>geri veriyor mu</b>? "None" bir fonksiyonun hiçbir şey döndürmediğinin işaretidir. Ekrana yazmak (<code>print</code>) ile geri döndürmek (<code>return</code>) aynı şey mi?</div></div>
+    <div class="reason"><div class="reason-in">
+      <div class="v-lbl">🎯 Yakaladın! Peki neden hatalı?</div>
+      <div class="v-sub"><code>print</code> ile <code>return</code> farkına değin.</div>
+      <textarea class="r-input" placeholder="Bu satır ... olmalıydı çünkü ..."></textarea>
+      <div class="r-row"><button class="r-btn">Avı tamamla</button><span class="feedback tip r-msg"></span></div>
+    </div></div>
+  </article>
+
+  <!-- V5 -->
+  <article class="case" data-case data-xp="25" data-bug="OA==">
+    <div class="c-top"><span class="c-no">VAKA 5</span><span class="tier">Uzman</span><span class="c-xp">+25</span></div>
+    <p class="c-goal"><b>Ne yapmalı:</b> Her cümleyi tek tek sorup doğru cevapları puanlamalı.</p>
+    <div class="c-symptom"><b>Belirti:</b> İlk doğru cevaptan sonra oyun bitiyor; kalan cümleler hiç sorulmuyor.</div>
+    <div class="codewrap">
+      <button class="cl" data-i="0"><span class="ln">1</span><span class="code"><span class="tok-k">for</span> turkce, kabul <span class="tok-k">in</span> cumleler.<span class="tok-f">items</span>():</span></button>
+      <button class="cl" data-i="1"><span class="ln">2</span><span class="code">    cevap = <span class="tok-f">input</span>(<span class="tok-s">"Cevap: "</span>)</span></button>
+      <button class="cl" data-i="2"><span class="ln">3</span><span class="code">    dogru_mu = <span class="tok-k">False</span></span></button>
+      <button class="cl" data-i="3"><span class="ln">4</span><span class="code">    <span class="tok-k">for</span> k <span class="tok-k">in</span> kabul:</span></button>
+      <button class="cl" data-i="4"><span class="ln">5</span><span class="code">        <span class="tok-k">if</span> cevap == k:</span></button>
+      <button class="cl" data-i="5"><span class="ln">6</span><span class="code">            dogru_mu = <span class="tok-k">True</span></span></button>
+      <button class="cl" data-i="6"><span class="ln">7</span><span class="code">    <span class="tok-k">if</span> dogru_mu:</span></button>
+      <button class="cl" data-i="7"><span class="ln">8</span><span class="code">        score += <span class="tok-n">1</span></span></button>
+      <button class="cl" data-i="8"><span class="ln">9</span><span class="code">        <span class="tok-k">break</span></span></button>
+    </div>
+    <div class="feedback tip"></div>
+    <button class="hintbtn" disabled>🔒 İpucu (2 denemede açılır)</button>
+    <div class="hintbox"><div class="hint-in">Belirti: "ilk doğru cevaptan sonra <b>oyun bitiyor</b>". Hangi komut bir döngüyü tamamen durdurur? O komut burada gerçekten gerekli mi, yoksa fazladan mı?</div></div>
+    <div class="reason"><div class="reason-in">
+      <div class="v-lbl">🎯 Yakaladın! Peki neden hatalı?</div>
+      <div class="v-sub">Bu satır ne yapıyor, neden burada olmamalı?</div>
+      <textarea class="r-input" placeholder="Bu satır ... çünkü ..."></textarea>
+      <div class="r-row"><button class="r-btn">Avı tamamla</button><span class="feedback tip r-msg"></span></div>
+    </div></div>
+  </article>
+
+  <div class="m-head">Av bitti</div>
+  <div class="report">
+    <h3>📤 Hocana av raporu gönder</h3>
+    <p>Bitirince bu butona bas — yakaladığın hatalar ve açıklamaların tek metin olur, hocana WhatsApp'tan yapıştır.</p>
+    <button class="r-report" id="reportBtn">Raporu kopyala</button>
+    <span class="msg tip" id="reportMsg"></span>
+    <textarea class="reportOut" id="reportOut" readonly></textarea>
+  </div>
+
+  <div class="note">
+    🧭 Takıldığın vaka olursa <b>not al</b> — derste birlikte avlarız. Bir hatayı bulamamak da bilgi:
+    hangi konuyu tekrar edeceğimizi bana söyler.
+  </div>
+</div>
+
+<footer>KODLAYIN // SPEAKGUARD BUG AVI</footer>
+
+<div id="toast"><div class="t-lvl">Tüm hatalar yakalandı! 🏆</div><div class="t-sub">Bug Ustası oldun — raporu hocana gönder</div></div>
+
+<script>
+(function(){
+  var KEY="kodlayin.bugavi.1.v1";
+  var MAX_XP=100;
+  var RANKS=[{min:0,name:"Acemi Avcı"},{min:40,name:"İz Sürücü"},{min:70,name:"Keskin Göz"},{min:100,name:"Bug Ustası"}];
+  var xp=0, level=1, storageOK=true, booting=true, wasFull=false;
+
+  var xpFill=document.getElementById('xpFill'), xpNow=document.getElementById('xpNow');
+  var rankName=document.getElementById('rankName'), caught=document.getElementById('caught');
+  var toast=document.getElementById('toast');
+  var cases=[].slice.call(document.querySelectorAll('[data-case]'));
+  var tTimer, indTimer;
+
+  function dec(b){ return atob(b); }
+
+  // "neden" gelişigüzel doldurulamasın: en az 20 karakter, en az 3 gerçek kelime, tek harf tekrarı değil
+  function validReason(t){
+    t=(t||'').trim();
+    if(t.length<20) return false;
+    if(/^(.)\1+$/.test(t.replace(/\s+/g,''))) return false;
+    var words=t.split(/\s+/).filter(function(w){ return w.length>=2; });
+    return words.length>=3;
+  }
+  function updateTries(c){
+    var el=c.querySelector('.tries-ind');
+    if(!el) return;
+    var t=parseInt(c.getAttribute('data-tries')||'0',10);
+    if(t<=0 || c.classList.contains('solved')){ el.textContent=''; el.style.display='none'; return; }
+    el.style.display='inline-block';
+    el.textContent='🔍 '+t+' yanlış deneme'+(t>=2?' · ipucu açık':' · 2. yanlıştan sonra ipucu açılır');
+  }
+
+  var ind=document.createElement('div'); ind.id='saveInd'; document.body.appendChild(ind);
+  function flash(msg,warn){
+    ind.textContent=msg; ind.className=warn?'show warn':'show';
+    clearTimeout(indTimer); indTimer=setTimeout(function(){ ind.className=warn?'warn':''; },1900);
+  }
+
+  try{ localStorage.setItem('__k','1'); localStorage.removeItem('__k'); }catch(e){ storageOK=false; }
+
+  function save(){
+    if(!storageOK) return;
+    try{
+      var data={v:1,items:cases.map(function(c){
+        return {s:c.classList.contains('solved'), hit:c.getAttribute('data-hit')==='1',
+                hu:c.getAttribute('data-hintused')==='1',
+                t:parseInt(c.getAttribute('data-tries')||'0',10), r:c.querySelector('.r-input').value};
+      })};
+      localStorage.setItem(KEY,JSON.stringify(data));
+      flash('İlerlemen kaydedildi ✓',false);
+    }catch(e){ storageOK=false; flash('Kayıt yapılamadı — dosyayı indirip aç',true); }
+  }
+
+  function load(){
+    if(!storageOK) return;
+    try{
+      var raw=localStorage.getItem(KEY); if(!raw) return;
+      var d=JSON.parse(raw);
+      (d.items||[]).forEach(function(it,i){
+        var c=cases[i]; if(!c) return;
+        c.setAttribute('data-tries', it.t||0);
+        c.querySelector('.r-input').value = it.r || '';
+        if(it.hu) c.setAttribute('data-hintused','1');
+        if((it.t||0)>=2) unlockHint(c);
+        if(it.hit){ markHit(c, true); }
+        if(it.s){ c.classList.add('solved'); lockCase(c); c.querySelector('.r-btn').textContent='Tamamlandı ✓'; }
+        updateTries(c);
+      });
+    }catch(e){ storageOK=false; }
+  }
+
+  function unlockHint(c){
+    var b=c.querySelector('.hintbtn');
+    if(b && b.disabled){ b.disabled=false; b.textContent='💡 İpucu'; }
+  }
+  function markHit(c, silent){
+    c.setAttribute('data-hit','1');
+    var bug=parseInt(dec(c.getAttribute('data-bug')),10);
+    c.querySelectorAll('.cl').forEach(function(l){
+      var i=parseInt(l.getAttribute('data-i'),10);
+      if(i===bug) l.classList.add('hit');
+    });
+    c.querySelector('.reason').classList.add('open');
+    if(!silent){
+      var fb=c.querySelector('.feedback');
+      fb.className='feedback ok'; fb.textContent='🎯 Yakaladın! Şimdi neden hatalı olduğunu yaz.';
+    }
+  }
+  function lockCase(c){
+    c.querySelectorAll('.cl').forEach(function(l){ l.disabled=true; });
+  }
+
+  function recompute(){
+    xp=0; var n=0;
+    cases.forEach(function(c){
+      if(c.classList.contains('solved')){ xp+=parseInt(c.getAttribute('data-xp'),10); n++; }
+    });
+    caught.textContent=n;
+  }
+  function render(){
+    var pct=Math.min(100,xp/MAX_XP*100);
+    xpFill.style.width=pct+'%'; xpNow.textContent=xp;
+    var nl=1; for(var i=0;i<RANKS.length;i++){ if(xp>=RANKS[i].min) nl=i+1; }
+    rankName.textContent=RANKS[nl-1].name;
+    var full=(xp>=MAX_XP);
+    if(full && !wasFull && !booting){
+      toast.classList.add('show'); clearTimeout(tTimer);
+      tTimer=setTimeout(function(){ toast.classList.remove('show'); },3200);
+    }
+    wasFull=full; level=nl;
+  }
+
+  cases.forEach(function(c){
+    var bug=parseInt(dec(c.getAttribute('data-bug')),10);
+    var fb=c.querySelector('.feedback');
+
+    var triesInd=document.createElement('span');
+    triesInd.className='tries-ind';
+    triesInd.style.display='none';
+    fb.insertAdjacentElement('afterend', triesInd);
+
+    c.querySelectorAll('.cl').forEach(function(line){
+      line.addEventListener('click',function(){
+        if(c.classList.contains('solved') || c.getAttribute('data-hit')==='1') return;
+        var i=parseInt(line.getAttribute('data-i'),10);
+        if(i===bug){
+          markHit(c,false); save();
+        } else {
+          line.classList.remove('wrong'); void line.offsetWidth; line.classList.add('wrong');
+          var t=parseInt(c.getAttribute('data-tries')||'0',10)+1;
+          c.setAttribute('data-tries',t);
+          fb.className='feedback no';
+          if(t>=2){ unlockHint(c); fb.textContent='O satır temiz görünüyor. İpucu açıldı 🔓 — belirtiyi tekrar oku.'; }
+          else { fb.textContent='O satır temiz görünüyor, bir daha bak. 🔍'; }
+          updateTries(c);
+          save();
+        }
+      });
+    });
+
+    c.querySelector('.hintbtn').addEventListener('click',function(){
+      if(this.disabled) return;
+      var box=c.querySelector('.hintbox');
+      var open = box.classList.toggle('open');
+      this.textContent = open ? '🔽 İpucu' : '💡 İpucu';
+      if(open){ c.setAttribute('data-hintused','1'); save(); }
+    });
+
+    var rbtn=c.querySelector('.r-btn');
+    var rin=c.querySelector('.r-input');
+    var rmsg=c.querySelector('.r-msg');
+    rbtn.addEventListener('click',function(){
+      if(c.classList.contains('solved')){
+        c.classList.remove('solved'); rbtn.textContent='Avı tamamla';
+        rmsg.className='feedback tip r-msg'; rmsg.textContent='Tekrar açtın.';
+        recompute(); render(); save(); return;
+      }
+      if(!validReason(rin.value)){
+        rmsg.className='feedback no r-msg';
+        rmsg.textContent='Gerçek bir açıklama yaz — birkaç kelimeyle neden hatalı, anlat.';
+        return;
+      }
+      c.classList.add('solved'); lockCase(c); updateTries(c);
+      rbtn.textContent='Tamamlandı ✓';
+      rmsg.className='feedback ok r-msg'; rmsg.textContent='Av kaydedildi ✅';
+      recompute(); render(); save();
+    });
+    rin.addEventListener('input',function(){
+      if(!c.classList.contains('solved')){ rmsg.textContent=''; }
+    });
+  });
+
+  document.getElementById('reportBtn').addEventListener('click',function(){
+    var lines=['SPEAKGUARD BUG AVI — Eren','Av Puanı: '+xp+'/'+MAX_XP+'  ('+caught.textContent+'/5 hata)',''];
+    cases.forEach(function(c,idx){
+      var solved=c.classList.contains('solved');
+      var tries=c.getAttribute('data-tries')||'0';
+      var hu=c.getAttribute('data-hintused')==='1'?' · ipucu açıldı':'';
+      lines.push((solved?'✔':'✗')+' Vaka '+(idx+1)+(tries!=='0'?'  (yanlış deneme: '+tries+')':'')+hu);
+      var r=c.querySelector('.r-input').value.trim();
+      if(r) lines.push('   → '+r.replace(/\n/g,' '));
+      lines.push('');
+    });
+    var text=lines.join('\n');
+    var out=document.getElementById('reportOut'), msg=document.getElementById('reportMsg');
+    out.value=text; out.style.display='block';
+    navigator.clipboard.writeText(text).then(function(){
+      msg.className='msg ok'; msg.textContent='Kopyalandı — hocana yapıştır ✓';
+    }).catch(function(){ msg.className='msg tip'; msg.textContent='Aşağıdaki metni seçip kopyala.'; });
+  });
+
+  var f=document.querySelector('footer');
+  var rb=document.createElement('button');
+  rb.id='resetBtn'; rb.type='button'; rb.textContent='İlerlemeyi sıfırla';
+  rb.addEventListener('click',function(){
+    if(!confirm('Tüm av ilerlemen silinecek. Emin misin?')) return;
+    try{ localStorage.removeItem(KEY); }catch(e){}
+    cases.forEach(function(c){
+      c.classList.remove('solved'); c.setAttribute('data-tries','0'); c.removeAttribute('data-hit');
+      c.removeAttribute('data-hintused');
+      c.querySelector('.r-input').value=''; c.querySelector('.reason').classList.remove('open');
+      c.querySelector('.feedback').textContent=''; c.querySelector('.r-btn').textContent='Avı tamamla';
+      c.querySelectorAll('.cl').forEach(function(l){ l.disabled=false; l.classList.remove('hit','wrong'); });
+      var hb=c.querySelector('.hintbtn'); hb.disabled=true; hb.textContent='🔒 İpucu (2 denemede açılır)';
+      c.querySelector('.hintbox').classList.remove('open');
+      updateTries(c);
+    });
+    booting=true; recompute(); render(); booting=false; flash('İlerleme sıfırlandı');
+  });
+  f.appendChild(document.createElement('br')); f.appendChild(rb);
+
+  load(); recompute(); render(); booting=false;
+  if(!storageOK) flash('Bu tarayıcıda kayıt kapalı — ilerleme saklanmayacak',true);
+  else if(xp>0 || caught.textContent!=='0') flash('Kaldığın yerden devam ✓');
+})();
+</script>
+</body>
+</html>
