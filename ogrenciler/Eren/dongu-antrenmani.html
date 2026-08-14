@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Döngü Antrenmanı — for X in Y</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0E14; --panel:#161326; --panel-2:#100E1C; --line:#2A2640;
+    --text:#E9E6F2; --muted:#9A93B0; --muted-2:#66607e;
+    --vi:#A78BFA; --vi-dim:#5b3fa8; --on:#35D07F; --on-dim:#1c6b44; --hint:#FFB020; --no:#FF6B6B;
+    --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+    --disp:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:radial-gradient(1100px 560px at 50% -200px,#1a103000,#0B0E14),var(--bg);
+    color:var(--text);font-family:var(--body);line-height:1.6;-webkit-font-smoothing:antialiased}
+  code{font-family:var(--mono);font-size:.92em;background:#0d0b16;border:1px solid var(--line);
+    padding:1px 6px;border-radius:6px;color:#cfc7e6}
+  :focus-visible{outline:2px solid var(--vi);outline-offset:3px;border-radius:6px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+  .hud{position:sticky;top:0;z-index:40;backdrop-filter:blur(10px);
+    background:rgba(11,14,20,.85);border-bottom:1px solid var(--line)}
+  .hud-in{max-width:800px;margin:0 auto;padding:13px 22px;display:flex;align-items:center;gap:16px}
+  .hud-t{font-family:var(--disp);font-weight:700;font-size:14px;line-height:1.1}
+  .hud-s{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px}
+  .pr-wrap{flex:1;min-width:0}
+  .pr-top{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px}
+  .pr-top b{color:var(--vi);font-family:var(--mono)}
+  .pr-bar{height:9px;background:#100e1c;border:1px solid var(--line);border-radius:20px;overflow:hidden}
+  .pr-fill{height:100%;width:0;border-radius:20px;background:linear-gradient(90deg,var(--vi-dim),var(--vi));transition:width .6s cubic-bezier(.2,.8,.2,1)}
+  .flame{font-size:20px;filter:grayscale(1) opacity(.35);transition:filter .5s,transform .5s;flex-shrink:0}
+  .flame.on{filter:none;transform:scale(1.1)}
+
+  .wrap{max-width:800px;margin:0 auto;padding:0 22px}
+  .hero{padding:48px 0 6px}
+  .eyebrow{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;
+    letter-spacing:2px;color:var(--vi);text-transform:uppercase;border:1px solid var(--line);
+    background:var(--panel-2);padding:7px 13px;border-radius:100px}
+  h1{font-family:var(--disp);font-weight:700;font-size:clamp(30px,5.5vw,46px);line-height:1.06;margin:20px 0 0;letter-spacing:-.5px}
+  h1 .g{color:var(--vi)}
+  .lede{color:var(--muted);font-size:17px;max-width:60ch;margin-top:14px}
+  .pep{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--vi);
+    border-radius:14px;padding:16px 19px;font-size:15px;color:var(--text)}
+  .how{margin-top:14px;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:14px 18px;font-size:13.5px;color:var(--muted)}
+  .how b{color:var(--text)}
+
+  .m-head{font-family:var(--disp);font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--muted-2);margin:36px 0 14px;display:flex;align-items:center;gap:12px}
+  .m-head::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  .task{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:14px;transition:border-color .3s,box-shadow .3s}
+  .task.done{border-color:var(--on-dim);box-shadow:0 0 0 1px var(--on-dim) inset}
+  .t-top{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+  .t-no{font-family:var(--disp);font-weight:700;font-size:14px;color:var(--bg);background:var(--vi);width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex-shrink:0}
+  .task.done .t-no{background:var(--on)}
+  .task.done .t-no::after{content:"✓";font-size:16px} .task.done .t-no .n{display:none}
+  .tier{font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);padding:4px 9px;border-radius:7px}
+  .t-title{font-family:var(--disp);font-weight:600;font-size:18px;margin:0}
+  .t-verb{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--vi);border:1px solid var(--vi-dim);padding:4px 9px;border-radius:8px}
+  .t-body{color:var(--muted);margin:12px 0 0;font-size:15px}.t-body b{color:var(--text)}
+
+  pre{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:16px;overflow-x:auto;margin:12px 0 0}
+  pre code{background:none;border:none;padding:0;color:#d4cff0;font-size:13.5px;line-height:1.75;white-space:pre}
+  .tok-c{color:#6b6488} .tok-s{color:#b8e6a0} .tok-k{color:#b39dff} .tok-f{color:#ffd479} .tok-n{color:#e0a86b}
+
+  .verify{margin-top:14px}
+  .v-in{width:100%;background:#0a0810;border:1px solid var(--line);border-radius:9px;padding:11px 13px;color:var(--text);font-family:var(--mono);font-size:13.5px}
+  .v-in:focus{border-color:var(--vi);outline:none}
+  .v-row{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .v-btn{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--bg);background:var(--vi);border:none;padding:10px 20px;border-radius:9px;cursor:pointer;transition:filter .2s,transform .12s}
+  .v-btn:hover{filter:brightness(1.08)} .v-btn:active{transform:scale(.99)}
+  .task.done .v-btn{background:transparent;color:var(--on);border:1px solid var(--on-dim)}
+  .fb{font-size:13px;font-weight:500}.fb.ok{color:var(--on)}.fb.no{color:var(--no)}.fb.tip{color:var(--muted)}
+  .tries-ind{font-family:var(--mono);font-size:12px;color:var(--hint);background:#1a1608;border:1px solid #4a3b12;border-radius:7px;padding:3px 9px;margin-top:10px;display:none}
+
+  .hintrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .hintbtn{background:none;border:1px solid var(--line);color:var(--hint);font-family:var(--body);font-weight:500;font-size:13px;padding:7px 13px;border-radius:9px;cursor:pointer}
+  .hintbtn:hover:not([disabled]){background:#1a1608;border-color:#4a3b12}
+  .hintbtn[disabled]{opacity:.35;cursor:not-allowed}
+  .hintbox{max-height:0;overflow:hidden;transition:max-height .4s ease}
+  .hintbox.open{max-height:340px}
+  .hint-in{margin-top:10px;background:#160f00;border:1px solid #4a3b12;border-radius:11px;padding:12px 14px;color:#e9d9b3;font-size:14px}
+  .hint-in code{background:#241a05;border-color:#4a3b12;color:#ffd479}
+  .hint-in .skel{display:block;background:#0f0a00;border:1px solid #4a3b12;border-radius:8px;padding:10px 12px;margin-top:8px;font-family:var(--mono);font-size:12.5px;color:#ffd479;white-space:pre;line-height:1.7}
+  .hint-in b.lbl{display:block;font-family:var(--mono);font-size:11px;letter-spacing:1px;color:#b08a3a;text-transform:uppercase;margin-bottom:5px}
+
+  /* surprise */
+  .surprise{opacity:0;max-height:0;overflow:hidden;transition:opacity .5s,max-height .6s ease;margin-top:8px}
+  .surprise.reveal{opacity:1;max-height:900px;margin-top:20px}
+  .sp-card{background:linear-gradient(160deg,#1e1636,#130f22);border:1px solid var(--vi-dim);border-radius:18px;padding:26px;text-align:center}
+  .sp-card .tro{font-size:46px}
+  .sp-card h2{font-family:var(--disp);margin:8px 0 4px;font-size:26px;color:var(--vi)}
+  .sp-card p{color:var(--text);font-size:15px;max-width:52ch;margin:8px auto 0}
+  .sp-secret{margin-top:18px;background:#0f0a1c;border:1px dashed var(--vi-dim);border-radius:12px;padding:16px;text-align:left}
+  .sp-secret .lbl{font-family:var(--mono);font-size:11px;letter-spacing:1px;color:var(--vi);text-transform:uppercase}
+  .sp-secret h3{font-family:var(--disp);margin:4px 0 8px;font-size:17px}
+  .sp-secret pre{margin-top:8px}
+
+  .report{background:var(--panel);border:1px solid var(--vi-dim);border-radius:16px;padding:22px;margin-top:20px}
+  .report h3{font-family:var(--disp);margin:0 0 6px;font-size:19px}.report p{color:var(--muted);font-size:14px;margin:0 0 14px}
+  .r-report{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--bg);background:var(--vi);border:none;padding:10px 20px;border-radius:9px;cursor:pointer}
+  .r-report:hover{filter:brightness(1.08)}
+  .reportOut{width:100%;margin-top:12px;display:none;min-height:140px;background:#0a0810;border:1px solid var(--line);border-radius:9px;padding:12px;color:var(--text);font-family:var(--mono);font-size:12.5px}
+  .msg{font-size:13px;font-weight:500;margin-left:10px}.msg.ok{color:var(--on)}.msg.tip{color:var(--muted)}
+
+  .note{color:var(--muted);font-size:14px;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:15px 17px;margin-top:16px}
+  footer{text-align:center;color:var(--muted-2);font-size:13px;padding:38px 0;font-family:var(--mono)}
+  #saveInd{position:fixed;left:18px;bottom:18px;z-index:70;font-family:var(--mono);font-size:12px;background:#161326;border:1px solid var(--vi-dim);color:var(--vi);padding:9px 14px;border-radius:10px;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;pointer-events:none;box-shadow:0 8px 24px #0006}
+  #saveInd.show{opacity:1;transform:translateY(0)}#saveInd.warn{border-color:#6b2b2b;color:var(--no)}
+  #resetBtn{margin-top:14px;background:none;border:1px solid var(--line);color:var(--muted-2);font-family:var(--mono);font-size:11px;padding:7px 13px;border-radius:8px;cursor:pointer}
+  #resetBtn:hover{color:var(--muted);border-color:var(--muted-2)}
+  #toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,120px);z-index:60;background:var(--panel);border:1px solid var(--vi-dim);border-radius:14px;padding:14px 22px;box-shadow:0 12px 40px #0008;transition:transform .45s cubic-bezier(.2,.9,.2,1);text-align:center}
+  #toast.show{transform:translate(-50%,0)}#toast .t-lvl{font-family:var(--disp);font-weight:700;color:var(--vi)}#toast .t-sub{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="hud">
+  <div class="hud-in">
+    <div><div class="hud-t">Döngü Antrenmanı</div><div class="hud-s">for X in Y</div></div>
+    <div class="pr-wrap">
+      <div class="pr-top"><span>Antrenman</span><span><b id="cnt">0</b>/6 tamamlandı</span></div>
+      <div class="pr-bar"><div class="pr-fill" id="prFill"></div></div>
+    </div>
+    <div class="flame" id="flame">🔥</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <section class="hero">
+    <span class="eyebrow">🔁 TEK KONU: DÖNGÜLER</span>
+    <h1>Bu hafta <span class="g">for</span> senin dostun olacak</h1>
+    <p class="lede">Geçen sefer <code>for sayı in sayılar</code> kısmında takıldın — hiç sorun değil, herkes orada takılır.
+      Bu antrenman tam o kası inşa etmek için. En basitten başlıyoruz, adım adım.</p>
+    <div class="pep">💪 Söz veriyorum: bu 6 görevi bitirdiğinde <b>for döngüsü</b> senin için kolay bir refleks olacak.
+      Ve sonunda <b>küçük bir sürpriz</b> var — ama önce hepsini bitirmelisin 😏</div>
+    <div class="how"><b>Nasıl:</b> Her görevde kodu <b>kendin yaz</b>, bilgisayarında çalıştır, çıktıyı kutuya gir.
+      Takılırsan ipucu var: İpucu 1 yön verir, İpucu 2 iskeleti gösterir (boşlukları sen doldurursun),
+      İpucu 3 (3 denemeden sonra) <b>başka bir örnekle</b> çözümü anlatır — ama senin cevabını asla vermez. 🧭</div>
+  </section>
+
+  <div class="m-head">Antrenman</div>
+
+  <!-- G1 OKU -->
+  <article class="task" data-task data-type="out" data-ans="YWwgbW9yIHllc2ls">
+    <div class="t-top"><span class="t-no"><span class="n">1</span></span><span class="tier">Isınma</span><h2 class="t-title">Her elemanı gör</h2><span class="t-verb">OKU</span></div>
+    <p class="t-body"><b>Ne yazdırır?</b> (Çıktıları boşlukla ayırarak yaz: örn. <code>x y z</code>)</p>
+    <pre><code>renkler = [<span class="tok-s">"al"</span>, <span class="tok-s">"mor"</span>, <span class="tok-s">"yesil"</span>]
+<span class="tok-k">for</span> renk <span class="tok-k">in</span> renkler:
+    <span class="tok-f">print</span>(renk)</code></pre>
+    <div class="verify"><input class="v-in" placeholder="al mor ..."><div class="v-row"><button class="v-btn">Kontrol et</button><span class="fb tip"></span></div></div>
+    <div class="hintrow"><button class="hintbtn" data-h="1">💡 İpucu 1</button><button class="hintbtn" data-h="2">💡 İpucu 2</button><button class="hintbtn" data-h="3" disabled>🔒 İpucu 3</button></div>
+    <div class="hintbox" data-hb="1"><div class="hint-in"><b class="lbl">İpucu 1 · Fikir</b>Döngü, listedeki her elemanı sırayla <code>renk</code> değişkenine koyar; sonra o satırı çalıştırır. Yani her tur bir renk yazdırılır.</div></div>
+    <div class="hintbox" data-hb="2"><div class="hint-in"><b class="lbl">İpucu 2 · Sıra</b>1. tur: renk = "al" → yazdırır. 2. tur: renk = "mor". 3. tur: renk = "yesil". Sırayla düşün.</div></div>
+    <div class="hintbox" data-hb="3"><div class="hint-in"><b class="lbl">İpucu 3 · Biçim</b>Üç kelime çıkıyor. Kutuya boşlukla ayırarak yaz: <code>birinci ikinci ucuncu</code> gibi.</div></div>
+  </article>
+
+  <!-- G2 SAY -->
+  <article class="task" data-task data-type="out" data-ans="Ng==">
+    <div class="t-top"><span class="t-no"><span class="n">2</span></span><span class="tier">Say</span><h2 class="t-title">Kaç tane var?</h2><span class="t-verb">YAZ</span></div>
+    <p class="t-body"><b>Görev:</b> Listede kaç sayı olduğunu <b>döngüyle sayarak</b> yazdır. (<code>len()</code> kullanma — amaç döngü kurmak.)</p>
+    <pre><code>sayilar = [<span class="tok-n">4</span>, <span class="tok-n">8</span>, <span class="tok-n">15</span>, <span class="tok-n">16</span>, <span class="tok-n">23</span>, <span class="tok-n">42</span>]
+<span class="tok-c"># kaç eleman var? döngüyle say ve yazdır</span></code></pre>
+    <div class="verify"><input class="v-in" placeholder="programının çıktısı..."><div class="v-row"><button class="v-btn">Kontrol et</button><span class="fb tip"></span></div></div>
+    <div class="hintrow"><button class="hintbtn" data-h="1">💡 İpucu 1</button><button class="hintbtn" data-h="2">💡 İpucu 2</button><button class="hintbtn" data-h="3" disabled>🔒 İpucu 3</button></div>
+    <div class="hintbox" data-hb="1"><div class="hint-in"><b class="lbl">İpucu 1 · Fikir</b>Bir <b>sayaç</b> düşün. Başta 0. Döngüde her elemana rastladığında sayacı 1 artır.</div></div>
+    <div class="hintbox" data-hb="2"><div class="hint-in"><b class="lbl">İpucu 2 · İskelet</b>Boşlukları sen doldur:<span class="skel">adet = 0
+for ___ in ___:
+    adet += 1
+print(adet)</span></div></div>
+    <div class="hintbox" data-hb="3"><div class="hint-in"><b class="lbl">İpucu 3 · Başka örnek</b>Diyelim <code>harfler = ["a", "b"]</code> kaç eleman? <span class="skel">adet = 0
+for h in harfler:
+    adet += 1
+print(adet)   # çıktı: 2</span>Aynı mantığı kendi listende uygula. Cevabını sana vermiyorum — sen bul 😉</div></div>
+  </article>
+
+  <!-- G3 TOPLA -->
+  <article class="task" data-task data-type="out" data-ans="MTAw">
+    <div class="t-top"><span class="t-no"><span class="n">3</span></span><span class="tier">Topla</span><h2 class="t-title">Hepsini topla</h2><span class="t-verb">YAZ</span></div>
+    <p class="t-body"><b>Görev:</b> Tüm sayıların toplamını <b>döngüyle</b> hesaplayıp yazdır.</p>
+    <pre><code>sayilar = [<span class="tok-n">10</span>, <span class="tok-n">20</span>, <span class="tok-n">30</span>, <span class="tok-n">40</span>]
+<span class="tok-c"># tüm sayıların toplamını yazdır</span></code></pre>
+    <div class="verify"><input class="v-in" placeholder="programının çıktısı..."><div class="v-row"><button class="v-btn">Kontrol et</button><span class="fb tip"></span></div></div>
+    <div class="hintrow"><button class="hintbtn" data-h="1">💡 İpucu 1</button><button class="hintbtn" data-h="2">💡 İpucu 2</button><button class="hintbtn" data-h="3" disabled>🔒 İpucu 3</button></div>
+    <div class="hintbox" data-hb="1"><div class="hint-in"><b class="lbl">İpucu 1 · Fikir</b>Bir <b>toplam</b> biriktir. Başta 0. Döngüde her sayıyı toplama ekle.</div></div>
+    <div class="hintbox" data-hb="2"><div class="hint-in"><b class="lbl">İpucu 2 · İskelet</b><span class="skel">toplam = 0
+for ___ in ___:
+    toplam += ___
+print(toplam)</span></div></div>
+    <div class="hintbox" data-hb="3"><div class="hint-in"><b class="lbl">İpucu 3 · Başka örnek</b><code>[2, 3]</code> toplamı: <span class="skel">toplam = 0
+for s in liste:
+    toplam += s
+print(toplam)   # çıktı: 5</span>Aynısını kendi listende yap.</div></div>
+  </article>
+
+  <!-- G4 FİLTRELE -->
+  <article class="task" data-task data-type="out" data-ans="MzI=">
+    <div class="t-top"><span class="t-no"><span class="n">4</span></span><span class="tier">Filtrele</span><h2 class="t-title">Sadece bazılarını topla</h2><span class="t-verb">YAZ</span></div>
+    <p class="t-body"><b>Görev:</b> Sadece <b>10'dan büyük</b> olan sayıların toplamını yazdır.</p>
+    <pre><code>sayilar = [<span class="tok-n">3</span>, <span class="tok-n">8</span>, <span class="tok-n">5</span>, <span class="tok-n">12</span>, <span class="tok-n">7</span>, <span class="tok-n">20</span>]
+<span class="tok-c"># 10'dan büyük olanların toplamını yazdır</span></code></pre>
+    <div class="verify"><input class="v-in" placeholder="programının çıktısı..."><div class="v-row"><button class="v-btn">Kontrol et</button><span class="fb tip"></span></div></div>
+    <div class="hintrow"><button class="hintbtn" data-h="1">💡 İpucu 1</button><button class="hintbtn" data-h="2">💡 İpucu 2</button><button class="hintbtn" data-h="3" disabled>🔒 İpucu 3</button></div>
+    <div class="hintbox" data-hb="1"><div class="hint-in"><b class="lbl">İpucu 1 · Fikir</b>Topla ama <b>koşullu</b>: sadece sayı 10'dan büyükse ekle. Yani döngünün <b>içinde</b> bir <code>if</code>.</div></div>
+    <div class="hintbox" data-hb="2"><div class="hint-in"><b class="lbl">İpucu 2 · İskelet</b><span class="skel">toplam = 0
+for ___ in ___:
+    if ___ > 10:
+        toplam += ___
+print(toplam)</span></div></div>
+    <div class="hintbox" data-hb="3"><div class="hint-in"><b class="lbl">İpucu 3 · Başka örnek</b><code>[5, 12]</code> içinde 8'den büyükleri topla: 12 > 8 doğru, 5 değil → toplam <b>12</b>. Sadece koşulu geçenleri eklersin. Kendi listende 10 eşiğiyle yap.</div></div>
+  </article>
+
+  <!-- G5 BUL -->
+  <article class="task" data-task data-type="out" data-ans="Njc=">
+    <div class="t-top"><span class="t-no"><span class="n">5</span></span><span class="tier">Bul</span><h2 class="t-title">En büyüğü yakala</h2><span class="t-verb">YAZ</span></div>
+    <p class="t-body"><b>Görev:</b> En büyük sayıyı <b>döngüyle</b> bul ve yazdır. (<code>max()</code> kullanma — kendin bul.)</p>
+    <pre><code>sayilar = [<span class="tok-n">23</span>, <span class="tok-n">45</span>, <span class="tok-n">12</span>, <span class="tok-n">67</span>, <span class="tok-n">34</span>]
+<span class="tok-c"># en büyük sayıyı döngüyle bul ve yazdır</span></code></pre>
+    <div class="verify"><input class="v-in" placeholder="programının çıktısı..."><div class="v-row"><button class="v-btn">Kontrol et</button><span class="fb tip"></span></div></div>
+    <div class="hintrow"><button class="hintbtn" data-h="1">💡 İpucu 1</button><button class="hintbtn" data-h="2">💡 İpucu 2</button><button class="hintbtn" data-h="3" disabled>🔒 İpucu 3</button></div>
+    <div class="hintbox" data-hb="1"><div class="hint-in"><b class="lbl">İpucu 1 · Fikir</b>"Şimdiye kadarki en büyük"ü bir değişkende sakla. Döngüde daha büyüğünü görünce onu güncelle.</div></div>
+    <div class="hintbox" data-hb="2"><div class="hint-in"><b class="lbl">İpucu 2 · İskelet</b><span class="skel">en_buyuk = sayilar[0]
+for ___ in ___:
+    if ___ > en_buyuk:
+        en_buyuk = ___
+print(en_buyuk)</span></div></div>
+    <div class="hintbox" data-hb="3"><div class="hint-in"><b class="lbl">İpucu 3 · Başka örnek</b><code>[3, 9, 5]</code>: en_buyuk=3 başlar → 9>3 güncelle=9 → 5>9 hayır → sonuç <b>9</b>. Aynı adımları kendi listende izle.</div></div>
+  </article>
+
+  <!-- G6 ÜRET -->
+  <article class="task" data-task data-type="out" data-ans="MzA=">
+    <div class="t-top"><span class="t-no"><span class="n">6</span></span><span class="tier">Üret</span><h2 class="t-title">Kareler toplamı</h2><span class="t-verb">YAZ</span></div>
+    <p class="t-body"><b>Görev:</b> Her sayının <b>karesini</b> (sayı × sayı) topla ve toplamı yazdır.</p>
+    <pre><code>sayilar = [<span class="tok-n">1</span>, <span class="tok-n">2</span>, <span class="tok-n">3</span>, <span class="tok-n">4</span>]
+<span class="tok-c"># her sayının karesini topla ve yazdır</span></code></pre>
+    <div class="verify"><input class="v-in" placeholder="programının çıktısı..."><div class="v-row"><button class="v-btn">Kontrol et</button><span class="fb tip"></span></div></div>
+    <div class="hintrow"><button class="hintbtn" data-h="1">💡 İpucu 1</button><button class="hintbtn" data-h="2">💡 İpucu 2</button><button class="hintbtn" data-h="3" disabled>🔒 İpucu 3</button></div>
+    <div class="hintbox" data-hb="1"><div class="hint-in"><b class="lbl">İpucu 1 · Fikir</b>Bir sayının karesi = <code>sayı * sayı</code>. Bunları döngüde bir toplama ekle.</div></div>
+    <div class="hintbox" data-hb="2"><div class="hint-in"><b class="lbl">İpucu 2 · İskelet</b><span class="skel">toplam = 0
+for ___ in ___:
+    toplam += ___ * ___
+print(toplam)</span></div></div>
+    <div class="hintbox" data-hb="3"><div class="hint-in"><b class="lbl">İpucu 3 · Başka örnek</b><code>[2, 3]</code> kareleri toplamı: 2×2 + 3×3 = 4 + 9 = <b>13</b>. Aynı yöntemle kendi listende dört sayıyı topla.</div></div>
+  </article>
+
+  <!-- SURPRISE (gizli) -->
+  <div class="surprise" id="surprise">
+    <div class="sp-card">
+      <div class="tro">🏆</div>
+      <h2>Sürpriz açıldı!</h2>
+      <p>Bir hafta önce <code>for sayı in sayılar</code> yazamıyordun. Az önce <b>6 farklı döngü</b> yazdın:
+        okudun, saydın, topladın, filtreledin, en büyüğü buldun ve kareleri topladın. İşte gelişim tam olarak bu. 🔥</p>
+      <div class="sp-secret">
+        <span class="lbl">🎁 Gizli Bonus Görev (sadece isteyene)</span>
+        <h3>Süper Döngü Ustası Rozeti</h3>
+        <p style="margin:0;color:var(--muted);font-size:14px">Şunu çözersen tam usta olursun: Aşağıdaki listede
+          <b>çift sayıların kaç tane</b> olduğunu döngüyle bul. Cevabı derste bana söyle 😎</p>
+        <pre><code>sayilar = [<span class="tok-n">7</span>, <span class="tok-n">4</span>, <span class="tok-n">9</span>, <span class="tok-n">2</span>, <span class="tok-n">6</span>, <span class="tok-n">3</span>, <span class="tok-n">8</span>]
+<span class="tok-c"># kaç tane çift sayı var? (döngü + if + sayaç)</span></code></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="m-head">Bitirince</div>
+  <div class="report">
+    <h3>📤 Hocana rapor gönder</h3>
+    <p>Bitirince bu butona bas — hangi görevleri yaptığın ve cevapların tek metin olur, hocana yapıştır.</p>
+    <button class="r-report" id="reportBtn">Raporu kopyala</button><span class="msg tip" id="reportMsg"></span>
+    <textarea class="reportOut" id="reportOut" readonly></textarea>
+  </div>
+
+  <div class="note">🧭 Bir görevi çözemiyorsan <b>not al</b> — derste birlikte bakarız. Takılmak utanılacak değil,
+    öğrenmenin ta kendisi. Bu ödevi bitirdiğinde döngüler artık senin dostun olacak. 💪</div>
+</div>
+
+<footer>KODLAYIN // DÖNGÜ ANTRENMANI</footer>
+<div id="toast"><div class="t-lvl">6/6 — Döngü Ustası! 🔥</div><div class="t-sub">Sürprizini aç ↓</div></div>
+
+<script>
+(function(){
+  var KEY="kodlayin.dongu-antrenman.v1", TOTAL=6;
+  var storageOK=true, booting=true, wasFull=false;
+  var prFill=document.getElementById('prFill'), cnt=document.getElementById('cnt'), flame=document.getElementById('flame');
+  var toast=document.getElementById('toast'), surprise=document.getElementById('surprise');
+  var tasks=[].slice.call(document.querySelectorAll('[data-task]'));
+  var tTimer, indTimer;
+
+  function dec(b){ return decodeURIComponent(escape(atob(b))); }
+  function norm(t){ return (t||'').replace(/\s+/g,' ').trim().toLowerCase(); }
+
+  var ind=document.createElement('div'); ind.id='saveInd'; document.body.appendChild(ind);
+  function flash(m,w){ ind.textContent=m; ind.className=w?'show warn':'show'; clearTimeout(indTimer); indTimer=setTimeout(function(){ ind.className=w?'warn':''; },1900); }
+
+  try{ localStorage.setItem('__k','1'); localStorage.removeItem('__k'); }catch(e){ storageOK=false; }
+
+  function save(){
+    if(!storageOK) return;
+    try{
+      var data={v:1,items:tasks.map(function(t){
+        return {d:t.classList.contains('done'), t:parseInt(t.getAttribute('data-tries')||'0',10),
+                hu:t.getAttribute('data-hintused')==='1', a:t.querySelector('.v-in').value};
+      })};
+      localStorage.setItem(KEY,JSON.stringify(data)); flash('İlerlemen kaydedildi ✓',false);
+    }catch(e){ storageOK=false; flash('Kayıt yapılamadı — dosyayı indirip aç',true); }
+  }
+  function load(){
+    if(!storageOK) return;
+    try{
+      var raw=localStorage.getItem(KEY); if(!raw) return; var d=JSON.parse(raw);
+      (d.items||[]).forEach(function(it,i){
+        var t=tasks[i]; if(!t) return;
+        t.setAttribute('data-tries', it.t||0); t.querySelector('.v-in').value=it.a||'';
+        if(it.hu) t.setAttribute('data-hintused','1');
+        if((it.t||0)>=3) unlock3(t);
+        if(it.d) setDone(t,true);
+        updateTries(t);
+      });
+    }catch(e){ storageOK=false; }
+  }
+  function unlock3(t){ var b=t.querySelector('.hintbtn[data-h="3"]'); if(b&&b.disabled){ b.disabled=false; b.textContent='💡 İpucu 3'; } }
+  function updateTries(t){
+    var el=t.querySelector('.tries-ind'); if(!el) return;
+    var n=parseInt(t.getAttribute('data-tries')||'0',10);
+    if(n<=0 || t.classList.contains('done')){ el.style.display='none'; return; }
+    el.style.display='inline-block';
+    el.textContent='🔍 '+n+' deneme'+(n>=3?' · ipucu 3 açık':' · 3. denemede ipucu 3 açılır');
+  }
+  function setDone(t,silent){
+    t.classList.add('done'); t.querySelector('.v-btn').textContent='Tamam ✓';
+    t.querySelector('.v-in').setAttribute('disabled','disabled'); updateTries(t);
+    if(!silent){ var fb=t.querySelector('.fb'); fb.className='fb ok'; fb.textContent='Doğru! ✅'; }
+  }
+  function doneCount(){ var n=0; tasks.forEach(function(t){ if(t.classList.contains('done')) n++; }); return n; }
+  function render(){
+    var n=doneCount(), pct=Math.round(n/TOTAL*100);
+    prFill.style.width=pct+'%'; cnt.textContent=n;
+    if(n>=TOTAL) flame.classList.add('on'); else flame.classList.remove('on');
+    var full=(n===TOTAL);
+    if(full){ surprise.classList.add('reveal'); }
+    else { surprise.classList.remove('reveal'); }
+    if(full && !wasFull && !booting){
+      toast.classList.add('show'); clearTimeout(tTimer); tTimer=setTimeout(function(){ toast.classList.remove('show'); },3600);
+    }
+    wasFull=full;
+  }
+
+  tasks.forEach(function(t){
+    var btn=t.querySelector('.v-btn'), inp=t.querySelector('.v-in'), fb=t.querySelector('.fb');
+    var ti=document.createElement('span'); ti.className='tries-ind'; ti.style.display='none';
+    fb.parentNode.parentNode.appendChild(ti);
+
+    btn.addEventListener('click',function(){
+      if(t.classList.contains('done')) return;
+      var got=norm(inp.value);
+      if(got===''){ fb.className='fb tip'; fb.textContent='Önce çıktıyı yaz.'; return; }
+      var exp=norm(dec(t.getAttribute('data-ans')));
+      if(got===exp){ setDone(t,false); render(); save(); }
+      else{
+        var n=parseInt(t.getAttribute('data-tries')||'0',10)+1; t.setAttribute('data-tries',n);
+        fb.className='fb no';
+        if(n>=3){ unlock3(t); fb.textContent='Henüz değil — İpucu 3 açıldı 🔓 (başka bir örnekle anlatıyor)'; }
+        else{ fb.textContent='Henüz değil. Kodunu çalıştır, çıktıyı aynen yaz. İpuçlarına bak.'; }
+        updateTries(t); save();
+      }
+    });
+    inp.addEventListener('input',function(){ if(!t.classList.contains('done')){ fb.textContent=''; fb.className='fb tip'; } });
+
+    t.querySelectorAll('.hintbtn').forEach(function(b){
+      b.addEventListener('click',function(){
+        if(b.disabled) return;
+        var h=b.getAttribute('data-h'), box=t.querySelector('.hintbox[data-hb="'+h+'"]');
+        var open=box.classList.toggle('open'); b.textContent=open?('🔽 İpucu '+h):('💡 İpucu '+h);
+        if(open){ t.setAttribute('data-hintused','1'); save(); }
+      });
+    });
+  });
+
+  document.getElementById('reportBtn').addEventListener('click',function(){
+    var n=doneCount();
+    var names=['Her elemanı gör (oku)','Kaç tane var (say)','Hepsini topla','Sadece bazılarını topla (filtre)','En büyüğü bul','Kareler toplamı'];
+    var lines=['DÖNGÜ ANTRENMANI — Eren','Tamamlanan: '+n+'/'+TOTAL,''];
+    tasks.forEach(function(t,i){
+      var d=t.classList.contains('done'), tr=t.getAttribute('data-tries')||'0';
+      var hu=t.getAttribute('data-hintused')==='1'?' · ipucu':'';
+      lines.push((d?'✔':'✗')+' '+names[i]+(tr!=='0'?'  (deneme: '+tr+')':'')+hu);
+    });
+    if(n===TOTAL) lines.push('','🏆 Sürprizi açtı — Döngü Ustası!');
+    var text=lines.join('\n'), out=document.getElementById('reportOut'), msg=document.getElementById('reportMsg');
+    out.value=text; out.style.display='block';
+    navigator.clipboard.writeText(text).then(function(){ msg.className='msg ok'; msg.textContent='Kopyalandı ✓'; })
+      .catch(function(){ msg.className='msg tip'; msg.textContent='Aşağıdaki metni seçip kopyala.'; });
+  });
+
+  var f=document.querySelector('footer');
+  var rb=document.createElement('button'); rb.id='resetBtn'; rb.type='button'; rb.textContent='İlerlemeyi sıfırla';
+  rb.addEventListener('click',function(){
+    if(!confirm('Tüm ilerlemen silinecek. Emin misin?')) return;
+    try{ localStorage.removeItem(KEY); }catch(e){}
+    tasks.forEach(function(t){
+      t.classList.remove('done'); t.setAttribute('data-tries','0'); t.removeAttribute('data-hintused');
+      var inp=t.querySelector('.v-in'); inp.value=''; inp.removeAttribute('disabled');
+      t.querySelector('.v-btn').textContent='Kontrol et'; t.querySelector('.fb').textContent='';
+      var h3=t.querySelector('.hintbtn[data-h="3"]'); if(h3){ h3.disabled=true; h3.textContent='🔒 İpucu 3'; }
+      t.querySelectorAll('.hintbox').forEach(function(hb){ hb.classList.remove('open'); });
+      updateTries(t);
+    });
+    booting=true; render(); booting=false; flash('İlerleme sıfırlandı');
+  });
+  f.appendChild(document.createElement('br')); f.appendChild(rb);
+
+  load(); render(); booting=false;
+  if(!storageOK) flash('Bu tarayıcıda kayıt kapalı — ilerleme saklanmayacak',true);
+  else if(doneCount()>0) flash('Kaldığın yerden devam ✓');
+})();
+</script>
+</body>
+</html>
