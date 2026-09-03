@@ -112,6 +112,42 @@
   .msg{font-size:13px;font-weight:500;margin-left:10px}.msg.ok{color:var(--on)}.msg.tip{color:var(--muted)}
 
   .note{color:var(--muted);font-size:14px;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:15px 17px;margin-top:16px}
+
+  /* intro concept section */
+  .intro-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px}
+  .intro-card h2{font-family:var(--disp);font-weight:600;font-size:19px;margin:0 0 10px;color:var(--text)}
+  .intro-card p{color:var(--muted);font-size:14.5px;line-height:1.7;margin:0 0 6px}
+  .intro-card p b{color:var(--text)}
+  .badge-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+  .badge{font-family:var(--mono);font-size:11px;padding:5px 11px;border-radius:100px;border:1px solid var(--line);color:var(--muted)}
+  .badge.cls{color:var(--cls);border-color:var(--cls-dim)}
+  .badge.obj{color:var(--obj);border-color:var(--obj-dim)}
+
+  .cmp-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  @media (max-width:640px){.cmp-wrap{grid-template-columns:1fr}}
+  .cmp-col{border-radius:14px;padding:18px;border:1px solid var(--line)}
+  .cmp-col.old{background:#1a1015;border-color:#5c2a2a}
+  .cmp-col.new{background:#0f1e19;border-color:var(--obj-dim)}
+  .cmp-col h3{font-family:var(--disp);font-size:14.5px;margin:0 0 4px}
+  .cmp-col.old h3{color:#ff9b9b}
+  .cmp-col.new h3{color:var(--obj)}
+  .cmp-col .sub{font-size:12px;color:var(--muted);margin-bottom:12px}
+  .cmp-col pre{margin:0;background:#0a0810;border-color:var(--line)}
+  .cmp-col pre code{font-size:12px}
+
+  .kterm{width:100%;border-collapse:separate;border-spacing:0;margin-top:14px;font-size:13.5px}
+  .kterm th{font-family:var(--disp);font-weight:600;font-size:12px;text-align:left;color:var(--text);
+    background:var(--panel-2);padding:11px 13px;border-bottom:2px solid var(--line)}
+  .kterm td{padding:12px 13px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--muted);line-height:1.55}
+  .kterm tr:last-child td{border-bottom:none}
+  .kterm .kt-term{font-family:var(--mono);font-weight:600;color:var(--cls);white-space:nowrap}
+  .kterm .kt-what{color:var(--text)}
+  .kterm code{font-size:12px}
+  .kterm-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px}
+  .kterm-wrap table{border-radius:14px;overflow:hidden}
+
+  .whybox{background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:16px 19px;margin-top:16px}
+  .whybox b{color:var(--text)}
   footer{text-align:center;color:var(--muted-2);font-size:13px;padding:38px 0;font-family:var(--mono)}
   #saveInd{position:fixed;left:18px;bottom:18px;z-index:70;font-family:var(--mono);font-size:12px;background:#151129;border:1px solid var(--obj-dim);color:var(--obj);padding:9px 14px;border-radius:10px;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;pointer-events:none;box-shadow:0 8px 24px #0006}
   #saveInd.show{opacity:1;transform:translateY(0)}#saveInd.warn{border-color:#6b2b2b;color:var(--no)}
@@ -146,7 +182,101 @@
       yeteneklerine sahip olsun.</div>
   </section>
 
-  <div class="m-head">Önce gör: sınıfın anatomisi</div>
+  <div class="m-head">Önce anla: Nesne Yönelimli Programlama nedir?</div>
+
+  <div class="intro-card">
+    <h2>🧩 Bir problemin çözümü olarak doğdu</h2>
+    <p>Şimdiye kadar yazdığın kodlarda (SpeakGuard dahil) <b>veri</b> (sözlükler, listeler) ile o veriyi
+      <b>işleyen fonksiyonlar</b> hep birbirinden ayrı duruyordu. Program büyüdükçe hangi fonksiyonun hangi
+      veriyle çalıştığını takip etmek zorlaşıyor.</p>
+    <p><b>Nesne Yönelimli Programlama (OOP)</b>, bu ikisini <b>tek bir pakette</b> birleştirme fikridir:
+      veriyi ve o veriyle çalışan fonksiyonları aynı kutuya koyarız. Bu kutuya <b>sınıf (class)</b> deriz.</p>
+    <div class="badge-row">
+      <span class="badge cls">class = kalıp / tasarım</span>
+      <span class="badge obj">object = kalıptan üretilen gerçek şey</span>
+    </div>
+  </div>
+
+  <div class="intro-card">
+    <h2>⚖️ Eskisi ile yenisi yan yana</h2>
+    <p>SpeakGuard'da cümleleri ve puanı nasıl tuttuğumuzu hatırla — veri ve fonksiyon ayrıydı.
+      OOP'ta ikisi birleşiyor. Aynı fikri iki şekilde yazalım:</p>
+    <div class="cmp-wrap">
+      <div class="cmp-col old">
+        <h3>❌ Eski yöntem (veri + fonksiyon ayrı)</h3>
+        <div class="sub">SpeakGuard'da yaptığımız gibi</div>
+        <pre><code><span class="tok-c"># Veri, ayrı bir sözlükte</span>
+oyuncu = {<span class="tok-s">"isim"</span>: <span class="tok-s">"Eren"</span>, <span class="tok-s">"puan"</span>: <span class="tok-n">0</span>}
+
+<span class="tok-c"># Fonksiyon, tamamen ayrı</span>
+<span class="tok-k">def</span> <span class="tok-f">puan_ekle</span>(oyuncu):
+    oyuncu[<span class="tok-s">"puan"</span>] += <span class="tok-n">10</span></code></pre>
+      </div>
+      <div class="cmp-col new">
+        <h3>✅ OOP yöntemi (veri + fonksiyon bir arada)</h3>
+        <div class="sub">Bugün öğreneceğimiz yapı</div>
+        <pre><code><span class="tok-k">class</span> <span class="tok-f">Oyuncu</span>:
+    <span class="tok-k">def</span> <span class="tok-f">__init__</span>(<span class="tok-slf">self</span>, isim):
+        <span class="tok-slf">self</span>.isim = isim
+        <span class="tok-slf">self</span>.puan = <span class="tok-n">0</span>
+
+    <span class="tok-k">def</span> <span class="tok-f">puan_ekle</span>(<span class="tok-slf">self</span>):
+        <span class="tok-slf">self</span>.puan += <span class="tok-n">10</span></code></pre>
+      </div>
+    </div>
+    <div class="whybox">💡 <b>Fark ne?</b> Solda "oyuncu" verisini fonksiyona <i>parametre olarak göndermek</i> zorundayız.
+      Sağda ise <code>puan_ekle</code> zaten <code>Oyuncu</code>'nun içinde yaşıyor — kendi verisine doğrudan
+      ulaşabiliyor. Veri ile onu değiştiren kod artık aynı çatı altında.</div>
+  </div>
+
+  <div class="intro-card">
+    <h2>📖 Kavramlar sözlüğü — bugün öğreneceklerimiz</h2>
+    <p>Aşağıdaki 5 terimi bugün kod yazarak öğreneceksin. Şimdiden göz gezdir, ders ilerledikçe
+      her biri somutlaşacak.</p>
+    <div class="kterm-wrap">
+      <table class="kterm">
+        <tr><th>Terim</th><th>Ne işe yarar</th><th>Benzetme</th><th>Kodda nasıl görünür</th></tr>
+        <tr>
+          <td class="kt-term">class</td>
+          <td class="kt-what">Bir "şeyin" nasıl olacağını tanımlayan kalıp/şablon.</td>
+          <td>Kurabiye kalıbı, ev planı</td>
+          <td><code>class Kopek:</code></td>
+        </tr>
+        <tr>
+          <td class="kt-term">object<br/><span style="color:var(--muted);font-weight:400">(nesne)</span></td>
+          <td class="kt-what">Kalıptan üretilen, gerçekten var olan şey.</td>
+          <td>Kalıptan çıkan kurabiyenin kendisi</td>
+          <td><code>kopek1 = Kopek(...)</code></td>
+        </tr>
+        <tr>
+          <td class="kt-term">__init__</td>
+          <td class="kt-what">Bir nesne oluşturulduğu anda otomatik çalışan "kurucu" fonksiyon.</td>
+          <td>Doğum anı — ilk ayarların yapıldığı yer</td>
+          <td><code>def __init__(self, isim):</code></td>
+        </tr>
+        <tr>
+          <td class="kt-term">self</td>
+          <td class="kt-what">"Şu an işlem gören bu nesnenin kendisi" anlamına gelir.</td>
+          <td>Her köpeğin kendi tasması</td>
+          <td><code>self.isim = isim</code></td>
+        </tr>
+        <tr>
+          <td class="kt-term">öznitelik<br/><span style="color:var(--muted);font-weight:400">(attribute)</span></td>
+          <td class="kt-what">Her nesnenin kendine ait, farklı olabilen verisi.</td>
+          <td>Bir oyun karakterinin saç rengi, adı</td>
+          <td><code>self.enerji = 50</code></td>
+        </tr>
+        <tr>
+          <td class="kt-term">metot<br/><span style="color:var(--muted);font-weight:400">(method)</span></td>
+          <td class="kt-what">Sınıfın içine yazılan, tüm nesnelerde ortak çalışan fonksiyon.</td>
+          <td>Her karakterin "zıplama" yeteneği — aynı yetenek, farklı karakterde</td>
+          <td><code>def besle(self):</code></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="m-head">Şimdi gör: sınıfın anatomisi</div>
   <div class="diagram-card">
     <div class="dtoggle">
       <button class="dbtn active" data-part="all">Tümü</button>
