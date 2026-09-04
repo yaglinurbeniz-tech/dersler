@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini Görev: Zıplama Sayacı</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+    .task-card.done { outline: 3px solid #22c55e; outline-offset: -3px; }
+    .pop { animation: pop .4s ease; }
+    @keyframes pop { 0%{transform:scale(.96)} 60%{transform:scale(1.03)} 100%{transform:scale(1)} }
+  </style>
+</head>
+<body class="bg-[#FFF8EE] text-[#1d1d1f] font-sans">
+<main class="min-h-screen p-5 md:p-12">
+  <div class="max-w-3xl mx-auto space-y-6">
+
+    <!-- HEADER -->
+    <section class="bg-white rounded-[32px] shadow-sm p-7 md:p-12 border border-gray-200">
+      <div class="inline-block px-4 py-1 rounded-full bg-[#FF7A45] text-white text-xs font-bold mb-5">
+        SCRATCH MİNİ GÖREV
+      </div>
+      <h1 class="text-4xl md:text-5xl font-bold tracking-tight leading-tight">Zıplama Sayacı 🦘</h1>
+      <p class="text-gray-600 text-lg mt-4 leading-relaxed">
+        Merhaba İlhan! Bu görev oyun projemizden ayrı, küçük ve eğlenceli bir alıştırma.
+        Amacımız iki şeyi bir kez daha, yeni bir fikirle denemek: <b>kendi blok oluşturma</b> ve
+        <b>değişkenin başlangıç değeri</b>.
+      </p>
+
+      <div class="mt-7 grid md:grid-cols-2 gap-4">
+        <div class="bg-[#FFF3E9] rounded-3xl p-5">
+          <div class="text-2xl mb-2">🧩</div>
+          <h3 class="font-bold">Kendi Blok</h3>
+          <p class="text-gray-600 text-sm mt-1">"zıpla" adında kendi bloğunu oluşturacaksın.</p>
+        </div>
+        <div class="bg-[#EAF6FF] rounded-3xl p-5">
+          <div class="text-2xl mb-2">🔢</div>
+          <h3 class="font-bold">Değişken + Başlangıç</h3>
+          <p class="text-gray-600 text-sm mt-1">Bir sayaç 0'dan başlayıp her zıplamada artacak.</p>
+        </div>
+      </div>
+
+      <!-- PROGRESS -->
+      <div class="mt-7 bg-[#f5f5f7] rounded-3xl p-5">
+        <div class="flex items-center justify-between mb-3">
+          <span class="font-semibold">İlerlemen</span>
+          <span id="count" class="font-bold text-gray-500">0 / 6</span>
+        </div>
+        <div class="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+          <div id="bar" class="h-full bg-[#22c55e] rounded-full transition-all duration-500" style="width:0%"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEPS -->
+    <section class="bg-white rounded-[28px] p-6 md:p-10 border border-gray-200 shadow-sm">
+      <h2 class="text-2xl font-bold mb-6">📋 Adım Adım Yapalım</h2>
+
+      <div class="space-y-4">
+        <label class="task-card flex items-start gap-4 bg-[#f5f5f7] rounded-2xl p-5 cursor-pointer">
+          <input type="checkbox" class="step w-6 h-6 mt-0.5 accent-[#22c55e] flex-shrink-0" />
+          <div>
+            <p class="font-bold">1. Yeni bir değişken oluştur</p>
+            <p class="text-gray-600 text-sm mt-1">Değişkenler bölümünden <code class="bg-white px-1.5 py-0.5 rounded">Değişken Oluştur</code> de,
+              adını <b>zıplama_sayısı</b> koy.</p>
+          </div>
+        </label>
+
+        <label class="task-card flex items-start gap-4 bg-[#f5f5f7] rounded-2xl p-5 cursor-pointer">
+          <input type="checkbox" class="step w-6 h-6 mt-0.5 accent-[#22c55e] flex-shrink-0" />
+          <div>
+            <p class="font-bold">2. Başlangıç değerini ayarla</p>
+            <p class="text-gray-600 text-sm mt-1"><code class="bg-white px-1.5 py-0.5 rounded">Yeşil bayrak tıklandığında</code> bloğunun altına,
+              <code class="bg-white px-1.5 py-0.5 rounded">zıplama_sayısı'nı 0 yap</code> bloğunu ekle.
+              Böylece her oyun başladığında sayaç sıfırdan başlar.</p>
+          </div>
+        </label>
+
+        <label class="task-card flex items-start gap-4 bg-[#f5f5f7] rounded-2xl p-5 cursor-pointer">
+          <input type="checkbox" class="step w-6 h-6 mt-0.5 accent-[#22c55e] flex-shrink-0" />
+          <div>
+            <p class="font-bold">3. Kendi bloğunu oluştur</p>
+            <p class="text-gray-600 text-sm mt-1"><code class="bg-white px-1.5 py-0.5 rounded">Kendi Bloklarım</code> bölümünden
+              <code class="bg-white px-1.5 py-0.5 rounded">Blok Oluştur</code> de, adını <b>zıpla</b> koy.</p>
+          </div>
+        </label>
+
+        <label class="task-card flex items-start gap-4 bg-[#f5f5f7] rounded-2xl p-5 cursor-pointer">
+          <input type="checkbox" class="step w-6 h-6 mt-0.5 accent-[#22c55e] flex-shrink-0" />
+          <div>
+            <p class="font-bold">4. "zıpla" bloğunun içini doldur</p>
+            <p class="text-gray-600 text-sm mt-1">Sırayla ekle: <b>y konumunu 50 değiştir</b> → <b>0.2 saniye bekle</b> →
+              <b>y konumunu -50 değiştir</b> → <b>zıplama_sayısı'nı 1 artır</b>.
+              Karakter zıplayacak ve sayaç artacak.</p>
+          </div>
+        </label>
+
+        <label class="task-card flex items-start gap-4 bg-[#f5f5f7] rounded-2xl p-5 cursor-pointer">
+          <input type="checkbox" class="step w-6 h-6 mt-0.5 accent-[#22c55e] flex-shrink-0" />
+          <div>
+            <p class="font-bold">5. Bir tuşla çalıştır</p>
+            <p class="text-gray-600 text-sm mt-1"><code class="bg-white px-1.5 py-0.5 rounded">Boşluk tuşuna basıldığında</code> bloğunun altına
+              kendi <b>zıpla</b> bloğunu bağla.</p>
+          </div>
+        </label>
+
+        <label class="task-card flex items-start gap-4 bg-[#f5f5f7] rounded-2xl p-5 cursor-pointer">
+          <input type="checkbox" class="step w-6 h-6 mt-0.5 accent-[#22c55e] flex-shrink-0" />
+          <div>
+            <p class="font-bold">6. Test et!</p>
+            <p class="text-gray-600 text-sm mt-1">Yeşil bayrağa bas, sonra boşluk tuşuna birkaç kez bas.
+              Karakter zıplıyor mu? Sayaç artıyor mu? 🎉</p>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <!-- REFLECTION -->
+    <section class="bg-white rounded-[28px] p-6 md:p-10 border border-gray-200 shadow-sm">
+      <h2 class="text-2xl font-bold mb-2">💭 İki Kısa Soru</h2>
+      <p class="text-gray-600 mb-5">Doğru/yanlış yok, sadece ne düşündüğünü yaz. Hocan okuyacak.</p>
+
+      <div class="space-y-5">
+        <div>
+          <label class="font-semibold block mb-2">Değişkeni neden yeşil bayrakta sıfırladık?</label>
+          <textarea id="q1" class="w-full border border-gray-300 rounded-2xl p-4 text-sm" rows="2"
+            placeholder="Bence çünkü..."></textarea>
+        </div>
+        <div>
+          <label class="font-semibold block mb-2">Kendi blok oluşturmak sence neden faydalı?</label>
+          <textarea id="q2" class="w-full border border-gray-300 rounded-2xl p-4 text-sm" rows="2"
+            placeholder="Bence çünkü..."></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- REPORT -->
+    <section class="bg-white rounded-[28px] p-6 md:p-10 border border-gray-200 shadow-sm">
+      <h2 class="text-2xl font-bold mb-2">📤 Hocana Gönder</h2>
+      <p class="text-gray-600 mb-5">Bitirince bu butona bas — cevapların kopyalanacak, sonra hocana WhatsApp'tan yapıştır.</p>
+      <button id="reportBtn" class="bg-[#FF7A45] text-white font-bold px-6 py-3 rounded-2xl">Cevaplarımı kopyala</button>
+      <span id="reportMsg" class="ml-3 text-sm text-gray-500"></span>
+      <textarea id="reportOut" readonly class="w-full mt-4 border border-gray-300 rounded-2xl p-4 text-sm font-mono hidden" rows="8"></textarea>
+    </section>
+
+    <!-- DONE BANNER -->
+    <section id="finish" class="hidden bg-[#22c55e] text-white rounded-[28px] p-7 md:p-8 shadow-sm">
+      <h2 class="text-2xl font-bold mb-1">Harika iş! 🎉</h2>
+      <p class="text-white/90">Zıplama Sayacı hazır! Şimdi yukarıdaki "Hocana Gönder" butonuna bas.</p>
+    </section>
+
+    <p class="text-center text-gray-400 text-sm pb-6">Kodlayın · Scratch Mini Görev</p>
+  </div>
+</main>
+
+<script>
+  var KEY = "kodlayin.ilhan.ziplama-sayaci.v1";
+  var steps = document.querySelectorAll('.step');
+  var bar = document.getElementById('bar');
+  var count = document.getElementById('count');
+  var finish = document.getElementById('finish');
+  var q1 = document.getElementById('q1');
+  var q2 = document.getElementById('q2');
+  var storageOK = true;
+
+  try { localStorage.setItem('__t','1'); localStorage.removeItem('__t'); } catch(e){ storageOK = false; }
+
+  function save(){
+    if(!storageOK) return;
+    try{
+      var data = { steps: [], q1: q1.value, q2: q2.value };
+      steps.forEach(function(s){ data.steps.push(s.checked); });
+      localStorage.setItem(KEY, JSON.stringify(data));
+    }catch(e){}
+  }
+  function load(){
+    if(!storageOK) return;
+    try{
+      var raw = localStorage.getItem(KEY);
+      if(!raw) return;
+      var d = JSON.parse(raw);
+      (d.steps||[]).forEach(function(v,i){ if(steps[i]) steps[i].checked = !!v; });
+      q1.value = d.q1 || ''; q2.value = d.q2 || '';
+    }catch(e){}
+  }
+  function update(){
+    var done = 0;
+    steps.forEach(function(s){
+      if(s.checked){ done++; s.closest('.task-card').classList.add('done'); }
+      else { s.closest('.task-card').classList.remove('done'); }
+    });
+    bar.style.width = (done/steps.length*100) + '%';
+    count.textContent = done + ' / ' + steps.length;
+    if(done === steps.length){ finish.classList.remove('hidden'); finish.classList.add('pop'); }
+    else { finish.classList.add('hidden'); }
+    save();
+  }
+  steps.forEach(function(s){ s.addEventListener('change', update); });
+  q1.addEventListener('input', save);
+  q2.addEventListener('input', save);
+
+  var stepNames = [
+    "Değişken oluşturdu (zıplama_sayısı)",
+    "Başlangıç değerini ayarladı (bayrakta 0)",
+    "Kendi bloğunu oluşturdu (zıpla)",
+    "Bloğun içini doldurdu",
+    "Bir tuşla çalıştırdı",
+    "Test etti"
+  ];
+  document.getElementById('reportBtn').addEventListener('click', function(){
+    var lines = ["ZIPLAMA SAYACI — İlhan", ""];
+    steps.forEach(function(s,i){
+      lines.push((s.checked ? "✔ " : "✗ ") + stepNames[i]);
+    });
+    lines.push("");
+    lines.push("Soru 1 — Değişkeni neden bayrakta sıfırladık?");
+    lines.push(q1.value.trim() || "(boş bırakılmış)");
+    lines.push("");
+    lines.push("Soru 2 — Kendi blok oluşturmak neden faydalı?");
+    lines.push(q2.value.trim() || "(boş bırakılmış)");
+    var text = lines.join("\n");
+    var out = document.getElementById('reportOut');
+    var msg = document.getElementById('reportMsg');
+    out.value = text; out.classList.remove('hidden');
+    navigator.clipboard.writeText(text).then(function(){
+      msg.textContent = "Kopyalandı ✓ — şimdi hocana yapıştır";
+      msg.className = "ml-3 text-sm text-green-600 font-semibold";
+    }).catch(function(){
+      msg.textContent = "Aşağıdaki metni seçip kopyala";
+      msg.className = "ml-3 text-sm text-gray-500";
+    });
+  });
+
+  load();
+  update();
+</script>
+</body>
+</html>
