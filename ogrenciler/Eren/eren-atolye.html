@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Eren'in Atölyesi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0C12; --panel:#141824; --panel-2:#0F121B; --line:#252B3B;
+    --text:#ECEEF4; --muted:#98A0B4; --muted-2:#5F6779;
+    --gold:#F5B942; --gold-dim:#7a5a1c; --red:#FF5D5D; --red-dim:#6b2626;
+    --teal:#3DD6B5; --teal-dim:#16695a; --pink:#FF8FB8; --pink-dim:#7a2e4c;
+    --on:#3DD68C; --on-dim:#1c6b44; --hint:#FFB020;
+    --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+    --disp:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:radial-gradient(900px 500px at 12% -120px,#2a1d0a55,transparent),radial-gradient(900px 500px at 92% -150px,#2a0f2555,transparent),var(--bg);
+    color:var(--text);font-family:var(--body);line-height:1.6;-webkit-font-smoothing:antialiased}
+  code{font-family:var(--mono);font-size:.92em;background:#0b0e16;border:1px solid var(--line);padding:1px 6px;border-radius:6px;color:#d6dbea}
+  button{font-family:inherit}
+  :focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:6px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+  .hud{position:sticky;top:0;z-index:40;backdrop-filter:blur(10px);background:rgba(10,12,18,.88);border-bottom:1px solid var(--line)}
+  .hud-in{max-width:900px;margin:0 auto;padding:12px 22px;display:flex;align-items:center;gap:16px}
+  .brand{font-family:var(--disp);font-weight:700;font-size:15px;line-height:1.1}
+  .brand small{display:block;font-family:var(--mono);font-weight:400;font-size:10.5px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}
+  .xp{flex:1;min-width:0}
+  .xp-top{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px}
+  .xp-top b{color:var(--gold);font-family:var(--mono)}
+  .xp-bar{height:9px;background:#0d1019;border:1px solid var(--line);border-radius:20px;overflow:hidden}
+  .xp-fill{height:100%;width:0;border-radius:20px;background:linear-gradient(90deg,var(--gold-dim),var(--gold));transition:width .6s cubic-bezier(.2,.8,.2,1)}
+  .rank{font-family:var(--mono);font-size:12px;color:var(--gold);border:1px solid var(--gold-dim);padding:5px 10px;border-radius:8px;white-space:nowrap}
+
+  .wrap{max-width:900px;margin:0 auto;padding:0 22px}
+  .hero{padding:44px 0 6px}
+  .eyebrow{display:inline-flex;gap:9px;font-family:var(--mono);font-size:12px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;border:1px solid var(--line);background:var(--panel-2);padding:7px 13px;border-radius:100px}
+  h1{font-family:var(--disp);font-weight:700;font-size:clamp(30px,5.5vw,48px);line-height:1.05;margin:18px 0 0;letter-spacing:-.5px}
+  h1 .g{color:var(--gold)} h1 .p{color:var(--pink)}
+  .lede{color:var(--muted);font-size:16.5px;max-width:64ch;margin-top:12px}
+  .lede b{color:var(--text)}
+
+  .tabs{display:flex;gap:8px;margin:28px 0 6px;flex-wrap:wrap}
+  .tab{background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:10px;padding:9px 16px;cursor:pointer;font-family:var(--disp);font-weight:600;font-size:14px}
+  .tab.on{color:var(--bg);background:var(--gold);border-color:var(--gold)}
+  .pane{display:none} .pane.on{display:block}
+
+  .m-head{font-family:var(--disp);font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--muted-2);margin:30px 0 14px;display:flex;align-items:center;gap:12px}
+  .m-head::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  /* projects */
+  .projects{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:720px){.projects{grid-template-columns:1fr}}
+  .proj{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+  .proj.soon{opacity:.55}
+  .proj-h{display:flex;align-items:center;gap:10px}
+  .proj-ic{font-size:26px}
+  .proj-t{font-family:var(--disp);font-weight:700;font-size:17px}
+  .proj-d{font-size:13px;color:var(--muted);margin-top:4px}
+  .chs{margin-top:12px;display:flex;flex-direction:column;gap:7px}
+  .chrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;color:var(--text);cursor:pointer}
+  .chrow:hover:not([disabled]){border-color:var(--gold-dim)}
+  .chrow[disabled]{cursor:default;opacity:.6}
+  .chrow .st{font-size:15px;width:22px;text-align:center}
+  .chrow .tt{font-weight:600;font-size:14px}
+  .chrow .cc{font-size:12px;color:var(--muted)}
+  .chrow.sel{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold-dim) inset}
+
+  /* skill tree */
+  .skills{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+  .skill{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 14px}
+  .skill .sn{font-family:var(--disp);font-weight:600;font-size:15px}
+  .skill .sl{font-family:var(--mono);font-size:11.5px;margin-top:4px;color:var(--muted-2)}
+  .pips{display:flex;gap:5px;margin-top:8px}
+  .pip{flex:1;height:7px;border-radius:5px;background:#1b2030}
+  .skill[data-lv="1"] .pip:nth-child(-n+1),.skill[data-lv="2"] .pip:nth-child(-n+2),.skill[data-lv="3"] .pip:nth-child(-n+3){background:var(--gold)}
+  .skill[data-lv="1"] .sl,.skill[data-lv="2"] .sl,.skill[data-lv="3"] .sl{color:var(--gold)}
+  .skill .sp{font-size:12px;color:var(--muted);margin-top:6px}
+  .legend{color:var(--muted);font-size:13.5px;margin:0 0 14px}
+  .legend b{color:var(--text)}
+
+  /* chapter */
+  #chapterArea{margin-top:22px}
+  .chapter{display:none} .chapter.show{display:block}
+  .ch-head{background:linear-gradient(135deg,#1c1709,#141824 60%);border:1px solid var(--gold-dim);border-radius:18px;padding:22px 24px}
+  .ch-head.pet{background:linear-gradient(135deg,#2a0f1f,#141824 60%);border-color:var(--pink-dim)}
+  .ch-head .k{font-family:var(--mono);font-size:12px;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase}
+  .ch-head.pet .k{color:var(--pink)}
+  .ch-head h2{font-family:var(--disp);font-size:26px;margin:6px 0 6px}
+  .ch-head p{color:var(--muted);margin:0;font-size:15px}
+  .ch-head .unlock{margin-top:12px;font-size:13.5px;color:var(--text)}
+  .ch-head .unlock b{color:var(--gold)}
+  .ch-head.pet .unlock b{color:var(--pink)}
+
+  .keycard{background:var(--panel);border:1px dashed var(--pink-dim);border-radius:16px;padding:26px;text-align:center;margin-top:14px}
+  .keycard .ic{font-size:36px}
+  .keycard h3{font-family:var(--disp);margin:8px 0 4px}
+  .keycard p{color:var(--muted);margin:0 0 14px;font-size:14px}
+  .keyrow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .keyrow input{width:220px;background:#0b0e16;border:1px solid var(--line);border-radius:9px;padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:14px;text-transform:uppercase;letter-spacing:1px;text-align:center}
+  .lockcard{background:var(--panel);border:1px dashed var(--line);border-radius:16px;padding:26px;text-align:center;color:var(--muted);margin-top:14px}
+  .lockcard .ic{font-size:34px} .lockcard h3{font-family:var(--disp);color:var(--text);margin:8px 0 4px}
+
+  .concept{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;margin-top:14px}
+  .concept h3{font-family:var(--disp);font-size:18px;margin:0 0 8px}
+  .concept p{color:var(--muted);font-size:14.5px;margin:6px 0}
+  .concept p b{color:var(--text)}
+  .flow{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin-top:14px}
+  @media (max-width:640px){.flow{grid-template-columns:1fr}.flow .arr{transform:rotate(90deg);justify-self:center}}
+  .box{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:13px 14px;font-family:var(--mono);font-size:13px;line-height:1.8}
+  .box .lbl{font-family:var(--body);font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted-2);margin-bottom:4px}
+  .arr{font-size:22px;color:var(--gold)}
+  .chip{display:inline-block;padding:0 6px;border-radius:5px}
+  .c1{background:#3b2a0b;color:#ffd27a} .c2{background:#3b0f16;color:#ff9aa6} .c3{background:#0d3a31;color:#7ff0d4}
+
+  .task{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;margin-top:14px;transition:border-color .3s,box-shadow .3s}
+  .task.done{border-color:var(--on-dim);box-shadow:0 0 0 1px var(--on-dim) inset}
+  .t-top{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+  .t-no{font-family:var(--disp);font-weight:700;font-size:14px;color:var(--bg);background:var(--gold);width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex-shrink:0}
+  .task.done .t-no{background:var(--on)}
+  .task.done .t-no::after{content:"✓";font-size:16px} .task.done .t-no .n{display:none}
+  .tier{font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);padding:4px 9px;border-radius:7px}
+  .xpb{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--gold);border:1px solid var(--gold-dim);padding:4px 9px;border-radius:8px}
+  .t-title{font-family:var(--disp);font-weight:600;font-size:17.5px;margin:0}
+  .t-body{color:var(--text);margin:12px 0 0;font-size:14.5px;line-height:1.65}
+  .t-body b{color:var(--gold)}
+  .t-body ul{margin:8px 0 0;padding-left:18px;color:var(--muted)} .t-body li{margin:4px 0}
+
+  pre{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:14px 16px;overflow-x:auto;margin:12px 0 0}
+  pre code{background:none;border:none;padding:0;color:#d8deef;font-size:13px;line-height:1.75;white-space:pre}
+  .ln{display:inline-block;width:22px;color:#4b5366;user-select:none}
+  .tok-c{color:#5f6b85} .tok-k{color:#c4a3ff} .tok-f{color:#ffd479} .tok-s{color:#9fe6c2} .tok-n{color:#f2a76b} .tok-slf{color:#7fd6d0}
+
+  .mapper{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:12px;font-family:var(--mono);font-size:13.5px;line-height:2.1}
+  .mapper select{background:#0b0e16;color:var(--text);border:1px solid var(--line);border-radius:7px;padding:4px 8px;font-family:var(--mono);font-size:13px}
+  .card{margin-top:12px;display:flex;gap:14px;align-items:center;background:linear-gradient(135deg,#1a1f2e,#121622);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .card .av{font-size:34px}
+  .card .nm{font-family:var(--disp);font-weight:700;font-size:17px}
+  .card .row{font-size:13px;color:var(--muted);font-family:var(--mono)}
+  .card .row b{color:var(--text)} .card .row b.bad{color:var(--red)}
+
+  .v-in{width:100%;background:#0b0e16;border:1px solid var(--line);border-radius:9px;padding:11px 13px;color:var(--text);font-family:var(--body);font-size:14px;line-height:1.55}
+  .v-in.mono{font-family:var(--mono);font-size:13px}
+  textarea.v-in{min-height:100px;resize:vertical}
+  .v-in:focus{border-color:var(--gold);outline:none}
+  .v-in:disabled{opacity:.6}
+  .lab{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.6px;color:var(--muted);margin:14px 0 6px;text-transform:uppercase}
+  .v-row{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+  .v-btn{font-weight:600;font-size:14px;color:var(--bg);background:var(--gold);border:none;padding:10px 20px;border-radius:9px;cursor:pointer;font-family:var(--disp);transition:filter .2s,transform .12s}
+  .v-btn:hover{filter:brightness(1.08)} .v-btn:active{transform:scale(.99)}
+  .task.done .v-btn{background:transparent;color:var(--on);border:1px solid var(--on-dim)}
+  .fb{font-size:13.5px;font-weight:500;line-height:1.5}
+  .fb.ok{color:var(--on)}.fb.no{color:var(--red)}.fb.tip{color:var(--muted)}
+  .tries{font-family:var(--mono);font-size:12px;color:var(--hint);background:#1a1608;border:1px solid #4a3b12;border-radius:7px;padding:3px 9px;margin-top:10px;display:none}
+
+  .hintrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .hintbtn{background:none;border:1px solid var(--line);color:var(--hint);font-weight:500;font-size:13px;padding:7px 13px;border-radius:9px;cursor:pointer}
+  .hintbtn:hover:not([disabled]){background:#1a1608;border-color:#4a3b12}
+  .hintbtn[disabled]{opacity:.35;cursor:not-allowed}
+  .hintbox{max-height:0;overflow:hidden;transition:max-height .35s ease}
+  .hintbox.open{max-height:240px}
+  .hint-in{margin-top:10px;background:#160f00;border:1px solid #4a3b12;border-radius:11px;padding:12px 14px;color:#e9d9b3;font-size:13.5px}
+  .hint-in b.lbl{display:block;font-family:var(--mono);font-size:11px;letter-spacing:1px;color:#b08a3a;text-transform:uppercase;margin-bottom:5px}
+  .hint-in code{background:#241a05;border-color:#4a3b12;color:#ffd479}
+
+  /* rewards */
+  .duel{margin-top:14px;background:linear-gradient(160deg,#1d1208,#141824 55%,#1b0d12);border:1px solid var(--gold-dim);border-radius:18px;padding:22px}
+  .duel.pet{background:linear-gradient(160deg,#25101c,#141824 55%,#0e1d1a);border-color:var(--pink-dim)}
+  .duel.locked{border-style:dashed;border-color:var(--line);background:var(--panel)}
+  .duel h3{font-family:var(--disp);margin:0 0 4px;font-size:20px}
+  .duel .sub{color:var(--muted);font-size:14px}
+  .setup{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+  @media (max-width:640px){.setup{grid-template-columns:1fr}}
+  .fighter{background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .fighter label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:6px 0 4px;font-family:var(--mono)}
+  .fighter input{width:100%;background:#0b0e16;border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--text);font-family:var(--mono);font-size:13.5px}
+  .fighter .nmv{font-family:var(--disp);font-weight:700;font-size:18px}
+  .hp{height:12px;background:#0b0e16;border:1px solid var(--line);border-radius:20px;overflow:hidden;margin-top:6px}
+  .hp > div{height:100%;width:0;background:linear-gradient(90deg,#1f9e6a,var(--on));transition:width .45s ease}
+  .hp.low > div,.hp.danger > div{background:linear-gradient(90deg,#9e2a2a,var(--red))}
+  .hpt{font-family:var(--mono);font-size:12.5px;color:var(--muted);margin-top:4px}
+  .hit{animation:hit .35s ease}
+  @keyframes hit{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .duel-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .btn-a{font-family:var(--disp);font-weight:600;font-size:14px;border:none;border-radius:10px;padding:11px 18px;cursor:pointer;background:var(--red);color:#fff}
+  .duel.pet .btn-a{background:var(--pink);color:#2a0f1f}
+  .btn-a[disabled]{opacity:.35;cursor:not-allowed}
+  .btn-g{font-family:var(--disp);font-weight:600;font-size:14px;border:1px solid var(--line);border-radius:10px;padding:11px 18px;cursor:pointer;background:var(--panel);color:var(--text)}
+  .callline{margin-top:12px;font-family:var(--mono);font-size:14px;color:var(--gold);min-height:22px}
+  .duel.pet .callline{color:var(--pink)}
+  .duel-log{margin-top:10px;background:#0b0e16;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:var(--mono);font-size:12.5px;color:var(--muted);max-height:170px;overflow:auto;min-height:44px}
+  .winner{margin-top:12px;font-family:var(--disp);font-weight:700;font-size:18px;color:var(--gold);min-height:24px}
+  .pet-row{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:14px}
+  .pet-face{font-size:64px;width:96px;height:96px;display:grid;place-items:center;background:var(--panel-2);border:1px solid var(--line);border-radius:22px}
+  .mood{font-family:var(--disp);font-weight:700;font-size:18px;margin-top:10px;color:var(--pink)}
+  .meters{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+  @media (max-width:640px){.meters{grid-template-columns:1fr}}
+  .mt{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .mt span{color:var(--text)}
+
+  .report{background:var(--panel);border:1px solid var(--gold-dim);border-radius:16px;padding:22px;margin-top:14px}
+  .report h3{font-family:var(--disp);margin:0 0 6px;font-size:19px}.report p{color:var(--muted);font-size:14px;margin:0 0 14px}
+  .r-report{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--bg);background:var(--gold);border:none;padding:10px 20px;border-radius:9px;cursor:pointer}
+  .reportOut{width:100%;margin-top:12px;display:none;min-height:200px;background:#0b0e16;border:1px solid var(--line);border-radius:9px;padding:12px;color:var(--text);font-family:var(--mono);font-size:12.5px}
+  .msg{font-size:13px;font-weight:500;margin-left:10px}.msg.ok{color:var(--on)}.msg.tip{color:var(--muted)}
+
+  footer{text-align:center;color:var(--muted-2);font-size:13px;padding:40px 0;font-family:var(--mono)}
+  #saveInd{position:fixed;left:18px;bottom:18px;z-index:70;font-family:var(--mono);font-size:12px;background:var(--panel);border:1px solid var(--gold-dim);color:var(--gold);padding:9px 14px;border-radius:10px;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;pointer-events:none}
+  #saveInd.show{opacity:1;transform:translateY(0)} #saveInd.warn{border-color:var(--red-dim);color:var(--red)}
+  #resetBtn{margin-top:14px;background:none;border:1px solid var(--line);color:var(--muted-2);font-family:var(--mono);font-size:11px;padding:7px 13px;border-radius:8px;cursor:pointer}
+  #toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,140px);z-index:60;background:var(--panel);border:1px solid var(--gold-dim);border-radius:14px;padding:14px 22px;box-shadow:0 12px 40px #0009;transition:transform .45s cubic-bezier(.2,.9,.2,1);text-align:center}
+  #toast.show{transform:translate(-50%,0)} #toast .t1{font-family:var(--disp);font-weight:700;color:var(--gold)} #toast .t2{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="hud">
+  <div class="hud-in">
+    <div class="brand">Eren'in Atölyesi<small>Python · Projeler</small></div>
+    <div class="xp">
+      <div class="xp-top"><span id="xpLabel">Sonraki unvana</span><span><b id="xpNow">0</b> XP</span></div>
+      <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+    </div>
+    <div class="rank" id="rank">Çırak</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <section class="hero">
+    <span class="eyebrow">🛠️ EREN'İN ATÖLYESİ</span>
+    <h1>Her proje bir <span class="g">beceri</span>, her beceri yeni bir <span class="p">proje</span></h1>
+    <p class="lede">Burada tek bir ders programını takip etmiyorsun. Projeler yapıyorsun: bir arena, bir evcil hayvan,
+      sonra yenileri. Her projede öğrendiğin kavram <b>beceri ağacına</b> işleniyor. Bir beceri farklı projelerde
+      kullandıkça güçleniyor. Bu atölyenin bir sonu yok, sen ilerledikçe büyüyor.</p>
+  </section>
+
+  <div class="tabs">
+    <button class="tab on" data-tab="projeler">Projeler</button>
+    <button class="tab" data-tab="beceriler">Beceri ağacı</button>
+    <button class="tab" data-tab="rapor">Hocana rapor</button>
+  </div>
+
+  <div class="pane on" data-pane="projeler">
+    <div class="m-head">Projeler</div>
+    <div class="projects" id="projects"></div>
+
+    <div id="chapterArea">
+      <!-- ============ ARENA · BÖLÜM 1 ============ -->
+      <section class="chapter" data-ch="arena1" data-project="arena">
+        <div class="ch-head">
+          <div class="k">Karakter Arenası · Bölüm 1 · Öznitelikler</div>
+          <h2>Karakterin kimliği</h2>
+          <p>Her karakter doğduğu an kendi ismini, gücünü ve canını taşımaya başlar. Bu bölümde bunun nasıl olduğunu göreceksin.</p>
+          <div class="unlock">Bölümü bitirince açılan özellik: <b>Düello Arenası</b> ⚔️</div>
+        </div>
+
+        <div class="concept">
+          <h3>Bir çağrı, üç kutu</h3>
+          <p>Bir karakter oluşturduğunda değerler <b>sırayla</b> parametrelere gider. Sonra <code>self.</code> ile
+            karakterin kendi kutularına yerleştirilir. Renkleri takip et:</p>
+          <div class="flow">
+            <div class="box"><div class="lbl">Çağrı</div>Karakter(<span class="chip c1">"Karabas"</span>, <span class="chip c2">15</span>, <span class="chip c3">100</span>)</div>
+            <div class="arr">→</div>
+            <div class="box"><div class="lbl">Parametreler (sırayla)</div>isim = <span class="chip c1">"Karabas"</span><br/>guc &nbsp;= <span class="chip c2">15</span><br/>can &nbsp;= <span class="chip c3">100</span></div>
+          </div>
+          <div class="flow" style="margin-top:10px">
+            <div class="box"><div class="lbl">Kurucu metottaki satır</div>self.isim = <span class="chip c1">isim</span></div>
+            <div class="arr">→</div>
+            <div class="box"><div class="lbl">Karakterin kutusu</div>karabas.isim → <span class="chip c1">"Karabas"</span></div>
+          </div>
+          <p style="margin-top:12px">Eşittirin <b>solu</b> karakterin kutusu, <b>sağı</b> içine konan değer. Sağdaki isim, parametre listesindeki isimlerden biri olmalı.</p>
+        </div>
+
+        <article class="task" data-task data-id="a1" data-type="map" data-xp="20" data-skills="oznitelik,self">
+          <div class="t-top"><span class="t-no"><span class="n">1</span></span><span class="tier">Eşleştir</span><h3 class="t-title">Kutuları doldur</h3><span class="xpb">+20 XP</span></div>
+          <div class="t-body">Her <code>self.</code> satırının sağına doğru parametreyi seç. Seçim yaptıkça karakter kartı canlı olarak değişir.</div>
+          <div class="mapper">
+            <div><span class="tok-k">def</span> <span class="tok-f">__init__</span>(<span class="tok-slf">self</span>, isim, guc, can):</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tok-slf">self</span>.isim = <select class="msel" data-attr="isim"></select></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tok-slf">self</span>.guc &nbsp;= <select class="msel" data-attr="guc"></select></div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tok-slf">self</span>.can &nbsp;= <select class="msel" data-attr="can"></select></div>
+            <div style="color:var(--muted-2);margin-top:6px">karabas = Karakter("Karabas", 15, 100)</div>
+          </div>
+          <div class="card"><div class="av">🛡️</div><div><div class="nm" id="cardName">?</div><div class="row">güç: <b id="cardGuc">?</b> · can: <b id="cardCan">?</b></div></div></div>
+          <div class="v-row"><button class="v-btn">Kontrol et</button><span class="fb tip"></span></div>
+          <div class="tries"></div>
+          <div class="hintrow"><button class="hintbtn" data-h="1">💡 İpucu 1</button><button class="hintbtn" data-h="2">💡 İpucu 2</button><button class="hintbtn" data-h="3" disabled>🔒 İpucu 3</button></div>
+          <div class="hintbox" data-hb="1"><div class="hint-in"><b class="lbl">İpucu 1</b>Kart bir şeyi garip gösteriyorsa (ismin yerinde sayı, gücün yerinde 100 gibi) o satır yanlış eşleşmiştir.</div></div>
+          <div class="hintbox" data-hb="2"><div class="hint-in"><b class="lbl">İpucu 2</b>Sağ tarafta yazı ya da sayı değil, parametre listesindeki bir <b>isim</b> olmalı. Parametreler: <code>isim, guc, can</code>.</div></div>
+          <div class="hintbox" data-hb="3"><div class="hint-in"><b class="lbl">İpucu 3</b>Kutunun adı ile parametrenin adı aynı seçilebilir. Kart doğru olduğunda isim "Karabas", güç 15, can 100 görünür.</div></div>
+        </article>
+
+        <article class="task" data-task data-id="a2" data-type="out" data-ans="MTAgMTAw" data-xp="20" data-skills="parametre,oznitelik">
+          <div class="t-top"><span class="t-no"><span class="n">2</span></span><span class="tier">Tahmin</span><h3 class="t-title">Sıra tuzağı</h3><span class="xpb">+20 XP</span></div>
+          <div class="t-body">Bu sefer parametrelerin sırası değişti. Kodu çalıştırmadan Boncuk'un <b>canını</b> ve <b>gücünü</b> tahmin et.</div>
+          <pre><code><span class="tok-k">class</span> <span class="tok-f">Karakter</span>:
+    <span class="tok-k">def</span> <span class="tok-f">__init__</span>(<span class="tok-slf">self</span>, isim, can, guc):
+        <span class="tok-slf">self</span>.isim = isim
+        <span class="tok-slf">self</span>.can = can
+        <span class="tok-slf">self</span>.guc = guc
+
+boncuk = <span class="tok-f">Karakter</span>(<span class="tok-s">"Boncuk"</span>, <span class="tok-n">10</span>, <span class="tok-n">100</span>)
+<span class="tok-f">print</span>(boncuk.can, boncuk.guc)</code></pre>
+          <span class="lab">Çıktı ne olur? (iki sayı)</span>
+          <input class="v-in mono" placeholder="örn: 50 20" />
+          <div class="v-row"><button class="v-btn">Kontrol et</button><span class="fb tip"></span></div>
+          <div class="tries"></div>
+          <div class="hintrow"><button class="hintbtn" data-h="1">💡 İpucu 1</button><button class="hintbtn" data-h="2">💡 İpucu 2</button><button class="hintbtn" data-h="3" disabled>🔒 İpucu 3</button></div>
+          <div class="hintbox" data-hb="1"><div class="hint-in"><b class="lbl">İpucu 1</b>Değerler parametrelere isimlerine göre değil, <b>sırasına</b> göre gider.</div></div>
+          <div class="hintbox" data-hb="2"><div class="hint-in"><b class="lbl">İpucu 2</b>Parametre sırası: <code>isim, can, guc</code>. Çağrıdaki ikinci değer hangi parametreye gider?</div></div>
+          <div class="hintbox" data-hb="3"><div class="hint-in"><b class="lbl">İpucu 3</b>"Boncuk" → isim, ikinci değer → can, üçüncü değer → guc. Önce can'ı, sonra gücü yaz.</div></div>
+        </article>
+
+        <article class="task" data-task data-id="a3" data-type="code" data-ans="ODUgMTAw" data-xp="40" data-skills="sinif,oznitelik,etkilesim"
+          data-must="class Karakter|def __init__|self.guc|self.can|def saldir|hedef.can" data-minc="120">
+          <div class="t-top"><span class="t-no"><span class="n">3</span></span><span class="tier">Kod</span><h3 class="t-title">Karakter sınıfını tamamla</h3><span class="xpb">+40 XP</span></div>
+          <div class="t-body">Editöründe <code>Karakter</code> sınıfını yaz:
+            <ul>
+              <li><code>__init__</code> parametreleri bu sırayla olsun: <code>isim, guc, can</code>. Her birini karakterin kendi kutusuna kaydet.</li>
+              <li><code>saldir(self, hedef)</code> metodu hedefin canını, saldıranın gücü kadar azaltsın.</li>
+            </ul>
+            Sonra dosyanın sonuna test kodunu ekle, çalıştır ve çıktıyı yapıştır.</div>
+          <span class="lab">Test kodu</span>
+          <pre><code>karabas = <span class="tok-f">Karakter</span>(<span class="tok-s">"Karabas"</span>, <span class="tok-n">15</span>, <span class="tok-n">100</span>)
+boncuk = <span class="tok-f">Karakter</span>(<span class="tok-s">"Boncuk"</span>, <span class="tok-n">10</span>, <span class="tok-n">100</span>)
+karabas.<span class="tok-f">saldir</span>(boncuk)
+<span class="tok-f">print</span>(boncuk.can, karabas.can)</code></pre>
+          <span class="lab">1) Sınıfının kodu</span>
+          <textarea class="v-in mono code-in" placeholder="class Karakter:&#10;    ..."></textarea>
+          <span class="lab">2) Test çıktısı</span>
+          <input class="v-in mono out-in" placeholder="programın yazdığı çıktı" />
+          <div class="v-row"><button class="v-btn">Kontrol et</button><span class="fb tip"></span></div>
+          <div class="tries"></div>
+          <div class="hintrow"><button class="hintbtn" data-h="1">💡 İpucu 1</button><button class="hintbtn" data-h="2">💡 İpucu 2</button><button class="hintbtn" data-h="3" disabled>🔒 İpucu 3</button></div>
+          <div class="hintbox" data-hb="1"><div class="hint-in"><b class="lbl">İpucu 1</b>Görev 1'de doldurduğun üç satır, bu sınıfın <code>__init__</code> gövdesinin aynısı.</div></div>
+          <div class="hintbox" data-hb="2"><div class="hint-in"><b class="lbl">İpucu 2</b>Saldır metodunda değişen tek kutu hedefin canı. Saldıranın gücü yalnızca okunur: <code>self.guc</code>.</div></div>
+          <div class="hintbox" data-hb="3"><div class="hint-in"><b class="lbl">İpucu 3</b>Azaltma için <code>-=</code> kullan. Metodun iki parametresi var: önce <code>self</code>, sonra <code>hedef</code>.</div></div>
+        </article>
+
+        <article class="task" data-task data-id="a4" data-type="out" data-ans="NA==" data-xp="30" data-skills="hata,oznitelik">
+          <div class="t-top"><span class="t-no"><span class="n">4</span></span><span class="tier">Boss</span><h3 class="t-title">Tek vuruş hatası</h3><span class="xpb">+30 XP</span></div>
+          <div class="t-body">Bu kodla Karabas, Boncuk'a tek bir saldırıda <b>100 hasar</b> veriyor. Oysa gücü 15 olmalıydı. Hatalı satırın numarasını bul.</div>
+          <pre><code><span class="ln">1</span><span class="tok-k">class</span> <span class="tok-f">Karakter</span>:
+<span class="ln">2</span>    <span class="tok-k">def</span> <span class="tok-f">__init__</span>(<span class="tok-slf">self</span>, isim, guc, can):
+<span class="ln">3</span>        <span class="tok-slf">self</span>.isim = isim
+<span class="ln">4</span>        <span class="tok-slf">self</span>.guc = can
+<span class="ln">5</span>        <span class="tok-slf">self</span>.can = can
+<span class="ln">6</span>
+<span class="ln">7</span>    <span class="tok-k">def</span> <span class="tok-f">saldir</span>(<span class="tok-slf">self</span>, hedef):
+<span class="ln">8</span>        hedef.can -= <span class="tok-slf">self</span>.guc</code></pre>
+          <span class="lab">Hatalı satır numarası</span>
+          <input class="v-in mono" placeholder="sadece sayı" />
+          <div class="v-row"><button class="v-btn">Kontrol et</button><span class="fb tip"></span></div>
+          <div class="tries"></div>
+          <div class="hintrow"><button class="hintbtn" data-h="1">💡 İpucu 1</button><button class="hintbtn" data-h="2">💡 İpucu 2</button><button class="hintbtn" data-h="3" disabled>🔒 İpucu 3</button></div>
+          <div class="hintbox" data-hb="1"><div class="hint-in"><b class="lbl">İpucu 1</b>Hasar 100 çıkıyorsa, saldırıda kullanılan güç 100 olmuş demektir. 100 hangi parametrenin değeri?</div></div>
+          <div class="hintbox" data-hb="2"><div class="hint-in"><b class="lbl">İpucu 2</b><code>self.guc</code> kutusuna hangi parametre yazılıyor? Ona bak.</div></div>
+          <div class="hintbox" data-hb="3"><div class="hint-in"><b class="lbl">İpucu 3</b>Gücün kutusuna canın değeri konmuş. O satırın numarasını yaz.</div></div>
+        </article>
+
+        <article class="task" data-task data-id="a5" data-type="proof" data-minc="60" data-xp="20" data-skills="oznitelik">
+          <div class="t-top"><span class="t-no"><span class="n">5</span></span><span class="tier">Sürüm</span><h3 class="t-title">Sürüm notu</h3><span class="xpb">+20 XP</span></div>
+          <div class="t-body">Gerçek geliştiriciler her sürümde ne değiştiğini yazar. Sen de yaz: bu sürümde oyuna ne eklendi ve <code>self.guc = guc</code> satırı ne işe yarıyor? İki üç cümle yeterli.</div>
+          <textarea class="v-in" placeholder="v0.1 — ..."></textarea>
+          <div class="v-row"><button class="v-btn">Kontrol et</button><span class="fb tip"></span></div>
+          <div class="tries"></div>
+          <div class="hintrow"><button class="hintbtn" data-h="1">💡 İpucu 1</button><button class="hintbtn" data-h="2">💡 İpucu 2</button><button class="hintbtn" data-h="3" disabled>🔒 İpucu 3</button></div>
+          <div class="hintbox" data-hb="1"><div class="hint-in"><b class="lbl">İpucu 1</b>Önce özelliği yaz: karakterler artık ne yapabiliyor?</div></div>
+          <div class="hintbox" data-hb="2"><div class="hint-in"><b class="lbl">İpucu 2</b>Sonra satırı açıkla: soldaki ne, sağdaki ne?</div></div>
+          <div class="hintbox" data-hb="3"><div class="hint-in"><b class="lbl">İpucu 3</b>Kalıp: "v0.1 — Karakterler artık ... . <code>self.guc = guc</code> satırı ..."</div></div>
+        </article>
+
+        <div class="duel locked" id="duel">
+          <h3 id="duelTitle">🔒 Düello Arenası</h3>
+          <div class="sub" id="duelSub">Görev 3'ü tamamlayınca açılır.</div>
+          <div id="duelBody" style="display:none">
+            <div class="setup">
+              <div class="fighter" id="fA">
+                <label>İsim</label><input id="aName" maxlength="14" />
+                <label>Güç (5–30)</label><input id="aGuc" type="number" min="5" max="30" />
+                <div class="nmv" id="aShow" style="margin-top:10px"></div>
+                <div class="hp" id="aHpBar"><div id="aHp"></div></div>
+                <div class="hpt" id="aHpT"></div>
+              </div>
+              <div class="fighter" id="fB">
+                <label>İsim</label><input id="bName" maxlength="14" />
+                <label>Güç (5–30)</label><input id="bGuc" type="number" min="5" max="30" />
+                <div class="nmv" id="bShow" style="margin-top:10px"></div>
+                <div class="hp" id="bHpBar"><div id="bHp"></div></div>
+                <div class="hpt" id="bHpT"></div>
+              </div>
+            </div>
+            <div class="duel-actions">
+              <button class="btn-a" id="aAtk">A saldırır</button>
+              <button class="btn-a" id="bAtk">B saldırır</button>
+              <button class="btn-g" id="duelReset">Yeni düello</button>
+            </div>
+            <div class="callline" id="callLine"></div>
+            <div class="winner" id="winner"></div>
+            <div class="duel-log" id="duelLog"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ ŞİFRELİ / KİLİTLİ BÖLÜMLER (JS doldurur) ============ -->
+      <section class="chapter" data-ch="pet1" data-project="pet"><div id="pet1Slot"></div></section>
+      <section class="chapter" data-ch="later"><div class="lockcard"><div class="ic">🔒</div><h3 id="laterTitle">Bu bölüm henüz açılmadı</h3><span id="laterText">Hocan derste açacak.</span></div></section>
+    </div>
+  </div>
+
+  <div class="pane" data-pane="beceriler">
+    <div class="m-head">Beceri ağacı</div>
+    <p class="legend">Bir beceriyi kullandıkça güçlenir. <b>Tanıştı:</b> ilk kez kullandın. <b>Kullandı:</b> en az iki
+      farklı projede kullandın. <b>Ustalaştı:</b> farklı projelerde dört ve daha fazla görevde kullandın.</p>
+    <div class="skills" id="skills"></div>
+  </div>
+
+  <div class="pane" data-pane="rapor">
+    <div class="report">
+      <h3>📤 Hocana rapor gönder</h3>
+      <p>Bir bölümü bitirince bu butona bas. Cevapların, kodların ve becerilerin tek metin olarak kopyalanır.</p>
+      <button class="r-report" id="reportBtn">Raporu kopyala</button><span class="msg tip" id="reportMsg"></span>
+      <textarea class="reportOut" id="reportOut" readonly></textarea>
+    </div>
+  </div>
+</div>
+
+<footer>KODLAYIN // EREN'İN ATÖLYESİ</footer>
+<div id="toast"><div class="t1" id="toastT1"></div><div class="t2" id="toastT2"></div></div>
+
+<script>
+(function(){
+  var KEY = "kodlayin.eren.atolye.v1";
+  var OLD_KEY = "kodlayin.eren.arena-akademisi.v1";
+  var PAYLOADS = { pet1: {"s": "H60W1cUqSTjrHcXn7oE2Fw==", "i": "zMWPPxbhwKSXHqnF", "c": "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", "n": 200000} };
+
+  var PROJECTS = [
+    { id:'arena', icon:'⚔️', name:'Karakter Arenası', desc:'Karakterler, düellolar, takımlar.', chapters:[
+      { id:'arena1', t:'Karakterin kimliği', c:'Öznitelikler', kind:'open' },
+      { id:'arena2', t:'Savaşçı, Büyücü, Okçu', c:'Kalıtım', kind:'later' },
+      { id:'arena3', t:'Özel yetenekler', c:'Çok biçimlilik', kind:'later' } ]},
+    { id:'pet', icon:'🐾', name:'Sanal Evcil Hayvan', desc:'Acıkan, yorulan, büyüyen bir hayvan.', chapters:[
+      { id:'pet1', t:'Hayvanın ihtiyaçları', c:'Metotlar ve durum', kind:'enc' },
+      { id:'pet2', t:'Zaman geçiyor', c:'Döngüler ve zaman', kind:'later' },
+      { id:'pet3', t:'Hayvanını kaydet', c:'Dosyalar', kind:'later' } ]},
+    { id:'market', icon:'🧾', name:'Market Kasası', desc:'Ürünler, sepet, hesap.', soon:true, chapters:[] },
+    { id:'quiz', icon:'❓', name:'Quiz Motoru', desc:'Kendi bilgi yarışman.', soon:true, chapters:[] },
+    { id:'speak', icon:'🎙️', name:'SpeakGuard 2.0', desc:'Eski projeni nesnelerle yeniden kur.', soon:true, chapters:[] }
+  ];
+  var SKILLS = [
+    { id:'sinif', n:'Sınıf' }, { id:'oznitelik', n:'Öznitelik' }, { id:'self', n:'self' },
+    { id:'metot', n:'Metot' }, { id:'parametre', n:'Parametre sırası' }, { id:'etkilesim', n:'Nesne etkileşimi' },
+    { id:'kosul', n:'Koşullar ve sınırlar' }, { id:'hata', n:'Hata ayıklama' }, { id:'tasarim', n:'Tasarım' }
+  ];
+  var RANKS = [ { x:0, n:'Çırak' }, { x:150, n:'Kalfa' }, { x:400, n:'Usta' }, { x:800, n:'Ustabaşı' }, { x:1400, n:'Mimar' } ];
+
+  var storageOK = true, booting = true, indTimer, toastTimer;
+  var S = { view:'arena1', tab:'projeler', tasks:{}, map:['','',''], keys:{}, duel:null, pet:null };
+
+  function dec(b){ return decodeURIComponent(escape(atob(b))); }
+  function norm(t){ return (t || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+  function $(id){ return document.getElementById(id); }
+  var ind = document.createElement('div'); ind.id = 'saveInd'; document.body.appendChild(ind);
+  function flash(m, w){ ind.textContent = m; ind.className = w ? 'show warn' : 'show'; clearTimeout(indTimer); indTimer = setTimeout(function(){ ind.className = w ? 'warn' : ''; }, 1800); }
+  function toast(a, b){ $('toastT1').textContent = a; $('toastT2').textContent = b; $('toast').classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(function(){ $('toast').classList.remove('show'); }, 3400); }
+  try { localStorage.setItem('__k','1'); localStorage.removeItem('__k'); } catch(e){ storageOK = false; }
+
+  /* ---------------- decryption ---------------- */
+  function b64bytes(s){ var bin = atob(s), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+  function decryptPayload(p, pass){
+    if (!window.crypto || !crypto.subtle) return Promise.reject(new Error('nocrypto'));
+    var enc = new TextEncoder();
+    return crypto.subtle.importKey('raw', enc.encode(pass.trim().toUpperCase()), 'PBKDF2', false, ['deriveKey'])
+      .then(function(km){ return crypto.subtle.deriveKey({ name:'PBKDF2', salt:b64bytes(p.s), iterations:p.n, hash:'SHA-256' }, km, { name:'AES-GCM', length:256 }, false, ['decrypt']); })
+      .then(function(k){ return crypto.subtle.decrypt({ name:'AES-GCM', iv:b64bytes(p.i) }, k, b64bytes(p.c)); })
+      .then(function(buf){ return new TextDecoder().decode(buf); });
+  }
+
+  /* ---------------- task helpers ---------------- */
+  function allTasks(){ return [].slice.call(document.querySelectorAll('[data-task]')); }
+  function tState(id){ if (!S.tasks[id]) S.tasks[id] = { d:false, t:0, hu:false, vals:[] }; return S.tasks[id]; }
+  function fields(t){ return [].slice.call(t.querySelectorAll('input.v-in, textarea.v-in')); }
+  function projOf(t){ return t.closest('.chapter').getAttribute('data-project'); }
+
+  var msels = [].slice.call(document.querySelectorAll('.msel'));
+  var OPTS = ['— seç —', 'isim', 'guc', 'can', '"Karabas"', '15', '100'];
+  var VALS = { 'isim':'Karabas', 'guc':'15', 'can':'100', '"Karabas"':'Karabas', '15':'15', '100':'100' };
+  msels.forEach(function(s, i){
+    OPTS.forEach(function(o, j){ var op = document.createElement('option'); op.value = j === 0 ? '' : o; op.textContent = o; s.appendChild(op); });
+    s.addEventListener('change', function(){ S.map[i] = s.value; renderCard(); save(); });
+  });
+  function renderCard(){
+    var get = function(a){ var s = msels.filter(function(x){ return x.getAttribute('data-attr') === a; })[0]; return s.value ? VALS[s.value] : '?'; };
+    var nm = get('isim'), g = get('guc'), c = get('can');
+    $('cardName').textContent = nm; $('cardGuc').textContent = g; $('cardCan').textContent = c;
+    $('cardName').style.color = (nm !== '?' && nm !== 'Karabas') ? 'var(--red)' : '';
+    $('cardGuc').className = (g !== '?' && g !== '15') ? 'bad' : '';
+    $('cardCan').className = (c !== '?' && c !== '100') ? 'bad' : '';
+  }
+  function mapCheck(){
+    var v = {}; msels.forEach(function(s){ v[s.getAttribute('data-attr')] = s.value; });
+    if (!v.isim || !v.guc || !v.can) return 'Üç satırın hepsini doldur.';
+    if (v.isim === 'isim' && v.guc === 'guc' && v.can === 'can') return '';
+    var lit = ['"Karabas"', '15', '100'];
+    if (lit.indexOf(v.isim) > -1 || lit.indexOf(v.guc) > -1 || lit.indexOf(v.can) > -1) return 'Kart doğru görünse de, sağa sabit bir değer yazarsan her karakter aynı olur. Parametre ismi seç.';
+    return 'Kartta yanlış görünen bir kutu var. Kırmızı değere bak.';
+  }
+  function validate(t){
+    var type = t.getAttribute('data-type');
+    if (type === 'map') return mapCheck();
+    if (type === 'out'){
+      var v = t.querySelector('input.v-in').value;
+      if (!v.trim()) return 'Önce cevabını yaz.';
+      return norm(v) === norm(dec(t.getAttribute('data-ans'))) ? '' : 'Henüz tutmuyor. Bir daha düşün.';
+    }
+    if (type === 'code'){
+      var code = t.querySelector('.code-in').value.trim(), out = t.querySelector('.out-in').value;
+      var minc = parseInt(t.getAttribute('data-minc') || '80', 10);
+      if (code.length < minc) return 'Önce kodunu yapıştır (' + code.length + '/' + minc + ' karakter).';
+      var must = (t.getAttribute('data-must') || '').split('|').filter(Boolean);
+      for (var i = 0; i < must.length; i++) if (code.indexOf(must[i]) === -1) return 'Kodunda \u201c' + must[i] + '\u201d görünmüyor.';
+      if (!out.trim()) return 'Test kodunu çalıştır ve çıktısını yapıştır.';
+      return norm(out) === norm(dec(t.getAttribute('data-ans'))) ? '' : 'Çıktı beklenenle uyuşmuyor. Kodunu çalıştırıp çıktıyı aynen yapıştır.';
+    }
+    var p = t.querySelector('textarea').value.trim(), m = parseInt(t.getAttribute('data-minc') || '60', 10);
+    return p.length >= m ? '' : 'Biraz daha yaz (' + p.length + '/' + m + ' karakter).';
+  }
+  function unlock3(t){ var b = t.querySelector('.hintbtn[data-h="3"]'); if (b && b.disabled){ b.disabled = false; b.textContent = '💡 İpucu 3'; } }
+  function updateTries(t){
+    var el = t.querySelector('.tries'), n = tState(t.getAttribute('data-id')).t;
+    if (n <= 0 || t.classList.contains('done')){ el.style.display = 'none'; return; }
+    el.style.display = 'inline-block'; el.textContent = 'Deneme: ' + n + (n >= 3 ? ' · ipucu 3 açık' : ' · 3. denemede ipucu 3 açılır');
+  }
+  function setDone(t, silent){
+    t.classList.add('done'); t.querySelector('.v-btn').textContent = 'Tamam ✓';
+    t.querySelectorAll('input, textarea, select').forEach(function(x){ x.disabled = true; });
+    updateTries(t);
+    if (!silent){ var fb = t.querySelector('.fb'); fb.className = 'fb ok'; fb.textContent = '+' + t.getAttribute('data-xp') + ' XP ✅'; }
+  }
+  function bindTask(t){
+    if (t.getAttribute('data-bound')) return; t.setAttribute('data-bound', '1');
+    var id = t.getAttribute('data-id'), st = tState(id), fb = t.querySelector('.fb');
+    var fs = fields(t); (st.vals || []).forEach(function(v, j){ if (fs[j]) fs[j].value = v; });
+    if (st.t >= 3) unlock3(t);
+    if (st.d) setDone(t, true);
+    updateTries(t);
+    t.querySelector('.v-btn').addEventListener('click', function(){
+      if (t.classList.contains('done')) return;
+      var err = validate(t);
+      if (err === ''){
+        var beforeRank = rankOf(xp()).n;
+        st.d = true; setDone(t, false); afterChange();
+        if (id === 'a3') toast('Düello Arenası açıldı ⚔️', 'Aşağıda kendi karakterlerinle dövüştür');
+        if (id === 'p2') toast('Evcil hayvanın uyandı 🐾', 'Aşağıda onu büyütebilirsin');
+        if (rankOf(xp()).n !== beforeRank) setTimeout(function(){ toast('Yeni unvan: ' + rankOf(xp()).n + ' 🏅', 'Atölyede bir seviye yükseldin'); }, 1000);
+        return;
+      }
+      st.t += 1; if (st.t >= 3) unlock3(t);
+      fb.className = 'fb no'; fb.textContent = err; updateTries(t); save();
+    });
+    t.querySelectorAll('.hintbtn').forEach(function(b){
+      b.addEventListener('click', function(){
+        if (b.disabled) return;
+        var h = b.getAttribute('data-h'), box = t.querySelector('.hintbox[data-hb="' + h + '"]');
+        var open = box.classList.toggle('open'); b.textContent = (open ? '🔽 ' : '💡 ') + 'İpucu ' + h;
+        if (open){ st.hu = true; save(); }
+      });
+    });
+    fs.forEach(function(x){ x.addEventListener('input', function(){ if (!t.classList.contains('done')){ fb.textContent = ''; fb.className = 'fb tip'; } st.vals = fs.map(function(f){ return f.value; }); save(); }); });
+  }
+
+  /* ---------------- scoring ---------------- */
+  function xp(){ var s = 0; allTasks().forEach(function(t){ if (tState(t.getAttribute('data-id')).d) s += parseInt(t.getAttribute('data-xp') || '0', 10); }); return s; }
+  function rankOf(x){ var r = RANKS[0], next = null; RANKS.forEach(function(k, i){ if (x >= k.x){ r = k; next = RANKS[i+1] || null; } }); return { n:r.n, from:r.x, next:next }; }
+  function chapterDone(ch){ var ts = [].slice.call(document.querySelectorAll('.chapter[data-ch="' + ch + '"] [data-task]')); return ts.length > 0 && ts.every(function(t){ return tState(t.getAttribute('data-id')).d; }); }
+  function skillLevels(){
+    var res = {}; SKILLS.forEach(function(s){ res[s.id] = { n:0, projs:{} }; });
+    allTasks().forEach(function(t){
+      if (!tState(t.getAttribute('data-id')).d) return;
+      (t.getAttribute('data-skills') || '').split(',').filter(Boolean).forEach(function(k){ if (res[k]){ res[k].n++; res[k].projs[projOf(t)] = 1; } });
+    });
+    Object.keys(res).forEach(function(k){
+      var r = res[k], p = Object.keys(r.projs).length;
+      r.lv = r.n >= 4 && p >= 2 ? 3 : (r.n >= 2 && p >= 2 ? 2 : (r.n >= 1 ? 1 : 0)); r.p = p;
+    });
+    return res;
+  }
+
+  /* ---------------- render ---------------- */
+  function chStatus(ch){
+    if (ch.kind === 'open') return chapterDone(ch.id) ? 'done' : 'open';
+    if (ch.kind === 'enc') return S.keys[ch.id] ? (chapterDone(ch.id) ? 'done' : 'open') : 'key';
+    return 'later';
+  }
+  function renderProjects(){
+    var box = $('projects'); box.innerHTML = '';
+    PROJECTS.forEach(function(p){
+      var d = document.createElement('div'); d.className = 'proj' + (p.soon ? ' soon' : '');
+      d.innerHTML = '<div class="proj-h"><span class="proj-ic">' + p.icon + '</span><div><div class="proj-t">' + p.name + '</div><div class="proj-d">' + p.desc + '</div></div></div>';
+      var chs = document.createElement('div'); chs.className = 'chs';
+      if (p.soon){ var s = document.createElement('div'); s.className = 'proj-d'; s.style.marginTop = '10px'; s.textContent = '🔒 Sıradaki projelerden biri.'; chs.appendChild(s); }
+      p.chapters.forEach(function(ch, i){
+        var st = chStatus(ch);
+        var b = document.createElement('button'); b.type = 'button';
+        b.className = 'chrow' + (S.view === ch.id ? ' sel' : '');
+        var icon = st === 'done' ? '✅' : (st === 'open' ? '▶️' : (st === 'key' ? '🗝️' : '🔒'));
+        b.innerHTML = '<span class="st">' + icon + '</span><span><span class="tt">Bölüm ' + (i+1) + ' · ' + ch.t + '</span><br/><span class="cc">' + ch.c + '</span></span>';
+        b.addEventListener('click', function(){ openChapter(ch); });
+        chs.appendChild(b);
+      });
+      d.appendChild(chs); box.appendChild(d);
+    });
+  }
+  function findCh(id){ var r = null; PROJECTS.forEach(function(p){ p.chapters.forEach(function(c){ if (c.id === id) r = c; }); }); return r; }
+  function openChapter(ch){
+    S.view = ch.id;
+    var st = chStatus(ch);
+    document.querySelectorAll('.chapter').forEach(function(s){ s.classList.remove('show'); });
+    if (st === 'later'){
+      $('laterTitle').textContent = ch.t + ' · henüz açılmadı';
+      $('laterText').textContent = 'Bu bölüm sırası geldiğinde derste açılacak. Şimdilik açık bölümlere odaklan.';
+      document.querySelector('.chapter[data-ch="later"]').classList.add('show');
+    } else {
+      document.querySelector('.chapter[data-ch="' + ch.id + '"]').classList.add('show');
+      if (st === 'key') renderKeyCard(ch);
+    }
+    renderProjects(); save();
+  }
+  function renderKeyCard(ch){
+    var slot = $(ch.id + 'Slot'); if (!slot || slot.getAttribute('data-open')) return;
+    slot.innerHTML = '<div class="keycard"><div class="ic">🗝️</div><h3>' + ch.t + '</h3><p>Bu bölüm kilitli. Anahtarı hocan derste verecek.</p>'
+      + '<div class="keyrow"><input id="key_' + ch.id + '" placeholder="ANAHTAR" autocomplete="off" /><button class="v-btn" id="keyBtn_' + ch.id + '">Kilidi aç</button></div>'
+      + '<div class="fb tip" id="keyMsg_' + ch.id + '" style="margin-top:10px"></div></div>';
+    $('keyBtn_' + ch.id).addEventListener('click', function(){ tryKey(ch, $('key_' + ch.id).value, false); });
+    $('key_' + ch.id).addEventListener('keydown', function(e){ if (e.key === 'Enter') tryKey(ch, this.value, false); });
+  }
+  function tryKey(ch, pass, silent){
+    var msg = $('keyMsg_' + ch.id);
+    if (!pass || !pass.trim()){ if (msg){ msg.className = 'fb no'; msg.textContent = 'Önce anahtarı yaz.'; } return Promise.resolve(false); }
+    return decryptPayload(PAYLOADS[ch.id], pass).then(function(html){
+      var slot = $(ch.id + 'Slot'); slot.innerHTML = html; slot.setAttribute('data-open', '1');
+      S.keys[ch.id] = pass.trim().toUpperCase();
+      slot.querySelectorAll('[data-task]').forEach(bindTask);
+      if (ch.id === 'pet1') initPet();
+      afterChange();
+      if (!silent) toast('Kilit açıldı 🗝️', ch.t + ' bölümü artık senin');
+      return true;
+    }).catch(function(e){
+      if (silent){ delete S.keys[ch.id]; renderKeyCard(ch); return false; }
+      if (msg){ msg.className = 'fb no'; msg.textContent = (e && e.message === 'nocrypto') ? 'Bu tarayıcı kilidi açamıyor. Sayfayı internetten (https) aç.' : 'Bu anahtar doğru değil.'; }
+      return false;
+    });
+  }
+  function renderSkills(){
+    var lv = skillLevels(), box = $('skills'); box.innerHTML = '';
+    var names = ['Henüz değil', 'Tanıştı', 'Kullandı', 'Ustalaştı'];
+    SKILLS.forEach(function(s){
+      var r = lv[s.id], d = document.createElement('div'); d.className = 'skill'; d.setAttribute('data-lv', r.lv);
+      d.innerHTML = '<div class="sn">' + s.n + '</div><div class="sl">' + names[r.lv] + '</div><div class="pips"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>'
+        + '<div class="sp">' + r.n + ' görev · ' + r.p + ' proje</div>';
+      box.appendChild(d);
+    });
+  }
+  function renderHud(){
+    var x = xp(), r = rankOf(x);
+    $('xpNow').textContent = x; $('rank').textContent = r.n;
+    if (r.next){ $('xpLabel').textContent = r.next.n + ' unvanına ' + (r.next.x - x) + ' XP'; $('xpFill').style.width = Math.round((x - r.from) / (r.next.x - r.from) * 100) + '%'; }
+    else { $('xpLabel').textContent = 'En yüksek unvan'; $('xpFill').style.width = '100%'; }
+  }
+
+  /* ---------------- duel ---------------- */
+  function duelDefault(){ return { a:{n:'Karabas', g:15, c:100}, b:{n:'Boncuk', g:10, c:100}, turn:'a', over:false, log:[] }; }
+  function clampG(v){ v = parseInt(v, 10); if (isNaN(v)) v = 10; return Math.max(5, Math.min(30, v)); }
+  function renderDuel(){
+    var open = tState('a3').d, D = S.duel;
+    $('duel').classList.toggle('locked', !open);
+    $('duelTitle').textContent = (open ? '⚔️ ' : '🔒 ') + 'Düello Arenası';
+    $('duelSub').textContent = open ? 'Karakterlerine isim ve güç ver, sonra sırayla saldırt. Her tıklama senin yazdığın saldir metodunun bir çağrısı.' : 'Görev 3\u2019ü tamamlayınca açılır.';
+    $('duelBody').style.display = open ? 'block' : 'none';
+    if (!open) return;
+    ['a','b'].forEach(function(k){
+      var f = D[k];
+      $(k + 'Show').textContent = f.n; $(k + 'Hp').style.width = Math.max(0, f.c) + '%';
+      $(k + 'HpBar').classList.toggle('low', f.c <= 30);
+      $(k + 'HpT').textContent = 'can: ' + Math.max(0, f.c) + ' · güç: ' + f.g;
+    });
+    $('aAtk').textContent = D.a.n + ' saldırır'; $('bAtk').textContent = D.b.n + ' saldırır';
+    $('aAtk').disabled = D.over || D.turn !== 'a'; $('bAtk').disabled = D.over || D.turn !== 'b';
+    var started = D.log.length > 0; ['aName','aGuc','bName','bGuc'].forEach(function(id){ $(id).disabled = started; });
+    $('winner').textContent = D.over ? '🏆 ' + (D.a.c <= 0 ? D.b.n : D.a.n) + ' kazandı!' : '';
+    var lg = $('duelLog'); lg.innerHTML = '';
+    if (!D.log.length) lg.textContent = 'Düello başlamadı. İlk saldırı ' + D.a.n + '\u2019tan.';
+    D.log.slice().reverse().forEach(function(m){ var d = document.createElement('div'); d.textContent = m; lg.appendChild(d); });
+  }
+  function readSetup(){
+    var D = S.duel;
+    D.a.n = ($('aName').value.trim() || 'Karabas').slice(0,14); D.b.n = ($('bName').value.trim() || 'Boncuk').slice(0,14);
+    D.a.g = clampG($('aGuc').value); D.b.g = clampG($('bGuc').value);
+  }
+  function attack(k){
+    var D = S.duel; if (D.over) return; if (!D.log.length) readSetup();
+    var s = D[k], hk = k === 'a' ? 'b' : 'a', h = D[hk];
+    h.c -= s.g;
+    var call = s.n.toLowerCase() + '.saldir(' + h.n.toLowerCase() + ')';
+    $('callLine').textContent = '▶ ' + call + '   # self = ' + s.n + ', hedef = ' + h.n;
+    D.log.push(call + ' → ' + h.n + ' -' + s.g + ' can, kalan: ' + Math.max(0, h.c));
+    var el = $(hk === 'a' ? 'fA' : 'fB'); el.classList.remove('hit'); void el.offsetWidth; el.classList.add('hit');
+    if (h.c <= 0) D.over = true;
+    D.turn = hk; renderDuel(); save();
+  }
+  $('aAtk').addEventListener('click', function(){ attack('a'); });
+  $('bAtk').addEventListener('click', function(){ attack('b'); });
+  $('duelReset').addEventListener('click', function(){ var D = S.duel; S.duel = { a:{n:D.a.n, g:D.a.g, c:100}, b:{n:D.b.n, g:D.b.g, c:100}, turn:'a', over:false, log:[] }; $('callLine').textContent = ''; renderDuel(); save(); });
+  ['aName','aGuc','bName','bGuc'].forEach(function(id){ $(id).addEventListener('input', function(){ readSetup(); renderDuel(); save(); }); });
+
+  /* ---------------- pet ---------------- */
+  var petTimer = null;
+  function petDefault(){ return { n:'Pamuk', a:50, m:50, e:50 }; }
+  function clamp(v){ return Math.max(0, Math.min(100, v)); }
+  function mood(P){ if (P.a >= 70) return 'Aç'; if (P.e <= 20) return 'Yorgun'; if (P.m >= 70) return 'Mutlu'; return 'Normal'; }
+  function renderPet(){
+    if (!$('petSim')) return;
+    var open = tState('p2').d, P = S.pet;
+    $('petSim').classList.toggle('locked', !open);
+    $('petTitle').textContent = (open ? '🐾 ' : '🔒 ') + 'Canlı evcil hayvan';
+    $('petSub').textContent = open ? 'Yazdığın metotlarla çalışan hayvanın burada. Ona iyi bak!' : 'Görev 2\u2019yi tamamlayınca açılır. Yazdığın metotlarla çalışan bir hayvanı burada büyüteceksin.';
+    $('petBody').style.display = open ? 'block' : 'none';
+    if (!open) return;
+    if (document.activeElement !== $('petName')) $('petName').value = P.n;
+    var md = mood(P), faces = { 'Aç':'😿', 'Yorgun':'😴', 'Mutlu':'😸', 'Normal':'🐱' };
+    $('petFace').textContent = faces[md]; $('petMood').textContent = 'Ruh hali: ' + md;
+    $('mA').style.width = P.a + '%'; $('mM').style.width = P.m + '%'; $('mE').style.width = P.e + '%';
+    $('mvA').textContent = P.a; $('mvM').textContent = P.m; $('mvE').textContent = P.e;
+  }
+  function petAct(kind){
+    var P = S.pet, nm = (P.n || 'pamuk').toLowerCase();
+    if (kind === 'besle'){ P.a = clamp(P.a - 20); }
+    if (kind === 'oyna'){ P.m = clamp(P.m + 15); P.e = clamp(P.e - 10); P.a = clamp(P.a + 10); }
+    if (kind === 'uyu'){ P.e = clamp(P.e + 30); }
+    $('petCall').textContent = '▶ ' + nm + '.' + kind + '()   # ruh hali: ' + mood(P);
+    var f = $('petFace'); f.classList.remove('hit'); void f.offsetWidth; f.classList.add('hit');
+    renderPet(); save();
+  }
+  function initPet(){
+    if (!S.pet) S.pet = petDefault();
+    $('petBesle').addEventListener('click', function(){ petAct('besle'); });
+    $('petOyna').addEventListener('click', function(){ petAct('oyna'); });
+    $('petUyu').addEventListener('click', function(){ petAct('uyu'); });
+    $('petReset').addEventListener('click', function(){ var n = S.pet.n; S.pet = petDefault(); S.pet.n = n; $('petCall').textContent = ''; renderPet(); save(); });
+    $('petName').addEventListener('input', function(){ S.pet.n = (this.value.trim() || 'Pamuk').slice(0,14); renderPet(); save(); });
+    if (!petTimer) petTimer = setInterval(function(){
+      if (!S.pet || !tState('p2').d || document.hidden) return;
+      if (!document.querySelector('.chapter[data-ch="pet1"]').classList.contains('show')) return;
+      S.pet.a = clamp(S.pet.a + 2); S.pet.e = clamp(S.pet.e - 1); S.pet.m = clamp(S.pet.m - 1);
+      renderPet(); save(true);
+    }, 4000);
+    renderPet();
+  }
+
+  /* ---------------- tabs ---------------- */
+  document.querySelectorAll('.tab').forEach(function(b){
+    b.addEventListener('click', function(){
+      S.tab = b.getAttribute('data-tab');
+      document.querySelectorAll('.tab').forEach(function(x){ x.classList.toggle('on', x === b); });
+      document.querySelectorAll('.pane').forEach(function(p){ p.classList.toggle('on', p.getAttribute('data-pane') === S.tab); });
+      if (S.tab === 'beceriler') renderSkills();
+      save();
+    });
+  });
+
+  /* ---------------- storage ---------------- */
+  function save(quiet){
+    if (!storageOK || booting) return;
+    try { localStorage.setItem(KEY, JSON.stringify(S)); if (!quiet) flash('Kaydedildi ✓'); }
+    catch(e){ storageOK = false; flash('Kayıt yapılamadı', true); }
+  }
+  function load(){
+    if (!storageOK) return;
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw){ var d = JSON.parse(raw); for (var k in d) S[k] = d[k]; return; }
+      var old = localStorage.getItem(OLD_KEY);
+      if (old){
+        var o = JSON.parse(old), ids = ['a1','a2','a3','a4','a5'];
+        (o.items || []).forEach(function(it, i){ if (ids[i]) S.tasks[ids[i]] = { d:!!it.d, t:it.t || 0, hu:!!it.hu, vals:it.vals || [] }; });
+        if (o.map) S.map = o.map;
+        if (o.duel) S.duel = o.duel;
+      }
+    } catch(e){ storageOK = false; }
+  }
+  function afterChange(){ renderHud(); renderProjects(); renderDuel(); renderPet(); if (S.tab === 'beceriler') renderSkills(); save(); }
+
+  /* ---------------- report ---------------- */
+  $('reportBtn').addEventListener('click', function(){
+    var L = ['EREN\'İN ATÖLYESİ — Rapor', 'Unvan: ' + rankOf(xp()).n + ' · XP: ' + xp(), ''];
+    PROJECTS.forEach(function(p){
+      p.chapters.forEach(function(ch){
+        var ts = [].slice.call(document.querySelectorAll('.chapter[data-ch="' + ch.id + '"] [data-task]'));
+        if (!ts.length) return;
+        L.push('■ ' + p.name + ' · ' + ch.t);
+        ts.forEach(function(t){
+          var id = t.getAttribute('data-id'), st = tState(id), title = t.querySelector('.t-title').textContent;
+          L.push((st.d ? '✔ ' : '✗ ') + title + (st.t ? '  (yanlış deneme: ' + st.t + ')' : '') + (st.hu ? ' · ipucu' : ''));
+          var type = t.getAttribute('data-type');
+          if (type === 'map') L.push('   seçimler: ' + msels.map(function(s){ return 'self.' + s.getAttribute('data-attr') + ' = ' + (s.value || '?'); }).join(' | '));
+          else if (type === 'code'){
+            var c = t.querySelector('.code-in').value.trim(); if (c){ L.push('   KOD:'); c.split('\n').forEach(function(l){ L.push('   | ' + l); }); }
+            L.push('   çıktı: ' + t.querySelector('.out-in').value.trim().replace(/\n/g, ' / '));
+          } else { var v = t.querySelector('textarea, input.v-in').value.trim(); if (v) L.push('   → ' + v.replace(/\n/g, ' / ')); }
+        });
+        L.push('');
+      });
+    });
+    var lv = skillLevels(), names = ['—', 'Tanıştı', 'Kullandı', 'Ustalaştı'];
+    L.push('Beceriler: ' + SKILLS.map(function(s){ return s.n + ' ' + names[lv[s.id].lv]; }).join(' · '));
+    if (S.duel && S.duel.log.length){ L.push('', 'Son düello:'); S.duel.log.forEach(function(m){ L.push('   ' + m); }); }
+    var text = L.join('\n'); $('reportOut').value = text; $('reportOut').style.display = 'block';
+    navigator.clipboard.writeText(text).then(function(){ $('reportMsg').className = 'msg ok'; $('reportMsg').textContent = 'Kopyalandı ✓'; })
+      .catch(function(){ $('reportMsg').className = 'msg tip'; $('reportMsg').textContent = 'Metni seçip kopyala.'; });
+  });
+
+  /* ---------------- reset ---------------- */
+  var rb = document.createElement('button'); rb.id = 'resetBtn'; rb.type = 'button'; rb.textContent = 'İlerlemeyi sıfırla';
+  rb.addEventListener('click', function(){
+    if (!confirm('Tüm ilerlemen, anahtarların ve hayvanın silinecek. Emin misin?')) return;
+    try { localStorage.removeItem(KEY); localStorage.removeItem(OLD_KEY); } catch(e){}
+    location.reload();
+  });
+  document.querySelector('footer').appendChild(document.createElement('br'));
+  document.querySelector('footer').appendChild(rb);
+
+  /* ---------------- boot ---------------- */
+  load();
+  if (!S.duel) S.duel = duelDefault();
+  msels.forEach(function(s, i){ if (S.map[i]) s.value = S.map[i]; });
+  $('aName').value = S.duel.a.n; $('aGuc').value = S.duel.a.g; $('bName').value = S.duel.b.n; $('bGuc').value = S.duel.b.g;
+  allTasks().forEach(bindTask);
+  renderCard();
+  var pending = [];
+  PROJECTS.forEach(function(p){ p.chapters.forEach(function(ch){ if (ch.kind === 'enc' && S.keys[ch.id]) pending.push(tryKey(ch, S.keys[ch.id], true)); }); });
+  Promise.all(pending).then(function(){
+    var v = findCh(S.view) || findCh('arena1');
+    openChapter(v);
+    var tb = document.querySelector('.tab[data-tab="' + S.tab + '"]'); if (tb && S.tab !== 'projeler') tb.click();
+    renderHud(); renderDuel(); renderPet();
+    booting = false;
+    if (!storageOK) flash('Bu tarayıcıda kayıt kapalı', true);
+    else if (xp() > 0) flash('Kaldığın yerden devam ✓');
+  });
+})();
+</script>
+</body>
+</html>
