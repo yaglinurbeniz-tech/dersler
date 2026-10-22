@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Canlı Arena — Eren</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#090B11; --panel:#131722; --panel-2:#0E1119; --line:#232938;
+    --text:#ECEEF4; --muted:#97A0B3; --muted-2:#5D6578;
+    --gold:#F5B942; --gold-dim:#7a5a1c; --red:#FF5D5D; --red-dim:#6b2626;
+    --teal:#3DD6B5; --violet:#A78BFA; --violet-dim:#4b3a86;
+    --on:#3DD68C; --on-dim:#1c6b44; --hint:#FFB020;
+    --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+    --disp:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:radial-gradient(1000px 520px at 10% -140px,#2a1c0a66,transparent),radial-gradient(1000px 520px at 95% -160px,#23104066,transparent),var(--bg);
+    color:var(--text);font-family:var(--body);line-height:1.6;-webkit-font-smoothing:antialiased}
+  code{font-family:var(--mono);font-size:.9em;background:#0b0e16;border:1px solid var(--line);padding:1px 6px;border-radius:6px;color:#d6dbea}
+  button{font-family:inherit}
+  :focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:6px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+  .hud{position:sticky;top:0;z-index:40;backdrop-filter:blur(10px);background:rgba(9,11,17,.88);border-bottom:1px solid var(--line)}
+  .hud-in{max-width:1180px;margin:0 auto;padding:11px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .brand{font-family:var(--disp);font-weight:700;font-size:16px;line-height:1.1}
+  .brand small{display:block;font-family:var(--mono);font-weight:400;font-size:10.5px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}
+  .sp{flex:1}
+  .pill{font-family:var(--mono);font-size:12px;padding:6px 11px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+  .pill.gold{color:var(--gold);border-color:var(--gold-dim)}
+  .pill.ok{color:var(--on);border-color:var(--on-dim)}
+  .pill.bad{color:var(--red);border-color:var(--red-dim)}
+  .pill.load{color:var(--hint);border-color:#4a3b12}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+
+  /* MAP */
+  .mapbar{margin-top:22px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px 18px}
+  .map-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .map-top h1{font-family:var(--disp);font-size:22px;margin:0}
+  .map-top span{color:var(--muted);font-size:13.5px}
+  .path{display:flex;align-items:center;gap:0;margin-top:14px;overflow-x:auto;padding-bottom:4px}
+  .node{flex-shrink:0;width:118px;background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:10px 8px;text-align:center;cursor:pointer;color:var(--text);transition:transform .15s,border-color .2s}
+  .node:hover:not([disabled]){transform:translateY(-2px)}
+  .node[disabled]{cursor:default;opacity:.5}
+  .node .ic{font-size:24px;line-height:1.2}
+  .node .nn{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:2px}
+  .node .nt{font-family:var(--disp);font-weight:600;font-size:12.5px;line-height:1.25;margin-top:2px;min-height:31px}
+  .node .stars{font-size:12px;letter-spacing:1px;color:#3a4152;margin-top:3px}
+  .node .stars b{color:var(--gold);font-weight:400}
+  .node.cur{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold-dim) inset}
+  .node.done{border-color:var(--on-dim)}
+  .link{flex-shrink:0;width:22px;height:2px;background:var(--line)}
+  .link.on{background:var(--gold-dim)}
+  .gate{flex-shrink:0;display:grid;place-items:center;width:46px;font-size:20px}
+
+  /* MISSION */
+  .mission{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:16px;margin-top:16px}
+  @media (max-width:980px){.mission{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px 20px}
+  .card + .card{margin-top:14px}
+  .eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase}
+  .m-title{font-family:var(--disp);font-size:27px;margin:4px 0 0;line-height:1.15}
+  .story{color:var(--muted);font-size:15px;margin:8px 0 0}
+  .goals{list-style:none;padding:0;margin:14px 0 0}
+  .goals li{display:flex;gap:9px;align-items:flex-start;font-size:14.5px;margin:7px 0}
+  .goals li .gi{flex-shrink:0;width:20px;height:20px;border-radius:6px;border:1px solid var(--line);display:grid;place-items:center;font-size:12px;margin-top:1px}
+  .goals li.bonus .gi{border-color:var(--gold-dim);color:var(--gold)}
+  .goals li.bonus{color:var(--muted)}
+  .sec-t{font-family:var(--disp);font-weight:600;font-size:16px;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+
+  /* concept stepper */
+  .cs-code{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:10px 0;font-family:var(--mono);font-size:13px;line-height:1.85;overflow-x:auto}
+  .cs-line{display:flex;padding:0 12px;white-space:pre;transition:background .25s}
+  .cs-line .ln{width:24px;color:#454c5e;flex-shrink:0;user-select:none}
+  .cs-line.hl{background:#2a2110;box-shadow:inset 3px 0 0 var(--gold)}
+  .cs-note{margin-top:10px;font-size:14.5px;min-height:44px;color:var(--text)}
+  .cs-state{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;min-height:30px}
+  .chip{font-family:var(--mono);font-size:12px;padding:4px 9px;border-radius:8px;background:#0d1220;border:1px solid var(--line);color:var(--muted);animation:pop .35s ease}
+  .chip b{color:var(--text);font-weight:600}
+  .chip.bad b{color:var(--red)} .chip.good b{color:var(--on)} .chip.hot{border-color:var(--gold-dim)}
+  @keyframes pop{0%{transform:scale(.85);opacity:0}100%{transform:scale(1);opacity:1}}
+  .cs-ctl{display:flex;gap:8px;align-items:center;margin-top:12px}
+  .btn{font-family:var(--disp);font-weight:600;font-size:13.5px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:9px;padding:8px 13px;cursor:pointer}
+  .btn:hover:not([disabled]){border-color:var(--muted-2)}
+  .btn[disabled]{opacity:.4;cursor:default}
+  .btn.pri{background:var(--gold);color:#1a1205;border-color:var(--gold)}
+  .cs-prog{font-family:var(--mono);font-size:12px;color:var(--muted);margin-left:auto}
+
+  /* hints */
+  .hintrow{display:flex;gap:8px;flex-wrap:wrap}
+  .hintbtn{background:none;border:1px solid var(--line);color:var(--hint);font-weight:500;font-size:13px;padding:7px 12px;border-radius:9px;cursor:pointer}
+  .hintbtn[disabled]{opacity:.35;cursor:not-allowed}
+  .hintbox{max-height:0;overflow:hidden;transition:max-height .35s ease}
+  .hintbox.open{max-height:220px}
+  .hint-in{margin-top:10px;background:#160f00;border:1px solid #4a3b12;border-radius:11px;padding:11px 13px;color:#e9d9b3;font-size:13.5px}
+  .hint-in b{display:block;font-family:var(--mono);font-size:11px;letter-spacing:1px;color:#b08a3a;text-transform:uppercase;margin-bottom:4px}
+
+  /* ARENA STAGE */
+  .stage{position:relative;height:270px;border-radius:16px;overflow:hidden;border:1px solid var(--line);
+    background:radial-gradient(420px 150px at 50% 100%,#3a2a1033,transparent),linear-gradient(180deg,#141a29 0%,#101522 62%,#1a140c 62%,#140f09 100%)}
+  .stage::after{content:"";position:absolute;left:0;right:0;top:62%;height:1px;background:#3a2c18}
+  .side{position:absolute;top:44px;bottom:calc(38% - 22px);display:flex;flex-direction:column;justify-content:flex-end;gap:8px;width:46%}
+  .side.L{left:14px} .side.R{right:14px;align-items:flex-end}
+  .side.L.many{gap:4px} .side.L.many .fighter{padding:4px 9px} .side.L.many .hpt{display:none}
+  .fighter{display:flex;align-items:center;gap:10px;background:rgba(14,17,25,.82);border:1px solid var(--line);border-radius:14px;padding:8px 11px;width:100%;max-width:250px;transition:transform .22s ease,opacity .4s,filter .4s;position:relative;opacity:0;transform:translateY(8px)}
+  .fighter.in{opacity:1;transform:none}
+  .side.R .fighter{flex-direction:row-reverse;text-align:right}
+  .fighter .fi{font-size:34px;line-height:1}
+  .side.L.many .fighter .fi{font-size:24px}
+  .fighter .fn{font-family:var(--disp);font-weight:700;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fighter .fb{flex:1;min-width:0}
+  .hp{height:9px;background:#0a0d14;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:4px}
+  .hp > div{height:100%;width:100%;background:linear-gradient(90deg,#1f9e6a,var(--on));transition:width .4s ease}
+  .hp.low > div{background:linear-gradient(90deg,#9e2a2a,var(--red))}
+  .hpt{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:2px}
+  .fighter.lungeR{transform:translateX(26px)} .fighter.lungeL{transform:translateX(-26px)}
+  .fighter.shake{animation:shake .32s ease}
+  @keyframes shake{0%,100%{translate:0}25%{translate:-6px}75%{translate:6px}}
+  .fighter.dead{filter:grayscale(1);opacity:.45}
+  .fighter.glow{box-shadow:0 0 0 2px var(--on),0 0 24px #3dd68c55}
+  .float{position:absolute;top:-6px;font-family:var(--disp);font-weight:700;font-size:18px;pointer-events:none;animation:rise .9s ease forwards}
+  .float.d{color:var(--red)} .float.h{color:var(--on)}
+  @keyframes rise{0%{opacity:0;transform:translateY(6px)}20%{opacity:1}100%{opacity:0;transform:translateY(-28px)}}
+  .banner{position:absolute;left:50%;top:10px;transform:translateX(-50%);font-family:var(--disp);font-weight:700;font-size:15px;padding:6px 14px;border-radius:10px;background:rgba(9,11,17,.85);border:1px solid var(--line);white-space:nowrap;opacity:0;transition:opacity .3s;max-width:92%;overflow:hidden;text-overflow:ellipsis}
+  .banner.on{opacity:1} .banner.b-win{color:var(--gold);border-color:var(--gold-dim)} .banner.b-lose{color:var(--red);border-color:var(--red-dim)}
+  .stage-empty{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted-2);font-size:14px;text-align:center;padding:20px}
+  .stage-ctl{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .callline{font-family:var(--mono);font-size:12.5px;color:var(--gold);min-height:20px;flex:1;min-width:200px}
+
+  /* code + run */
+  .codebox{width:100%;min-height:230px;background:#0a0d15;border:1px solid var(--line);border-radius:12px;padding:12px 14px;color:#e2e7f3;font-family:var(--mono);font-size:13px;line-height:1.65;resize:vertical;tab-size:4}
+  .codebox:focus{outline:none;border-color:var(--gold)}
+  .run-row{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .runbtn{font-family:var(--disp);font-weight:700;font-size:15px;background:linear-gradient(180deg,#ffcb5c,#e9a52a);color:#1a1205;border:none;border-radius:11px;padding:11px 22px;cursor:pointer;box-shadow:0 6px 18px #e9a52a33}
+  .runbtn[disabled]{opacity:.5;cursor:wait}
+  .tip{font-size:12.5px;color:var(--muted)}
+  .tests{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+  .test{display:flex;gap:9px;align-items:flex-start;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:8px 11px;font-size:13.5px;animation:pop .3s ease}
+  .test .ti{flex-shrink:0;width:20px;text-align:center}
+  .test.ok{border-color:var(--on-dim)} .test.no{border-color:var(--red-dim)}
+  .test .tm{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .test.bonus .ta::before{content:"★ ";color:var(--gold)}
+  .errbox{margin-top:12px;background:#1a0b0d;border:1px solid var(--red-dim);border-radius:11px;padding:11px 13px;font-size:14px;color:#ffc4c4;display:none}
+  .errbox b{color:var(--red);font-family:var(--disp)}
+  .console{margin-top:10px;background:#07090e;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-family:var(--mono);font-size:12px;color:#9fb0c8;white-space:pre-wrap;max-height:120px;overflow:auto;display:none}
+
+  .win{margin-top:12px;background:linear-gradient(135deg,#2a1f08,#131722 70%);border:1px solid var(--gold-dim);border-radius:14px;padding:14px 16px;display:none}
+  .win .ws{font-size:26px;letter-spacing:4px;color:#3a4152}
+  .win .ws b{color:var(--gold);font-weight:400}
+  .win .wt{font-family:var(--disp);font-weight:700;font-size:18px}
+  .win .wm{color:var(--muted);font-size:13.5px;margin-top:2px}
+
+  /* key */
+  .keycard{text-align:center;padding:30px 20px}
+  .keycard .ic{font-size:40px}
+  .keycard h2{font-family:var(--disp);margin:8px 0 4px}
+  .keycard p{color:var(--muted);margin:0 0 14px}
+  .keyrow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .keyrow input{width:220px;background:#0b0e16;border:1px solid var(--line);border-radius:9px;padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:14px;text-transform:uppercase;letter-spacing:1px;text-align:center}
+
+  .bottom{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  @media (max-width:820px){.bottom{grid-template-columns:1fr}}
+  .reportOut{width:100%;margin-top:10px;display:none;min-height:180px;background:#0b0e16;border:1px solid var(--line);border-radius:9px;padding:12px;color:var(--text);font-family:var(--mono);font-size:12px}
+  .msg{font-size:13px;margin-left:8px}.msg.ok{color:var(--on)}.msg.tip{color:var(--muted)}
+  footer{text-align:center;color:var(--muted-2);font-size:12.5px;padding:34px 0;font-family:var(--mono)}
+  #resetBtn{margin-top:12px;background:none;border:1px solid var(--line);color:var(--muted-2);font-family:var(--mono);font-size:11px;padding:7px 13px;border-radius:8px;cursor:pointer}
+  #saveInd{position:fixed;left:16px;bottom:16px;z-index:70;font-family:var(--mono);font-size:12px;background:var(--panel);border:1px solid var(--gold-dim);color:var(--gold);padding:8px 13px;border-radius:10px;opacity:0;transition:opacity .25s;pointer-events:none}
+  #saveInd.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="hud">
+  <div class="hud-in">
+    <div class="brand">Canlı Arena<small>Dünya 1 · Sınıflar</small></div>
+    <div class="sp"></div>
+    <span class="pill gold" id="starPill">★ 0</span>
+    <span class="pill load" id="enginePill">Python motoru yükleniyor…</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="mapbar">
+    <div class="map-top"><h1>Arena haritası</h1><span>Her görev, kodunla açılan yeni bir savaş. Kodunu VS Code'da yaz, buraya yapıştır, arenada izle.</span></div>
+    <div class="path" id="path"></div>
+  </div>
+
+  <div id="missionView"></div>
+
+  <div class="bottom">
+    <div class="card">
+      <div class="sec-t">📤 Hocana rapor</div>
+      <div class="tip">Ders sonunda bu butona bas. Yıldızların, denemelerin ve kodların tek metin olarak kopyalanır.</div>
+      <div style="margin-top:10px"><button class="btn pri" id="reportBtn">Raporu kopyala</button><span class="msg tip" id="reportMsg"></span></div>
+      <textarea class="reportOut" id="reportOut" readonly></textarea>
+    </div>
+    <div class="card">
+      <div class="sec-t">🧭 Nasıl oynanır?</div>
+      <div class="tip" style="font-size:13.5px;line-height:1.7">
+        1. Görevi ve hedefleri oku, kavram animasyonunu izle.<br/>
+        2. Kodunu <b>VS Code'da</b> yaz. Görevler birbirinin üstüne kurulur, aynı dosyada devam et.<br/>
+        3. Dosyanın tamamını kopyalayıp kod kutusuna yapıştır ve <b>Arenada çalıştır</b>'a bas.<br/>
+        4. Testleri geç, ★ topla. Bonus hedef ve az denemeyle ekstra yıldız kazanırsın.
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>KODLAYIN // CANLI ARENA</footer>
+<div id="saveInd"></div>
+
+<script type="text/plain" id="workerSrc">
+let py = null;
+self.onmessage = async (ev) => {
+  const d = ev.data;
+  if (d.type === 'init') {
+    try {
+      importScripts(d.base + 'pyodide.js');
+      py = await loadPyodide({ indexURL: d.base });
+      py.runPython(d.harness);
+      self.postMessage({ type: 'ready' });
+    } catch (e) { self.postMessage({ type: 'fail', msg: String(e) }); }
+  } else if (d.type === 'run') {
+    try {
+      py.globals.set('_kod', d.code); py.globals.set('_test', d.tests);
+      const r = py.runPython('_run(_kod, _test)');
+      self.postMessage({ type: 'result', id: d.id, res: r });
+    } catch (e) {
+      self.postMessage({ type: 'result', id: d.id, res: JSON.stringify({ err: 'Beklenmeyen bir hata oluştu: ' + String(e).slice(0, 300), tests: [], events: [], stdout: '' }) });
+    }
+  }
+};
+</script>
+
+<script>
+(function(){
+  var KEY = 'kodlayin.eren.canli-arena.v1';
+  var PYO = new URLSearchParams(location.search).get('pyo') || 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/';
+  var HARNESS = "import sys, io, json, traceback, re\n\nclass _Kes(Exception):\n    pass\n\ndef _girdi(*a, **k):\n    raise _Kes(\"Kodunda input() var. Arenaya yapıştırmadan önce input satırlarını sil ya da başına # koy.\")\n\ndef _satir(e):\n    if isinstance(e, SyntaxError) and getattr(e, \"filename\", None) == \"kodum.py\":\n        return e.lineno\n    n = None\n    for fr in traceback.extract_tb(e.__traceback__):\n        if fr.filename == \"kodum.py\":\n            n = fr.lineno\n    return n\n\ndef _fmt(e):\n    if isinstance(e, _Kes):\n        return str(e)\n    m = str(e)\n    n = _satir(e)\n    yer = \" (satır %d)\" % n if n else \"\"\n    if isinstance(e, IndentationError):\n        return \"Girinti hatası%s. Bir bloğun içindeki satırlar aynı miktarda içeride olmalı.\" % yer\n    if isinstance(e, SyntaxError):\n        return \"Yazım hatası%s. İki nokta (:), parantez ya da tırnak eksik olabilir.\" % yer\n    if isinstance(e, NameError):\n        r = re.search(r\"name '(\\w+)' is not defined\", m)\n        if r:\n            return \"'%s' adında bir şey bulunamadı%s. Yazımını ve büyük-küçük harfi kontrol et.\" % (r.group(1), yer)\n        return m + yer\n    if isinstance(e, AttributeError):\n        r = re.search(r\"'(\\w+)' object has no attribute '(\\w+)'\", m)\n        if r:\n            return \"%s nesnesinin '%s' adında bir özniteliği ya da metodu yok%s. Adını doğru yazdın mı, sınıfın içinde mi?\" % (r.group(1), r.group(2), yer)\n        return m + yer\n    if isinstance(e, TypeError):\n        if \"positional argument\" in m or \"takes\" in m or \"missing\" in m:\n            return \"Parametre sayısı uyuşmuyor%s. Metodun ilk parametresi self olmalı, diğerleri sırayla gelmeli. (Python: %s)\" % (yer, m)\n        return \"Tür hatası%s: %s\" % (yer, m)\n    if isinstance(e, RecursionError):\n        return \"Metot kendini durmadan çağırıyor%s.\" % yer\n    return \"%s%s: %s\" % (type(e).__name__, yer, m)\n\ndef _n(x):\n    try:\n        return int(x)\n    except Exception:\n        return 0\n\ndef T(res, ad, fn, ipucu, bonus=False):\n    try:\n        ok = bool(fn())\n        res[\"tests\"].append({\"ad\": ad, \"ok\": ok, \"m\": \"\" if ok else ipucu, \"b\": bonus})\n        return ok\n    except BaseException as e:\n        res[\"tests\"].append({\"ad\": ad, \"ok\": False, \"m\": _fmt(e), \"b\": bonus})\n        return False\n\ndef EV(res, **k):\n    try:\n        json.dumps(k, default=str)\n        res[\"events\"].append(k)\n    except Exception:\n        pass\n\ndef SINIF(ns, ad=\"Karakter\"):\n    c = ns.get(ad)\n    if not isinstance(c, type):\n        raise _Kes(\"Kodunda %s adında bir sınıf bulunamadı. Adı tam olarak böyle mi?\" % ad)\n    return c\n\ndef FONK(ns, ad):\n    f = ns.get(ad)\n    if not callable(f) or isinstance(f, type):\n        raise _Kes(\"Kodunda %s adında bir fonksiyon bulunamadı.\" % ad)\n    return f\n\ndef _run(kod, testsrc):\n    res = {\"tests\": [], \"events\": [], \"err\": None, \"stdout\": \"\"}\n    buf = io.StringIO()\n    eski = sys.stdout\n    sys.stdout = buf\n    try:\n        ns = {\"__name__\": \"__main__\", \"input\": _girdi}\n        try:\n            exec(compile(kod, \"kodum.py\", \"exec\"), ns)\n        except BaseException as e:\n            res[\"err\"] = _fmt(e)\n        if res[\"err\"] is None:\n            g = {\"T\": T, \"EV\": EV, \"SINIF\": SINIF, \"FONK\": FONK, \"_n\": _n, \"_fmt\": _fmt, \"_Kes\": _Kes}\n            exec(testsrc, g)\n            try:\n                g[\"testler\"](ns, res)\n            except BaseException as e:\n                res[\"err\"] = _fmt(e)\n    finally:\n        sys.stdout = eski\n    res[\"stdout\"] = buf.getvalue()[-3000:]\n    return json.dumps(res, ensure_ascii=False, default=str)\n";
+  var ENC2 = {"s": "goOOphTcChq6ti7YJLy3NQ==", "i": "jxCQHzFAObp8C9SS", "c": "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", "n": 200000};
+
+  var MISSIONS = [
+    { id:'m1', no:1, bolge:1, ikon:'🚪', ad:'Arenaya giriş', kavram:'Sınıf ve __init__',
+      hikaye:'Arena kapısında bir bekçi var. İçeri yalnızca kimliği olan savaşçıları alıyor: her savaşçının bir ismi, gücü ve canı olmalı.',
+      hedef:['Karakter adında bir sınıf yaz.', 'Kurucu metot isim, guc ve can alsın, bu sırayla.', 'Her değeri karakterin kendi kutusuna kaydet.'],
+      bonus:'Dosyanın en altında kendi kahramanını oluştur: kahraman = Karakter(...)',
+      concept:{ t:'Değerler kutulara nasıl girer?', kod:['class Araba:','    def __init__(self, renk, hiz):','        self.renk = renk','        self.hiz = hiz','','benim = Araba("Kırmızı", 120)'],
+        adim:[
+          { s:5, n:'Yeni bir araba oluşturuluyor. Değerler parantez içinde, sırayla gönderiliyor.', st:{} },
+          { s:1, n:'Python __init__\'i kendisi çağırır. self yeni araba olur, renk "Kırmızı", hiz 120 olur.', st:{'renk (parametre)':'"Kırmızı"','hiz (parametre)':'120'} },
+          { s:2, n:'Arabanın kendi renk kutusu oluşur ve içine renk parametresinin değeri konur.', st:{'renk (parametre)':'"Kırmızı"','hiz (parametre)':'120','benim.renk':'"Kırmızı"'}, hot:'benim.renk' },
+          { s:3, n:'Aynı şey hız için. Artık arabanın iki kutusu var.', st:{'renk (parametre)':'"Kırmızı"','hiz (parametre)':'120','benim.renk':'"Kırmızı"','benim.hiz':'120'}, hot:'benim.hiz' },
+          { s:5, n:'__init__ bitti. Parametreler kaybolur, kutular kalır. Arabanın rengi artık benim.renk içinde.', st:{'benim.renk':'"Kırmızı"','benim.hiz':'120'} }
+        ] },
+      ipucu:['Kurucu metot dört parametre alır: önce self, sonra isim, guc ve can.', 'Her parametreyi karakterin kendi kutusuna kaydet. Kutu adları self. ile başlar.', 'Üç satır gerekiyor. Her satırda soldaki kutu adı ile sağdaki parametre adı aynı olabilir. Kahraman için dosyanın en altında sınıfı bir kez çağır.'],
+      tests: "def testler(ns, res):\n    K = SINIF(ns)\n    if not T(res, \"Karakter üç değerle oluşturulabiliyor\", lambda: K(\"Ejder\", 20, 100) is not None, \"\"):\n        return\n    e = K(\"Ejder\", 20, 100)\n    T(res, \"İsim kendi kutusunda\", lambda: e.isim == \"Ejder\", \"Ejder'in isim kutusunda 'Ejder' olmalıydı.\")\n    T(res, \"Güç kendi kutusunda\", lambda: e.guc == 20, \"Ejder'in güç kutusunda 20 olmalıydı. Güç kutusuna hangi parametre gidiyor?\")\n    T(res, \"Can kendi kutusunda\", lambda: e.can == 100, \"Ejder'in can kutusunda 100 olmalıydı.\")\n    a = K(\"Atlas\", 10, 50); b = K(\"Bora\", 30, 90)\n    T(res, \"Her karakterin kutuları ayrı\", lambda: (a.guc, a.can, b.guc, b.can) == (10, 50, 30, 90),\n      \"İki farklı karakterin değerleri birbirine karışmamalı.\")\n    kh = ns.get(\"kahraman\")\n    T(res, \"Bonus: kendi kahramanın arenada\",\n      lambda: isinstance(kh, K) and 5 <= kh.guc <= 30 and 1 <= kh.can <= 150,\n      \"Dosyanın en altında kahraman = Karakter(...) yazarak kendi kahramanını oluştur. Güç 5–30, can en fazla 150.\", bonus=True)\n    s = kh if isinstance(kh, K) else e\n    try:\n        EV(res, t=\"enter\", id=\"h\", ad=str(s.isim), can=_n(s.can), max=_n(s.can), guc=_n(s.guc), yan=\"L\", ikon=\"🛡️\")\n        EV(res, t=\"enter\", id=\"k\", ad=\"Kukla\", can=100, max=100, guc=0, yan=\"R\", ikon=\"🎯\")\n        EV(res, t=\"msg\", m=\"%s arenaya girdi!\" % s.isim)\n    except Exception:\n        pass\n" },
+    { id:'m2', no:2, bolge:1, ikon:'🎯', ad:'İlk saldırı', kavram:'Metot, self ve hedef',
+      hikaye:'Karşında bir antrenman kuklası duruyor. Kahramanın ilk kez vuracak. Ama dikkat: vuruşta yalnızca kuklanın canı azalmalı.',
+      hedef:['saldir(self, hedef) metodunu yaz.', 'Hedefin canı, saldıranın gücü kadar azalsın.', 'Saldıranın kendi canı değişmesin.'],
+      bonus:'saldir, verdiği hasarı return ile geri versin.',
+      concept:{ t:'Noktanın solu self, parantezin içi hedef', kod:['class Cuzdan:','    # sahip ve para kutuları var','    def ode(self, alici):','        self.para -= 10','        alici.para += 10','','ali.ode(ayse)'],
+        adim:[
+          { s:6, n:'Başlangıçta ikisinin de 50 lirası var. ali.ode(ayse) çağrılıyor.', st:{'ali.para':'50','ayse.para':'50'} },
+          { s:2, n:'Noktanın solundaki ali, metodun içinde self olur. Parantezdeki ayse ise alici olur.', st:{'self':'ali','alici':'ayse','ali.para':'50','ayse.para':'50'} },
+          { s:3, n:'self.para azalır. Yani ali\'nin parası.', st:{'self':'ali','alici':'ayse','ali.para':'40','ayse.para':'50'}, hot:'ali.para' },
+          { s:4, n:'alici.para artar. Yani ayse\'nin parası.', st:{'self':'ali','alici':'ayse','ali.para':'40','ayse.para':'60'}, hot:'ayse.para' },
+          { s:6, n:'Bu metot iki kutuyu da değiştirdi. Senin saldir metodun yalnızca hangisini değiştirmeli?', st:{'ali.para':'40','ayse.para':'60'} }
+        ] },
+      ipucu:['saldir iki şey bilir: kim saldırıyor (self) ve kime saldırıyor (hedef).', 'Değişmesi gereken tek kutu hedefin canı. Ne kadar azalacağını saldıranın gücü söyler.', 'Azaltma için -= kullan. Bonus için metodun sonunda verdiğin hasarı return ile döndür.'],
+      tests: "def testler(ns, res):\n    K = SINIF(ns)\n    if not T(res, \"Karakter oluşturulabiliyor\", lambda: K(\"Ejder\", 20, 100) is not None, \"\"):\n        return\n    if not T(res, \"saldir metodu var\", lambda: callable(getattr(K(\"A\", 1, 1), \"saldir\", None)),\n             \"Karakter sınıfının içinde saldir adında bir metot olmalı.\"):\n        return\n    e = K(\"Ejder\", 20, 100); k = K(\"Kukla\", 0, 100)\n    def ilk():\n        e.saldir(k); return k.can == 80\n    T(res, \"Saldırı hedefin canını azaltıyor\", ilk, \"Ejder (güç 20) saldırınca Kukla'nın canı 100'den 80'e inmeliydi.\")\n    T(res, \"Saldıranın canı değişmiyor\", lambda: e.can == 100, \"Saldıran karakterin canı aynı kalmalı. Metot hangi kutuyu değiştiriyor?\")\n    z = K(\"Zehir\", 7, 50); k2 = K(\"Kukla\", 0, 100)\n    def farkli():\n        z.saldir(k2); z.saldir(k2); return k2.can == 86\n    T(res, \"Hasar saldıranın gücüne göre\", farkli, \"Zehir (güç 7) iki kez saldırınca hedefin canı 86 olmalıydı. Hasar, saldıranın gücü kadar olmalı.\")\n    b = K(\"Bonus\", 20, 100); kb = K(\"Kukla\", 0, 100)\n    T(res, \"Bonus: saldir verdiği hasarı döndürüyor\", lambda: b.saldir(kb) == 20,\n      \"saldir metodu, verdiği hasarı return ile geri versin.\", bonus=True)\n    kh = ns.get(\"kahraman\"); h = kh if isinstance(kh, K) else K(\"Ejder\", 20, 100)\n    kk = K(\"Kukla\", 0, 100)\n    EV(res, t=\"enter\", id=\"h\", ad=str(h.isim), can=_n(h.can), max=_n(h.can), guc=_n(h.guc), yan=\"L\", ikon=\"🛡️\")\n    EV(res, t=\"enter\", id=\"k\", ad=\"Kukla\", can=100, max=100, guc=0, yan=\"R\", ikon=\"🎯\")\n    for i in range(3):\n        once = _n(kk.can)\n        try:\n            h.saldir(kk)\n        except BaseException:\n            break\n        EV(res, t=\"atk\", a=\"h\", h=\"k\", hp=_n(kk.can), ahp=_n(h.can), dmg=once - _n(kk.can))\n" },
+    { id:'m3', no:3, bolge:1, ikon:'💀', ad:'Ölüler savaşmaz', kavram:'Sınır ve koşul',
+      hikaye:'Kukla bu sefer devrilecek. Ama arenada eksi can diye bir şey yok. Bir karakterin hâlâ ayakta olup olmadığını da sorabilmelisin.',
+      hedef:['hayatta_mi() metodunu yaz: canı varsa True, yoksa False döndürsün.', 'Saldırıdan sonra hedefin canı sıfırın altına inmesin.'],
+      bonus:'Canı bitmiş bir karakter saldıramasın.',
+      concept:{ t:'Değer sınırı aşarsa ne olur?', kod:['class Depo:','    def bosalt(self, miktar):','        self.su -= miktar','        if self.su < 0:','            self.su = 0','    def dolu_mu(self):','        return self.su > 0','','depo.bosalt(30)   # depoda 20 litre var','depo.dolu_mu()'],
+        adim:[
+          { s:8, n:'Depoda 20 litre su var. 30 litre boşaltılmak isteniyor.', st:{'depo.su':'20'} },
+          { s:2, n:'20 − 30 = −10. Eksi su olmaz! Kontrol edilmezse depo "eksi" görünür.', st:{'depo.su':'-10'}, bad:'depo.su' },
+          { s:3, n:'Koşul soruluyor: su sıfırın altında mı? Evet.', st:{'depo.su':'-10'}, bad:'depo.su' },
+          { s:4, n:'Değer sınıra eşitleniyor: su = 0.', st:{'depo.su':'0'}, good:'depo.su' },
+          { s:9, n:'dolu_mu sorusu: 0 > 0 mı? Değil. Cevap False.', st:{'depo.su':'0','dolu_mu()':'False'} },
+          { s:9, n:'Senin karakterlerinde de can eksiye inmemeli ve hayatta_mi aynı mantıkla cevap vermeli.', st:{'depo.su':'0','dolu_mu()':'False'} }
+        ] },
+      ipucu:['Önce hayatta_mi: canı sıfırdan büyükse True, değilse False döndürsün.', 'saldir içinde, can azaldıktan sonra eksiye inip inmediğini kontrol et.', 'Eksiye indiyse canı 0\'a eşitle. Bonus için saldir\'in en başında saldıranın canına bak.'],
+      tests: "def testler(ns, res):\n    K = SINIF(ns)\n    if not T(res, \"Karakter oluşturulabiliyor\", lambda: K(\"Ejder\", 20, 100) is not None, \"\"):\n        return\n    if not T(res, \"hayatta_mi metodu var\", lambda: callable(getattr(K(\"A\", 1, 1), \"hayatta_mi\", None)),\n             \"Karakter sınıfının içinde hayatta_mi adında bir metot olmalı.\"):\n        return\n    T(res, \"Canı olan karakter hayatta\", lambda: K(\"A\", 10, 30).hayatta_mi() == True, \"Canı 30 olan bir karakter için True dönmeli.\")\n    e = K(\"Ejder\", 25, 100); k = K(\"Kukla\", 0, 100)\n    def bes():\n        for _ in range(5):\n            e.saldir(k)\n        return k.can == 0\n    T(res, \"Can sıfırın altına düşmüyor\", bes, \"25 güçle beş saldırıdan sonra Kukla'nın canı 0 olmalıydı, eksiye inmemeli.\")\n    T(res, \"Canı biten karakter hayatta değil\", lambda: k.hayatta_mi() == False, \"Canı 0 olan karakter için False dönmeli.\")\n    def tekrar():\n        e.saldir(k); return k.can == 0\n    T(res, \"Ölü hedefe saldırı canı eksiye düşürmüyor\", tekrar, \"Canı 0 olan hedefe saldırınca can 0'da kalmalı.\")\n    def olu_saldirmaz():\n        o = K(\"Hayalet\", 30, 10); x = K(\"Avcı\", 20, 100); x.saldir(o)\n        hd = K(\"Hedef\", 0, 50); o.saldir(hd)\n        return hd.can == 50\n    T(res, \"Bonus: ölü karakter saldıramaz\", olu_saldirmaz, \"Canı 0 olan bir karakter saldırınca hedefin canı değişmemeli.\", bonus=True)\n    kh = ns.get(\"kahraman\"); h = kh if isinstance(kh, K) else K(\"Ejder\", 25, 100)\n    kk = K(\"Kukla\", 0, 100)\n    EV(res, t=\"enter\", id=\"h\", ad=str(h.isim), can=_n(h.can), max=_n(h.can), guc=_n(h.guc), yan=\"L\", ikon=\"🛡️\")\n    EV(res, t=\"enter\", id=\"k\", ad=\"Kukla\", can=100, max=100, guc=0, yan=\"R\", ikon=\"🎯\")\n    for i in range(14):\n        try:\n            if not kk.hayatta_mi():\n                break\n            once = _n(kk.can); h.saldir(kk)\n        except BaseException:\n            break\n        EV(res, t=\"atk\", a=\"h\", h=\"k\", hp=_n(kk.can), ahp=_n(h.can), dmg=once - _n(kk.can))\n    try:\n        if not kk.hayatta_mi():\n            EV(res, t=\"die\", id=\"k\"); EV(res, t=\"end\", s=\"win\", m=\"Kukla devrildi. Can tam 0'da durdu.\")\n        else:\n            EV(res, t=\"end\", s=\"none\", m=\"Kukla hâlâ ayakta görünüyor.\")\n    except BaseException:\n        pass\n" }
+  ];
+  var B2_INFO = [ { no:4, ikon:'🧪', ad:'İksir' }, { no:5, ikon:'👹', ad:'Gölge Boss' }, { no:6, ikon:'🛡️', ad:'Takım ruhu' } ];
+
+  var S = { cur:'m1', m:{}, key2:null };
+  var storageOK = true, booting = true;
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function mS(id){ if (!S.m[id]) S.m[id] = { code:'', runs:0, fails:0, done:false, firstRuns:0, bonus:false, hints:[] }; return S.m[id]; }
+  var indT; function flash(t){ var i = $('saveInd'); i.textContent = t; i.classList.add('show'); clearTimeout(indT); indT = setTimeout(function(){ i.classList.remove('show'); }, 1500); }
+  try { localStorage.setItem('__k','1'); localStorage.removeItem('__k'); } catch(e){ storageOK = false; }
+  function save(){ if (!storageOK || booting) return; try { localStorage.setItem(KEY, JSON.stringify(S)); flash('Kaydedildi ✓'); } catch(e){} }
+  function load(){ if (!storageOK) return; try { var r = localStorage.getItem(KEY); if (r){ var d = JSON.parse(r); for (var k in d) S[k] = d[k]; } } catch(e){} }
+
+  function findM(id){ for (var i = 0; i < MISSIONS.length; i++) if (MISSIONS[i].id === id) return MISSIONS[i]; return null; }
+  function starsOf(id){ var s = mS(id); if (!s.done) return 0; return 1 + (s.firstRuns <= 3 ? 1 : 0) + (s.bonus ? 1 : 0); }
+  function unlocked(m){
+    if (m.no === 1) return true;
+    var prev = MISSIONS.filter(function(x){ return x.no === m.no - 1; })[0];
+    return !!prev && mS(prev.id).done;
+  }
+
+  /* ================= ENGINE ================= */
+  var worker = null, ready = false, pending = null, runId = 0, timer = null;
+  function setEngine(state, txt){ var p = $('enginePill'); p.className = 'pill ' + state; p.textContent = txt; }
+  function startWorker(){
+    ready = false; setEngine('load', 'Python motoru yükleniyor…');
+    var blob = new Blob([$('workerSrc').textContent], { type:'application/javascript' });
+    worker = new Worker(URL.createObjectURL(blob));
+    worker.onmessage = function(ev){
+      var d = ev.data;
+      if (d.type === 'ready'){ ready = true; setEngine('ok', 'Python hazır ✓'); var rb = $('runBtn'); if (rb && !rb.getAttribute('data-busy')) rb.disabled = false; }
+      else if (d.type === 'fail'){ setEngine('bad', 'Motor yüklenemedi'); showErr('Python motoru yüklenemedi. İnternet bağlantını kontrol edip sayfayı yenile.'); }
+      else if (d.type === 'result' && pending && d.id === pending.id){ clearTimeout(timer); var cb = pending.cb; pending = null; cb(JSON.parse(d.res)); }
+    };
+    worker.onerror = function(){ setEngine('bad', 'Motor hatası'); };
+    worker.postMessage({ type:'init', base:PYO, harness:HARNESS });
+  }
+  function runCode(code, tests, cb){
+    runId++; pending = { id:runId, cb:cb };
+    worker.postMessage({ type:'run', id:runId, code:code, tests:tests });
+    timer = setTimeout(function(){
+      if (!pending) return;
+      var c = pending.cb; pending = null;
+      worker.terminate(); startWorker();
+      c({ err:'Kodun 8 saniyede bitmedi. Sonsuz bir döngü olabilir: while koşulu hiç yanlış olmuyor mu?', tests:[], events:[], stdout:'' });
+    }, 8000);
+  }
+
+  /* ================= MAP ================= */
+  function renderMap(){
+    var p = $('path'); p.innerHTML = '';
+    function node(m, info){
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'node';
+      var st = m ? starsOf(m.id) : 0, ok = m ? unlocked(m) : false;
+      if (m && S.cur === m.id) b.classList.add('cur');
+      if (m && mS(m.id).done) b.classList.add('done');
+      if (!ok) b.disabled = true;
+      var x = m || info;
+      b.innerHTML = '<div class="ic">' + (ok ? x.ikon : '🔒') + '</div><div class="nn">GÖREV ' + x.no + '</div><div class="nt">' + esc(x.ad) + '</div><div class="stars">' + [0,1,2].map(function(i){ return i < st ? '<b>★</b>' : '★'; }).join('') + '</div>';
+      if (m && ok) b.addEventListener('click', function(){ S.cur = m.id; renderMap(); renderMission(); save(); });
+      return b;
+    }
+    function link(on){ var l = document.createElement('div'); l.className = 'link' + (on ? ' on' : ''); return l; }
+    var b1 = MISSIONS.filter(function(m){ return m.bolge === 1; });
+    b1.forEach(function(m, i){ if (i) p.appendChild(link(mS(b1[i-1].id).done)); p.appendChild(node(m)); });
+    var g = document.createElement('button'); g.type = 'button'; g.className = 'gate node'; g.style.width = '58px';
+    g.innerHTML = S.key2 ? '🔓' : '🗝️';
+    g.title = 'Bölge 2';
+    g.addEventListener('click', function(){ S.cur = 'gate'; renderMap(); renderMission(); save(); });
+    if (S.cur === 'gate') g.classList.add('cur');
+    p.appendChild(g);
+    var b2 = MISSIONS.filter(function(m){ return m.bolge === 2; });
+    if (b2.length){ b2.forEach(function(m, i){ if (i) p.appendChild(link(mS(b2[i-1].id).done)); p.appendChild(node(m)); }); }
+    else { B2_INFO.forEach(function(x, i){ if (i) p.appendChild(link(false)); p.appendChild(node(null, x)); }); }
+    var tot = 0; MISSIONS.forEach(function(m){ tot += starsOf(m.id); });
+    $('starPill').textContent = '★ ' + tot + ' / ' + (6 * 3);
+  }
+
+  /* ================= MISSION VIEW ================= */
+  var csIdx = 0, csTimer = null;
+  function renderMission(){
+    var v = $('missionView');
+    clearInterval(csTimer); csTimer = null;
+    if (S.cur === 'gate'){ renderGate(v); return; }
+    var m = findM(S.cur) || MISSIONS[0], s = mS(m.id);
+    var html = ''
+      + '<div class="mission"><div>'
+      + '<div class="card"><div class="eyebrow">Görev ' + m.no + ' · ' + esc(m.kavram) + '</div><h2 class="m-title">' + m.ikon + ' ' + esc(m.ad) + '</h2>'
+      + '<p class="story">' + esc(m.hikaye) + '</p><ul class="goals">'
+      + m.hedef.map(function(h){ return '<li><span class="gi">●</span><span>' + esc(h) + '</span></li>'; }).join('')
+      + '<li class="bonus"><span class="gi">★</span><span>Bonus: ' + esc(m.bonus) + '</span></li></ul></div>'
+      + '<div class="card"><div class="sec-t">🔍 Kavramı gör: ' + esc(m.concept.t) + '</div>'
+      + '<div class="cs-code" id="csCode">' + m.concept.kod.map(function(l, i){ return '<div class="cs-line" data-i="' + i + '"><span class="ln">' + (i + 1) + '</span>' + esc(l) + '</div>'; }).join('') + '</div>'
+      + '<div class="cs-note" id="csNote"></div><div class="cs-state" id="csState"></div>'
+      + '<div class="cs-ctl"><button class="btn" id="csPrev">◀</button><button class="btn pri" id="csPlay">▶ Oynat</button><button class="btn" id="csNext">▶</button><span class="cs-prog" id="csProg"></span></div></div>'
+      + '<div class="card"><div class="sec-t">💡 İpuçları</div><div class="hintrow">'
+      + [0,1,2].map(function(i){ return '<button class="hintbtn" data-h="' + i + '"' + (i === 2 && s.fails < 3 ? ' disabled' : '') + '>' + (i === 2 && s.fails < 3 ? '🔒 İpucu 3' : '💡 İpucu ' + (i + 1)) + '</button>'; }).join('')
+      + '</div>' + [0,1,2].map(function(i){ return '<div class="hintbox" data-hb="' + i + '"><div class="hint-in"><b>İpucu ' + (i + 1) + '</b>' + esc(m.ipucu[i]) + '</div></div>'; }).join('')
+      + '<div class="tip" style="margin-top:8px">' + (s.fails < 3 ? '3. ipucu, 3 başarısız denemeden sonra açılır.' : '') + '</div></div>'
+      + '</div><div>'
+      + '<div class="card"><div class="sec-t">⚔️ Arena</div><div class="stage" id="stage"><div class="side L" id="sideL"></div><div class="side R" id="sideR"></div><div class="banner" id="banner"></div>'
+      + '<div class="stage-empty" id="stageEmpty">Kodunu çalıştırınca savaşçıların burada belirecek.</div></div>'
+      + '<div class="stage-ctl"><span class="callline" id="callLine"></span><button class="btn" id="speedBtn">Hız: 1x</button><button class="btn" id="replayBtn" disabled>↻ Tekrar izle</button></div></div>'
+      + '<div class="card"><div class="sec-t">💻 Kodun</div>'
+      + '<textarea class="codebox" id="code" spellcheck="false" placeholder="VS Code\'daki dosyanın tamamını buraya yapıştır…"></textarea>'
+      + '<div class="run-row"><button class="runbtn" id="runBtn"' + (ready ? '' : ' disabled') + '>▶ Arenada çalıştır</button><span class="tip" id="runInfo"></span></div>'
+      + '<div class="errbox" id="errBox"></div><div class="tests" id="tests"></div><div class="console" id="console"></div>'
+      + '<div class="win" id="winBox"></div></div>'
+      + '</div></div>';
+    v.innerHTML = html;
+
+    // concept
+    csIdx = 0; renderCS(m);
+    $('csPrev').addEventListener('click', function(){ stopCS(); if (csIdx > 0){ csIdx--; renderCS(m); } });
+    $('csNext').addEventListener('click', function(){ stopCS(); if (csIdx < m.concept.adim.length - 1){ csIdx++; renderCS(m); } });
+    $('csPlay').addEventListener('click', function(){
+      if (csTimer){ stopCS(); return; }
+      if (csIdx >= m.concept.adim.length - 1) csIdx = 0;
+      renderCS(m); $('csPlay').textContent = '⏸ Durdur';
+      csTimer = setInterval(function(){ if (csIdx >= m.concept.adim.length - 1){ stopCS(); return; } csIdx++; renderCS(m); }, 2600);
+    });
+    // hints
+    v.querySelectorAll('.hintbtn').forEach(function(b){
+      b.addEventListener('click', function(){
+        if (b.disabled) return; var i = +b.getAttribute('data-h');
+        var box = v.querySelector('.hintbox[data-hb="' + i + '"]'); var open = box.classList.toggle('open');
+        b.textContent = (open ? '🔽 ' : '💡 ') + 'İpucu ' + (i + 1);
+        if (open && s.hints.indexOf(i) < 0){ s.hints.push(i); save(); }
+      });
+    });
+    // code
+    var ta = $('code'); ta.value = s.code || '';
+    ta.addEventListener('input', function(){ s.code = ta.value; save(); });
+    ta.addEventListener('keydown', function(e){
+      if (e.key === 'Tab'){ e.preventDefault(); var a = ta.selectionStart, z = ta.selectionEnd; ta.value = ta.value.slice(0, a) + '    ' + ta.value.slice(z); ta.selectionStart = ta.selectionEnd = a + 4; s.code = ta.value; save(); }
+    });
+    $('runBtn').addEventListener('click', function(){ doRun(m); });
+    $('speedBtn').addEventListener('click', function(){ speed = speed === 1 ? 3 : 1; this.textContent = 'Hız: ' + speed + 'x'; });
+    $('replayBtn').addEventListener('click', function(){ if (lastEvents) play(lastEvents); });
+    $('runInfo').textContent = s.runs ? (s.runs + ' deneme yaptın') : '';
+    if (s.done) showWin(m, false);
+  }
+  function stopCS(){ clearInterval(csTimer); csTimer = null; var b = $('csPlay'); if (b) b.textContent = '▶ Oynat'; }
+  function renderCS(m){
+    var a = m.concept.adim[csIdx];
+    document.querySelectorAll('#csCode .cs-line').forEach(function(l){ l.classList.toggle('hl', +l.getAttribute('data-i') === a.s); });
+    $('csNote').textContent = a.n;
+    $('csState').innerHTML = Object.keys(a.st).map(function(k){
+      var cls = 'chip' + (a.bad === k ? ' bad' : '') + (a.good === k ? ' good' : '') + (a.hot === k ? ' hot' : '');
+      return '<span class="' + cls + '">' + esc(k) + ' = <b>' + esc(a.st[k]) + '</b></span>';
+    }).join('');
+    $('csProg').textContent = (csIdx + 1) + ' / ' + m.concept.adim.length;
+    $('csPrev').disabled = csIdx === 0; $('csNext').disabled = csIdx === m.concept.adim.length - 1;
+  }
+
+  /* ================= RUN ================= */
+  function showErr(t){ var e = $('errBox'); if (!e) return; if (!t){ e.style.display = 'none'; return; } e.style.display = 'block'; e.innerHTML = '<b>Kod çalışmadı.</b> ' + esc(t); }
+  function doRun(m){
+    var s = mS(m.id), code = $('code').value;
+    if (!code.trim()){ showErr('Önce kodunu yapıştır.'); return; }
+    if (!ready){ showErr('Python motoru hâlâ yükleniyor. Birkaç saniye sonra tekrar dene.'); return; }
+    var rb = $('runBtn'); rb.disabled = true; rb.setAttribute('data-busy','1'); rb.textContent = '⏳ Çalışıyor…';
+    showErr(''); $('tests').innerHTML = ''; $('winBox').style.display = 'none';
+    runCode(code, m.tests, function(r){
+      rb.removeAttribute('data-busy'); rb.disabled = !ready; rb.textContent = '▶ Arenada çalıştır';
+      s.runs++;
+      var req = (r.tests || []).filter(function(t){ return !t.b; });
+      var pass = !r.err && req.length > 0 && req.every(function(t){ return t.ok; });
+      var bonusOk = pass && (r.tests || []).some(function(t){ return t.b && t.ok; });
+      if (r.err) showErr(r.err);
+      $('tests').innerHTML = (r.tests || []).map(function(t){
+        return '<div class="test ' + (t.ok ? 'ok' : 'no') + (t.b ? ' bonus' : '') + '"><span class="ti">' + (t.ok ? '✅' : (t.b ? '☆' : '❌')) + '</span><div><div class="ta">' + esc(t.ad) + '</div>' + (t.ok || !t.m ? '' : '<div class="tm">' + esc(t.m) + '</div>') + '</div></div>';
+      }).join('');
+      var c = $('console'); if (r.stdout && r.stdout.trim()){ c.style.display = 'block'; c.textContent = 'Konsol çıktın:\n' + r.stdout; } else c.style.display = 'none';
+      var wasDone = s.done;
+      if (pass){
+        if (!s.done){ s.done = true; s.firstRuns = s.runs; }
+        if (bonusOk) s.bonus = true;
+      } else {
+        s.fails++;
+        if (s.fails >= 3){ var h3 = document.querySelector('.hintbtn[data-h="2"]'); if (h3 && h3.disabled){ h3.disabled = false; h3.textContent = '💡 İpucu 3'; } }
+      }
+      $('runInfo').textContent = s.runs + ' deneme yaptın';
+      save(); renderMap();
+      play(r.events || [], function(){ if (pass) showWin(m, !wasDone); });
+    });
+  }
+  function showWin(m, fresh){
+    var st = starsOf(m.id), s = mS(m.id), w = $('winBox'); if (!w) return;
+    var next = MISSIONS.filter(function(x){ return x.no === m.no + 1; })[0];
+    var why = [];
+    if (s.firstRuns <= 3) why.push('az denemeyle geçtin'); else why.push('3 ya da daha az denemede geçmek bir yıldız daha verir');
+    if (s.bonus) why.push('bonus hedefi yaptın'); else why.push('bonus hedef bir yıldız daha verir');
+    w.style.display = 'block';
+    w.innerHTML = '<div class="ws">' + [0,1,2].map(function(i){ return i < st ? '<b>★</b>' : '★'; }).join('') + '</div>'
+      + '<div class="wt">' + (fresh ? 'Görev tamamlandı!' : 'Bu görev tamam.') + '</div>'
+      + '<div class="wm">' + why.join(' · ') + '.</div>'
+      + '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">'
+      + (next ? '<button class="btn pri" id="nextBtn">Sonraki görev: ' + esc(next.ad) + ' →</button>' : (m.no === 3 ? '<button class="btn pri" id="gateBtn">Bölge 2 kapısına git →</button>' : ''))
+      + '</div>';
+    var nb = $('nextBtn'); if (nb) nb.addEventListener('click', function(){ S.cur = next.id; renderMap(); renderMission(); save(); window.scrollTo({ top:0, behavior:'smooth' }); });
+    var gb = $('gateBtn'); if (gb) gb.addEventListener('click', function(){ S.cur = 'gate'; renderMap(); renderMission(); save(); window.scrollTo({ top:0, behavior:'smooth' }); });
+  }
+
+  /* ================= ANIMATION ================= */
+  var speed = 1, lastEvents = null, playTok = 0;
+  function play(events, done){
+    lastEvents = events; var tok = ++playTok;
+    var L = $('sideL'), R = $('sideR'); if (!L) return;
+    L.innerHTML = ''; R.innerHTML = ''; $('banner').className = 'banner'; $('callLine').textContent = '';
+    var F = {}, names = {}; _F = F;
+    var em = $('stageEmpty'); em.style.display = events.length ? 'none' : 'grid';
+    if (!events.length){ em.textContent = 'Arenaya kimse giremedi. Önce kodundaki sorunu çöz.'; }
+    var rp = $('replayBtn'); if (rp) rp.disabled = !events.length;
+    var nL = events.filter(function(e){ return e.t === 'enter' && e.yan === 'L'; }).length;
+    L.classList.toggle('many', nL > 1);
+    var i = 0;
+    function step(){
+      if (tok !== playTok) return;
+      if (i >= events.length){ if (done) done(); return; }
+      var e = events[i++], d = Math.round(560 / speed);
+      if (e.t === 'enter'){
+        var el = document.createElement('div'); el.className = 'fighter';
+        el.innerHTML = '<span class="fi">' + esc(e.ikon || '🛡️') + '</span><div class="fb"><div class="fn">' + esc(e.ad) + '</div><div class="hp"><div></div></div><div class="hpt"></div></div>';
+        (e.yan === 'R' ? R : L).appendChild(el);
+        F[e.id] = { el:el, max:Math.max(1, e.max || e.can || 1), side:e.yan, guc:e.guc };
+        names[e.id] = e.ad; setHp(e.id, e.can);
+        requestAnimationFrame(function(){ el.classList.add('in'); });
+        d = Math.round(320 / speed);
+      } else if (e.t === 'atk' && F[e.a] && F[e.h]){
+        var A = F[e.a], H = F[e.h];
+        A.el.classList.add(A.side === 'R' ? 'lungeL' : 'lungeR');
+        setTimeout(function(){ A.el.classList.remove('lungeL', 'lungeR'); }, Math.round(240 / speed));
+        setTimeout(function(){ H.el.classList.remove('shake'); void H.el.offsetWidth; if (e.dmg) H.el.classList.add('shake'); setHp(e.h, e.hp); if (e.ahp !== undefined) setHp(e.a, e.ahp); floatTxt(H.el, e.dmg ? '−' + e.dmg : '0', 'd'); }, Math.round(200 / speed));
+        $('callLine').textContent = '▶ ' + String(names[e.a]).toLowerCase() + '.saldir(' + String(names[e.h]).toLowerCase() + ')   # self = ' + names[e.a] + ', hedef = ' + names[e.h];
+      } else if (e.t === 'team' && F[e.h]){
+        (e.ids || []).forEach(function(id){ if (F[id]){ F[id].el.classList.add('lungeR'); setTimeout(function(){ F[id].el.classList.remove('lungeR'); }, Math.round(240 / speed)); } });
+        var TH = F[e.h];
+        setTimeout(function(){ TH.el.classList.remove('shake'); void TH.el.offsetWidth; TH.el.classList.add('shake'); setHp(e.h, e.hp); floatTxt(TH.el, '−' + e.dmg, 'd'); }, Math.round(200 / speed));
+        $('callLine').textContent = '▶ takım saldırısı → ' + names[e.h] + '   # ' + (e.ids || []).length + ' üye saldırdı';
+      } else if (e.t === 'heal' && F[e.id]){
+        var X = F[e.id]; X.el.classList.add('glow'); setTimeout(function(){ X.el.classList.remove('glow'); }, Math.round(420 / speed));
+        setHp(e.id, e.hp); floatTxt(X.el, '+' + e.amt, 'h');
+        $('callLine').textContent = '▶ ' + String(names[e.id]).toLowerCase() + '.iyilestir(...)';
+      } else if (e.t === 'die' && F[e.id]){
+        F[e.id].el.classList.add('dead'); floatTxt(F[e.id].el, '💀', 'd');
+      } else if (e.t === 'msg' || e.t === 'end'){
+        var bn = $('banner'); bn.textContent = e.m || ''; bn.className = 'banner on' + (e.s === 'win' ? ' b-win' : (e.s === 'lose' ? ' b-lose' : ''));
+        d = Math.round(900 / speed);
+      }
+      setTimeout(step, d);
+    }
+    step();
+  }
+  function setHp(id, hp){
+    var f = lastF(id); if (!f) return;
+    var max = f.max, v = Math.max(0, +hp || 0);
+    var bar = f.el.querySelector('.hp'), fill = bar.firstChild;
+    fill.style.width = Math.min(100, v / max * 100) + '%';
+    bar.classList.toggle('low', v / max <= 0.3);
+    f.el.querySelector('.hpt').textContent = 'can: ' + hp + (f.guc !== undefined ? ' · güç: ' + f.guc : '');
+  }
+  var _F = null;
+  function lastF(id){ return _F && _F[id]; }
+  function floatTxt(el, t, c){ var s = document.createElement('span'); s.className = 'float ' + c; s.textContent = t; s.style.left = (el.parentNode.classList.contains('R') ? '18px' : 'auto'); s.style.right = (el.parentNode.classList.contains('R') ? 'auto' : '18px'); el.appendChild(s); setTimeout(function(){ s.remove(); }, 950); }
+
+  /* ================= GATE (Bölge 2) ================= */
+  function b64bytes(s){ var b = atob(s), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
+  function decrypt(p, pass){
+    if (!window.crypto || !crypto.subtle) return Promise.reject(new Error('nocrypto'));
+    var enc = new TextEncoder();
+    return crypto.subtle.importKey('raw', enc.encode(pass.trim().toUpperCase()), 'PBKDF2', false, ['deriveKey'])
+      .then(function(km){ return crypto.subtle.deriveKey({ name:'PBKDF2', salt:b64bytes(p.s), iterations:p.n, hash:'SHA-256' }, km, { name:'AES-GCM', length:256 }, false, ['decrypt']); })
+      .then(function(k){ return crypto.subtle.decrypt({ name:'AES-GCM', iv:b64bytes(p.i) }, k, b64bytes(p.c)); })
+      .then(function(b){ return new TextDecoder().decode(b); });
+  }
+  function applyB2(json){ var arr = JSON.parse(json); arr.forEach(function(m){ if (!findM(m.id)) MISSIONS.push(m); }); }
+  function renderGate(v){
+    var b3 = mS('m3').done;
+    if (S.key2){
+      v.innerHTML = '<div class="card keycard" style="margin-top:16px"><div class="ic">🔓</div><h2>Bölge 2 açık</h2><p>İksir, Gölge Boss ve takım savaşları seni bekliyor.</p>'
+        + '<button class="btn pri" id="goB2">Görev 4\'e git →</button></div>';
+      $('goB2').addEventListener('click', function(){ var m4 = findM('m4'); if (m4 && unlocked(m4)){ S.cur = 'm4'; } renderMap(); renderMission(); save(); });
+      return;
+    }
+    v.innerHTML = '<div class="card keycard" style="margin-top:16px"><div class="ic">🗝️</div><h2>Bölge 2 kapısı</h2>'
+      + '<p>' + (b3 ? 'Bu kapıyı hocan derste açacak. Anahtarı aldığında buraya yaz.' : 'Önce ilk üç görevi tamamla. Sonra bu kapı derste hocanla açılacak.') + '</p>'
+      + '<div class="keyrow"><input id="keyIn" placeholder="ANAHTAR" autocomplete="off"' + (b3 ? '' : ' disabled') + ' /><button class="btn pri" id="keyBtn"' + (b3 ? '' : ' disabled') + '>Kapıyı aç</button></div>'
+      + '<div class="tip" id="keyMsg" style="margin-top:10px"></div></div>';
+    if (!b3) return;
+    function go(){
+      var val = $('keyIn').value;
+      if (!val.trim()){ $('keyMsg').textContent = 'Önce anahtarı yaz.'; return; }
+      $('keyMsg').textContent = 'Kontrol ediliyor…';
+      decrypt(ENC2, val).then(function(json){
+        applyB2(json); S.key2 = val.trim().toUpperCase(); S.cur = 'm4'; save(); renderMap(); renderMission();
+      }).catch(function(e){ $('keyMsg').textContent = (e && e.message === 'nocrypto') ? 'Bu tarayıcı kapıyı açamıyor. Sayfayı internetten (https) aç.' : 'Bu anahtar doğru değil.'; });
+    }
+    $('keyBtn').addEventListener('click', go);
+    $('keyIn').addEventListener('keydown', function(e){ if (e.key === 'Enter') go(); });
+  }
+
+  /* ================= REPORT / RESET ================= */
+  $('reportBtn').addEventListener('click', function(){
+    var tot = 0; MISSIONS.forEach(function(m){ tot += starsOf(m.id); });
+    var L = ['CANLI ARENA — Eren', 'Toplam yıldız: ' + tot, ''];
+    MISSIONS.forEach(function(m){
+      var s = mS(m.id); if (!s.runs && !s.code) return;
+      L.push('■ Görev ' + m.no + ' · ' + m.ad + ' — ' + (s.done ? '★'.repeat(starsOf(m.id)) + ' tamam' : 'devam ediyor'));
+      L.push('   deneme: ' + s.runs + (s.done ? ' (ilk geçiş: ' + s.firstRuns + '. denemede)' : '') + ' · bonus: ' + (s.bonus ? 'evet' : 'hayır') + ' · açılan ipucu: ' + (s.hints.length ? s.hints.map(function(i){ return i + 1; }).join(', ') : 'yok'));
+      if (s.code.trim()){ L.push('   KOD:'); s.code.split('\n').forEach(function(l){ L.push('   | ' + l); }); }
+      L.push('');
+    });
+    var t = L.join('\n'); $('reportOut').value = t; $('reportOut').style.display = 'block';
+    navigator.clipboard.writeText(t).then(function(){ $('reportMsg').className = 'msg ok'; $('reportMsg').textContent = 'Kopyalandı ✓'; }).catch(function(){ $('reportMsg').className = 'msg tip'; $('reportMsg').textContent = 'Metni seçip kopyala.'; });
+  });
+  var rb = document.createElement('button'); rb.id = 'resetBtn'; rb.textContent = 'İlerlemeyi sıfırla';
+  rb.addEventListener('click', function(){ if (!confirm('Tüm ilerlemen, yıldızların ve kodların silinecek. Emin misin?')) return; try { localStorage.removeItem(KEY); } catch(e){} location.reload(); });
+  document.querySelector('footer').appendChild(document.createElement('br')); document.querySelector('footer').appendChild(rb);
+
+  /* ================= BOOT ================= */
+  load();
+  startWorker();
+  var pre = S.key2 ? decrypt(ENC2, S.key2).then(applyB2).catch(function(){ S.key2 = null; }) : Promise.resolve();
+  pre.then(function(){
+    if (S.cur !== 'gate'){ var m = findM(S.cur); if (!m || !unlocked(m)) S.cur = 'm1'; }
+    renderMap(); renderMission(); booting = false;
+  });
+})();
+</script>
+</body>
+</html>
