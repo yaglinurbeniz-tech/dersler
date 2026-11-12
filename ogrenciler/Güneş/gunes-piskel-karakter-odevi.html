@@ -1,0 +1,980 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Güneş'in ödevi: Karakterim iki yöne bakıyor</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #DDF1FC;
+    --paper: #FFFFFF;
+    --ink: #22305A;
+    --ink-soft: #4B5A80;
+    --line: #22305A;
+    --sky: #A8DCF7;
+    --sky-low: #C9EAFB;
+    --cloud: #FFFFFF;
+    --grass: #45A84F;
+    --grass-top: #7DCB5E;
+    --soil: #9A6233;
+    --soil-dark: #7C4C25;
+    --coin: #F2C230;
+    --good: #23774A;
+    --good-bg: #E3F5E9;
+    --note: #9A4B12;
+    --note-bg: #FFF1E2;
+    --check-a: #EEF3FA;
+    --check-b: #DCE5F2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #142038;
+      --paper: #1E2E50;
+      --ink: #EEF4FF;
+      --ink-soft: #B6C4E3;
+      --line: #9FB3D9;
+      --sky: #213E68;
+      --sky-low: #2B4C7C;
+      --cloud: #5A74A3;
+      --grass: #3C8F45;
+      --grass-top: #5FAE4E;
+      --soil: #6E4526;
+      --soil-dark: #57361D;
+      --coin: #E0B12A;
+      --good: #8FE0AE;
+      --good-bg: #1D4433;
+      --note: #FFC48F;
+      --note-bg: #4A3020;
+      --check-a: #2A3D63;
+      --check-b: #24365A;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #142038; --paper: #1E2E50; --ink: #EEF4FF; --ink-soft: #B6C4E3; --line: #9FB3D9;
+    --sky: #213E68; --sky-low: #2B4C7C; --cloud: #5A74A3; --grass: #3C8F45; --grass-top: #5FAE4E;
+    --soil: #6E4526; --soil-dark: #57361D; --coin: #E0B12A; --good: #8FE0AE; --good-bg: #1D4433;
+    --note: #FFC48F; --note-bg: #4A3020; --check-a: #2A3D63; --check-b: #24365A;
+  }
+
+  * { box-sizing: border-box; }
+  :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  html, body { margin: 0; }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: "Avenir Next", "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-size: 17px;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 18px 48px; }
+
+  canvas.pixel { image-rendering: pixelated; image-rendering: crisp-edges; display: block; width: 100%; height: auto; }
+
+  .hero { border: 3px solid var(--line); background: var(--paper); box-shadow: 6px 6px 0 var(--line); }
+  .hero-text { padding: 22px 24px 20px; }
+  h1 { font-size: 34px; line-height: 1.15; margin: 0 0 12px; letter-spacing: -0.01em; font-weight: 800; }
+  .hero-text p { margin: 0; max-width: 62ch; color: var(--ink-soft); }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-top: 18px; }
+  .saved { font-size: 14px; color: var(--ink-soft); }
+  .saved.on { color: var(--good); font-weight: 700; }
+
+  .step { display: grid; grid-template-columns: 48px 1fr; gap: 16px; margin-top: 30px; }
+  .num {
+    width: 48px; height: 48px; display: grid; place-items: center;
+    background: var(--coin); color: #22305A; font-weight: 800; font-size: 22px;
+    border: 3px solid var(--line); box-shadow: 3px 3px 0 var(--line);
+  }
+  .step.is-done .num { background: var(--grass-top); }
+  .card { background: var(--paper); border: 3px solid var(--line); padding: 18px 20px 20px; min-width: 0; }
+  h2 { font-size: 22px; line-height: 1.25; margin: 0 0 8px; font-weight: 800; }
+  .card p { margin: 0 0 10px; max-width: 68ch; }
+  .card ul, .card ol { margin: 6px 0 12px; padding-left: 22px; max-width: 68ch; }
+  .card li { margin-bottom: 6px; }
+  a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .key { font-weight: 700; }
+
+  .done { display: inline-flex; gap: 10px; align-items: center; margin-top: 6px; font-weight: 700; cursor: pointer; }
+  .done input { width: 22px; height: 22px; accent-color: var(--grass); cursor: pointer; }
+
+  button, .btn {
+    font: inherit; font-weight: 700; font-size: 16px; color: #22305A;
+    background: var(--coin); border: 3px solid var(--line); padding: 10px 16px;
+    box-shadow: 3px 3px 0 var(--line); cursor: pointer;
+  }
+  button.quiet { background: var(--paper); color: var(--ink); }
+  button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--line); }
+  button:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: 3px 3px 0 var(--line); }
+  :focus-visible { outline: 3px solid var(--coin); outline-offset: 3px; }
+
+  .drop {
+    display: block; border: 3px dashed var(--line); padding: 22px 16px; text-align: center;
+    background: var(--check-a); cursor: pointer; font-weight: 700; margin: 10px 0 14px;
+  }
+  .drop.over { background: var(--sky-low); }
+  .drop small { display: block; font-weight: 400; color: var(--ink-soft); margin-top: 4px; }
+  .drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+  .msg { padding: 12px 14px; border: 3px solid var(--line); margin: 12px 0; font-weight: 600; }
+  .msg.good { background: var(--good-bg); color: var(--good); border-color: var(--good); }
+  .msg.note { background: var(--note-bg); color: var(--note); border-color: var(--note); }
+  .msg[hidden] { display: none; }
+
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 12px 0; }
+  .pair figure { margin: 0; }
+  .pair figcaption { font-weight: 700; font-size: 15px; margin-top: 6px; }
+  .checker {
+    border: 3px solid var(--line);
+    background-color: var(--check-a);
+    background-image:
+      linear-gradient(45deg, var(--check-b) 25%, transparent 25%, transparent 75%, var(--check-b) 75%),
+      linear-gradient(45deg, var(--check-b) 25%, transparent 25%, transparent 75%, var(--check-b) 75%);
+    background-size: 16px 16px; background-position: 0 0, 8px 8px;
+    aspect-ratio: 1 / 1; display: grid; place-items: center; overflow: hidden;
+  }
+  .checker canvas { image-rendering: pixelated; image-rendering: crisp-edges; max-width: 100%; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 8px; }
+
+  .stage-box { border: 3px solid var(--line); margin-top: 14px; }
+  .stage-cap { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; margin-top: 10px; }
+  .stage-cap p { margin: 0; color: var(--ink-soft); font-size: 15px; }
+
+  .hints { margin-top: 16px; border-top: 3px dotted var(--line); padding-top: 14px; }
+  .hints h3 { font-size: 17px; margin: 0 0 8px; }
+  .hint-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+  .hint-text { background: var(--check-a); border-left: 6px solid var(--coin); padding: 10px 14px; margin-top: 10px; }
+  .hint-text[hidden] { display: none; }
+  .hint-lock { font-size: 14px; color: var(--ink-soft); margin-top: 8px; }
+
+  label.field { display: block; font-weight: 700; margin: 10px 0 6px; }
+  input[type="text"], textarea {
+    width: 100%; font: inherit; color: var(--ink); background: var(--page);
+    border: 3px solid var(--line); padding: 10px 12px;
+  }
+  textarea { min-height: 110px; resize: vertical; }
+  .counter { font-size: 14px; color: var(--ink-soft); margin-top: 4px; }
+
+  .locked-note { color: var(--ink-soft); }
+  footer { margin-top: 40px; color: var(--ink-soft); font-size: 15px; }
+
+  @media (max-width: 560px) {
+    body { font-size: 16px; }
+    h1 { font-size: 27px; }
+    .step { grid-template-columns: 1fr; gap: 8px; }
+    .num { width: 42px; height: 42px; font-size: 19px; }
+    .pair { gap: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    button:active { transform: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <canvas id="heroScene" class="pixel" width="320" height="120" aria-hidden="true"></canvas>
+    <div class="hero-text">
+      <h1>Oyunun kahramanını sen çiziyorsun</h1>
+      <p>Güneş, gelecek derste kendi platform oyununu kurmaya başlıyoruz ve oyunun kahramanı senin çizimin olacak. Bu hafta onu Piskel'de iki yöne bakacak şekilde çiz: bir hâli sağa, bir hâli sola baksın.</p>
+      <div class="toolbar">
+        <span id="saved" class="saved" aria-live="polite">İlerlemen bu tarayıcıya kaydediliyor.</span>
+        <button id="reset" class="quiet" type="button">Baştan başla</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="step" id="step1">
+      <div class="num" aria-hidden="true">1</div>
+      <div class="card">
+        <h2>Piskel'i aç ve tuvali hazırla</h2>
+        <ul>
+          <li><a href="https://www.piskelapp.com/" target="_blank" rel="noopener">piskelapp.com</a> adresine gir ve <span class="key">Create Sprite</span> düğmesine bas.</li>
+          <li>Sağdaki <span class="key">Resize</span> bölümünden tuvalin boyutunu 16 × 16 yap. Oyun karakteri için en uygun boyut bu; daha fazla ayrıntı istersen 24 × 24 de olur.</li>
+        </ul>
+        <label class="done"><input type="checkbox" data-step="1"> Bu adımı yaptım</label>
+      </div>
+    </section>
+
+    <section class="step" id="step2">
+      <div class="num" aria-hidden="true">2</div>
+      <div class="card">
+        <h2>Sağa bakan karakterini çiz</h2>
+        <p>Birinci karede karakterin sağa baksın. Oyunda bu hâliyle sağa koşacak.</p>
+        <ul>
+          <li>Yönü belli eden bir ayrıntı ekle: burun, bakan bir göz, şapka siperliği ya da arkaya doğru uçuşan saç.</li>
+          <li>Ayakları tuvalin en alt satırına değsin. Böylece oyunda yere tam basar.</li>
+          <li>Arka planı boş bırak. Piskel'de boyanmamış kareler şeffaftır; oyunda karakterinin etrafında kutu görünmez.</li>
+          <li>3-5 renk yeterli. Koyu bir renkle çizdiğin dış çizgi, karakterini her zeminde belirgin yapar.</li>
+        </ul>
+        <label class="done"><input type="checkbox" data-step="2"> Bu adımı yaptım</label>
+      </div>
+    </section>
+
+    <section class="step" id="step3">
+      <div class="num" aria-hidden="true">3</div>
+      <div class="card">
+        <h2>Sola bakan hâlini yap</h2>
+        <p>Sola bakan hâli baştan çizmene gerek yok; aynadan yararlanacaksın.</p>
+        <ol>
+          <li>Soldaki kare listesinde birinci karenin üzerine gel ve çıkan kopyala simgesine bas. Altına aynı çizimden ikinci bir kare gelir.</li>
+          <li>İkinci kareyi seç. Sağdaki <span class="key">Transform</span> bölümünde yatay çevirme düğmesine bir kez bas; düğmenin üzerine gelince <span class="key">Flip</span> yazar.</li>
+          <li>Çizimine bir bak: harf, rakam ya da yazı varsa ters dönmüş olabilir, onları düzelt.</li>
+        </ol>
+        <label class="done"><input type="checkbox" data-step="3"> Bu adımı yaptım</label>
+      </div>
+    </section>
+
+    <section class="step" id="step4">
+      <div class="num" aria-hidden="true">4</div>
+      <div class="card">
+        <h2>Kaydet ve resmini indir</h2>
+        <ul>
+          <li>Sağdaki <span class="key">Save</span> bölümünden çizimini bilgisayarına .piskel dosyası olarak kaydet. Gelecek derste yürüme karelerini bu dosyaya ekleyeceğiz.</li>
+          <li>Sağdaki <span class="key">Export</span> bölümünde <span class="key">PNG</span> sekmesini aç ve indirme düğmesine bas. İki karen yan yana tek bir resim olarak iner.</li>
+          <li>İstersen indirmeden önce ölçeği 8 yap; resmin daha büyük ve net olur.</li>
+        </ul>
+        <label class="done"><input type="checkbox" data-step="4"> Bu adımı yaptım</label>
+      </div>
+    </section>
+
+    <section class="step" id="step5">
+      <div class="num" aria-hidden="true">5</div>
+      <div class="card">
+        <h2>Resmini yükle ve karakterini yürüt</h2>
+        <p>İndirdiğin PNG dosyasını buraya yükle. Sayfa iki kareyi ayırır ve karakterinin gerçekten iki yöne baktığını kontrol eder.</p>
+
+        <label class="drop" id="drop">
+          PNG dosyanı buraya bırak ya da seçmek için tıkla
+          <small>İki kareyi ayrı dosyalar olarak indirdiysen ikisini birlikte seçebilirsin.</small>
+          <input id="file" type="file" accept="image/png,image/*" multiple>
+        </label>
+
+        <div id="result" class="msg" role="status" aria-live="polite" hidden></div>
+
+        <div id="previewArea" hidden>
+          <div class="pair">
+            <figure>
+              <div class="checker"><canvas id="prevRight"></canvas></div>
+              <figcaption>Sağa bakan</figcaption>
+            </figure>
+            <figure>
+              <div class="checker"><canvas id="prevLeft"></canvas></div>
+              <figcaption>Sola bakan</figcaption>
+            </figure>
+          </div>
+          <div class="row">
+            <button id="swap" class="quiet" type="button">Yönleri değiştir</button>
+            <span class="saved">Karakterin geri geri yürüyorsa bu düğmeye bas.</span>
+          </div>
+        </div>
+
+        <div id="stageArea" hidden>
+          <div class="stage-box"><canvas id="stage" class="pixel" width="320" height="120" aria-label="Karakterinin sahnede sağa ve sola yürüdüğü oyun önizlemesi" role="img"></canvas></div>
+          <div class="stage-cap">
+            <p>Oyunda da böyle görünecek: sağa giderken birinci kare, sola giderken ikinci kare.</p>
+            <button id="play" class="quiet" type="button">Durdur</button>
+          </div>
+        </div>
+
+        <div class="hints">
+          <h3>İpuçları</h3>
+          <div class="hint-btns">
+            <button class="quiet" type="button" data-hint="1">1. ipucu</button>
+            <button class="quiet" type="button" data-hint="2">2. ipucu</button>
+            <button class="quiet" type="button" data-hint="3" id="hint3btn" disabled>3. ipucu</button>
+          </div>
+          <div class="hint-text" id="hintText1" hidden>Piskel'de soldaki kare listesinde iki kare olmalı: birincisi sağa, ikincisi sola bakan. Export bölümündeki PNG sekmesinden indirdiğinde ikisi yan yana tek bir resim olarak gelir; o resmi yükle.</div>
+          <div class="hint-text" id="hintText2" hidden>Sola bakan kareyi elle çizmen gerekmez. Birinci kareyi kopyala, kopyayı seç ve Transform bölümündeki yatay çevirme düğmesine bas. Karakterin bir aynaya bakıyormuş gibi döner.</div>
+          <div class="hint-text" id="hintText3" hidden></div>
+          <p class="hint-lock" id="hintLock">3. ipucu, yüklediğin resim üç kez kontrol edildikten sonra açılır.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="step" id="step6">
+      <div class="num" aria-hidden="true">6</div>
+      <div class="card">
+        <h2>Karakterini tanıt</h2>
+        <p>Oyunun hikâyesi karakterinle başlıyor. Ona bir ad ver ve oyunda neler yapacağını anlat.</p>
+        <label class="field" for="charName">Karakterinin adı</label>
+        <input id="charName" type="text" maxlength="40" autocomplete="off">
+        <label class="field" for="charNote">Oyunda neler yapacak?</label>
+        <textarea id="charNote" maxlength="600" placeholder="Nereye gidiyor, neyi topluyor, nelerden kaçıyor?"></textarea>
+        <div class="counter" id="noteCounter">0 / 30 harf</div>
+      </div>
+    </section>
+
+    <section class="step" id="step7">
+      <div class="num" aria-hidden="true">7</div>
+      <div class="card">
+        <h2>Öğretmenine gönder</h2>
+        <p id="sendLocked" class="locked-note">Bu bölüm, 5. ve 6. adımlar tamamlanınca açılır.</p>
+        <div id="sendArea" hidden>
+          <p>Bilgisayarında WhatsApp'ı aç ve öğretmeninle olan sohbete gir. Sonra sırayla:</p>
+          <ol>
+            <li><span class="key">Raporu kopyala</span> düğmesine bas ve sohbete yapıştır.</li>
+            <li><span class="key">Kartı kopyala</span> düğmesine bas ve sohbete yapıştır. Kartta iki çizimin ve karakterinin adı var.</li>
+            <li><span class="key">Çizimleri indir</span> düğmesine bas. İndirilenler klasörüne gelen iki dosyayı da sohbete ekle. Derste bu dosyaları birlikte oyununa koyacağız.</li>
+          </ol>
+          <div class="row">
+            <button id="copyReport" type="button">Raporu kopyala</button>
+            <button id="copyCard" type="button">Kartı kopyala</button>
+            <button id="downloadFrames" class="quiet" type="button">Çizimleri indir</button>
+            <button id="downloadCard" class="quiet" type="button" hidden>Kartı indir</button>
+          </div>
+          <div id="sendMsg" class="msg good" role="status" aria-live="polite" hidden></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Öğretmenin: Nurbeniz</footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var KEY = 'nurbeniz-odev-gunes-piskel-karakter-2026-11';
+  var MIN_NOTE = 30;
+  // 3. ipucu kilitli kalsın diye kodlanmış hâlde tutuluyor.
+  var HINT3 = 'QWTEsW0gYWTEsW06IDEpIEJpcmluY2kga2FyZWRlIHNhxJ9hIGJha2FuIMOnaXppbWluIG9sc3VuLiAyKSBLYXJlIGxpc3Rlc2luZGUgYnUga2FyZW5pbiDDvHplcmluZSBnZWwgdmUga29weWFsYSBzaW1nZXNpbmUgYmFzLiAzKSBZZW5pIG9sdcWfYW4gaWtpbmNpIGthcmV5aSBzZcOnLiA0KSBUcmFuc2Zvcm0gYsO2bMO8bcO8bmRlIHlhdGF5IMOnZXZpcm1lIGTDvMSfbWVzaW5lIGJpciBrZXogYmFzLiA1KSBFeHBvcnQgYsO2bMO8bcO8bmRlIFBORyBzZWttZXNpbmkgYcOnIHZlIGluZGlyLiA2KSDEsG5lbiBkb3N5YXnEsSBidXJheWEgecO8a2xlLg==';
+
+  var state = {
+    steps: {},
+    frames: [null, null],   // PNG data URL'leri: [birinci kare, ikinci kare]
+    swapped: false,
+    verified: false,
+    similarity: 0,
+    frameSize: '',
+    attempts: 0,
+    hintsOpen: {},
+    name: '',
+    note: ''
+  };
+
+  // ---------- Kayıt ----------
+  var savedEl = document.getElementById('saved');
+  var savedTimer = null;
+  var canSave = true;
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var data = JSON.parse(raw);
+        Object.keys(state).forEach(function (k) { if (k in data) state[k] = data[k]; });
+      }
+    } catch (e) { canSave = false; }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(state));
+      savedEl.textContent = 'Kaydedildi';
+      savedEl.classList.add('on');
+      clearTimeout(savedTimer);
+      savedTimer = setTimeout(function () {
+        savedEl.classList.remove('on');
+        savedEl.textContent = 'İlerlemen bu tarayıcıya kaydediliyor.';
+      }, 1600);
+    } catch (e) {
+      canSave = false;
+      savedEl.classList.remove('on');
+      savedEl.textContent = 'Bu tarayıcı kayıt yapmıyor; ödevi sayfayı kapatmadan bitir.';
+    }
+  }
+
+  document.getElementById('reset').addEventListener('click', function () {
+    if (!confirm('Bu sayfadaki bütün ilerlemen silinecek. Baştan başlamak istiyor musun?')) return;
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    location.reload();
+  });
+
+  // ---------- Renkler ----------
+  function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+  function isDark() {
+    var t = document.documentElement.getAttribute('data-theme');
+    if (t) return t === 'dark';
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+
+  // ---------- Sahne çizimi ----------
+  var QMARK = [
+    ' ### ',
+    '#   #',
+    '    #',
+    '  ## ',
+    '  #  ',
+    '     ',
+    '  #  '
+  ];
+
+  function drawCloud(ctx, x, y) {
+    ctx.fillRect(x + 4, y, 12, 4);
+    ctx.fillRect(x, y + 4, 24, 4);
+    ctx.fillRect(x + 2, y + 8, 18, 3);
+  }
+
+  function drawScene(ctx, opts) {
+    var W = 320, H = 120, G = 96;
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = cssVar('--sky'); ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = cssVar('--sky-low'); ctx.fillRect(0, 70, W, G - 70);
+
+    if (isDark()) {
+      ctx.fillStyle = '#F6E7A8';
+      [[22, 12], [70, 30], [118, 8], [176, 22], [236, 10], [292, 34], [44, 46], [262, 52]].forEach(function (s) {
+        ctx.fillRect(s[0], s[1], 2, 2);
+      });
+    }
+    ctx.fillStyle = cssVar('--cloud');
+    drawCloud(ctx, 30, 14);
+    drawCloud(ctx, 196, 26);
+    drawCloud(ctx, 270, 10);
+
+    // yüzen platform
+    if (opts.platform) {
+      for (var p = 0; p < 3; p++) {
+        var px = 236 + p * 16, py = 58;
+        ctx.fillStyle = cssVar('--soil'); ctx.fillRect(px, py, 16, 10);
+        ctx.fillStyle = cssVar('--grass'); ctx.fillRect(px, py, 16, 4);
+        ctx.fillStyle = cssVar('--grass-top'); ctx.fillRect(px + 2, py, 4, 2); ctx.fillRect(px + 10, py, 3, 2);
+      }
+      ctx.fillStyle = cssVar('--coin'); ctx.fillRect(258, 46, 6, 8);
+    }
+
+    // zemin
+    for (var x = 0; x < W; x += 16) {
+      ctx.fillStyle = cssVar('--soil'); ctx.fillRect(x, G, 16, H - G);
+      ctx.fillStyle = cssVar('--soil-dark');
+      ctx.fillRect(x + ((x / 16) % 2 ? 2 : 9), G + 9, 4, 4);
+      ctx.fillRect(x + ((x / 16) % 2 ? 10 : 3), G + 17, 4, 3);
+      ctx.fillStyle = cssVar('--grass'); ctx.fillRect(x, G, 16, 5);
+      ctx.fillStyle = cssVar('--grass-top'); ctx.fillRect(x + 1, G, 5, 2); ctx.fillRect(x + 9, G, 4, 2);
+    }
+
+    if (opts.question) {
+      var bx = 152, by = 52;
+      ctx.fillStyle = cssVar('--line'); ctx.fillRect(bx - 1, by - 1, 18, 18);
+      ctx.fillStyle = cssVar('--coin'); ctx.fillRect(bx, by, 16, 16);
+      ctx.fillStyle = '#FFFFFF';
+      QMARK.forEach(function (row, r) {
+        for (var c = 0; c < row.length; c++) if (row[c] === '#') ctx.fillRect(bx + 6 + c, by + 4 + r, 1, 1);
+      });
+    }
+
+    if (opts.img) {
+      var size = fitSize(opts.img.width, opts.img.height, 32, 44);
+      ctx.drawImage(opts.img, Math.round(opts.x), G - size.h + (opts.bob || 0), size.w, size.h);
+    }
+  }
+
+  function fitSize(w, h, maxH, maxW) {
+    var s = Math.min(maxH / h, maxW / w);
+    return { w: Math.max(1, Math.round(w * s)), h: Math.max(1, Math.round(h * s)), s: s };
+  }
+
+  // ---------- Görüntü işleme ----------
+  function readAsDataURL(file) {
+    return new Promise(function (res, rej) {
+      var r = new FileReader();
+      r.onload = function () { res(r.result); };
+      r.onerror = function () { rej(new Error('okuma')); };
+      r.readAsDataURL(file);
+    });
+  }
+  function loadImg(src) {
+    return new Promise(function (res, rej) {
+      var im = new Image();
+      im.onload = function () { res(im); };
+      im.onerror = function () { rej(new Error('resim')); };
+      im.src = src;
+    });
+  }
+  function crop(img, sx, sy, sw, sh) {
+    var c = document.createElement('canvas');
+    c.width = sw; c.height = sh;
+    var x = c.getContext('2d');
+    x.imageSmoothingEnabled = false;
+    x.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+    return c;
+  }
+
+  var frameImgs = [null, null];
+
+  function handleFiles(fileList) {
+    var files = Array.prototype.slice.call(fileList).filter(function (f) { return /^image\//.test(f.type); });
+    if (!files.length) { showResult('note', 'Bu bir resim dosyası değil. Piskel\'den indirdiğin PNG dosyasını seç.'); return; }
+
+    if (files.length >= 2) {
+      files.sort(function (a, b) { return a.name.localeCompare(b.name, 'tr', { numeric: true }); });
+      Promise.all([readAsDataURL(files[0]).then(loadImg), readAsDataURL(files[1]).then(loadImg)])
+        .then(function (imgs) {
+          var a = crop(imgs[0], 0, 0, imgs[0].width, imgs[0].height);
+          var b = crop(imgs[1], 0, 0, imgs[1].width, imgs[1].height);
+          setFrames(a, b);
+        })
+        .catch(function () { showResult('note', 'Dosyalar açılamadı. Piskel\'den yeniden indirip tekrar dene.'); });
+      return;
+    }
+
+    readAsDataURL(files[0]).then(loadImg).then(function (img) {
+      var a, b;
+      if (img.width >= img.height) {
+        var hw = Math.floor(img.width / 2);
+        a = crop(img, 0, 0, hw, img.height);
+        b = crop(img, hw, 0, hw, img.height);
+      } else {
+        var hh = Math.floor(img.height / 2);
+        a = crop(img, 0, 0, img.width, hh);
+        b = crop(img, 0, hh, img.width, hh);
+      }
+      setFrames(a, b);
+    }).catch(function () { showResult('note', 'Dosya açılamadı. Piskel\'den yeniden indirip tekrar dene.'); });
+  }
+
+  function setFrames(a, b) {
+    state.frames = [a.toDataURL('image/png'), b.toDataURL('image/png')];
+    state.swapped = false;
+    state.verified = false;
+    Promise.all([loadImg(state.frames[0]), loadImg(state.frames[1])]).then(function (imgs) {
+      frameImgs = imgs;
+      runCheck(a, b);
+      renderPreviews();
+      save();
+      updateAll();
+    });
+  }
+
+  // Arka plan: dört köşe aynı renkte ve opaksa o renk arka plan sayılır.
+  function bgColor(d, w, h) {
+    var idx = [0, (w - 1) * 4, (h - 1) * w * 4, ((h - 1) * w + (w - 1)) * 4];
+    var first = idx[0];
+    for (var i = 0; i < idx.length; i++) {
+      var k = idx[i];
+      if (d[k + 3] < 200) return null;
+      if (Math.abs(d[k] - d[first]) + Math.abs(d[k + 1] - d[first + 1]) + Math.abs(d[k + 2] - d[first + 2]) > 30) return null;
+    }
+    return [d[first], d[first + 1], d[first + 2]];
+  }
+  function filled(d, k, bg) {
+    if (d[k + 3] < 128) return false;
+    if (bg && Math.abs(d[k] - bg[0]) + Math.abs(d[k + 1] - bg[1]) + Math.abs(d[k + 2] - bg[2]) < 30) return false;
+    return true;
+  }
+  function countFilled(d, w, h, bg) {
+    var n = 0;
+    for (var k = 0; k < w * h * 4; k += 4) if (filled(d, k, bg)) n++;
+    return n;
+  }
+  // a ile b'yi karşılaştırır; mirror true ise b yatay aynalanmış olarak okunur.
+  function similarity(a, b, w, h, bgA, bgB, mirror) {
+    var match = 0, union = 0;
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        var ka = (y * w + x) * 4;
+        var kb = (y * w + (mirror ? (w - 1 - x) : x)) * 4;
+        var fa = filled(a, ka, bgA), fb = filled(b, kb, bgB);
+        if (fa || fb) union++;
+        if (fa && fb && Math.abs(a[ka] - b[kb]) + Math.abs(a[ka + 1] - b[kb + 1]) + Math.abs(a[ka + 2] - b[kb + 2]) < 90) match++;
+      }
+    }
+    return union ? match / union : 0;
+  }
+
+  function runCheck(ca, cb) {
+    state.attempts += 1;
+    var w = ca.width, h = ca.height;
+    if (cb.width !== w || cb.height !== h) {
+      state.verified = false;
+      showResult('note', 'İki karenin boyutu farklı görünüyor. Piskel\'de iki kare aynı tuvalde durduğu sürece boyutları hep aynı olur. Export bölümündeki PNG sekmesinden ikisini tek resim olarak indirip yükle.');
+      return;
+    }
+    var da = ca.getContext('2d').getImageData(0, 0, w, h).data;
+    var db = cb.getContext('2d').getImageData(0, 0, w, h).data;
+    var bgA = bgColor(da, w, h), bgB = bgColor(db, w, h);
+    var na = countFilled(da, w, h, bgA), nb = countFilled(db, w, h, bgB);
+    if (na < 6 || nb < 6) {
+      state.verified = false;
+      showResult('note', 'Karelerden biri boş görünüyor. Piskel\'de iki karenin de çizimli olduğundan emin olup resmi yeniden indir. Resim üç kareden oluşuyorsa fazla kareyi silmeyi de unutma.');
+      return;
+    }
+    var mirrored = similarity(da, db, w, h, bgA, bgB, true);
+    var same = similarity(da, db, w, h, bgA, bgB, false);
+    var self = similarity(da, da, w, h, bgA, bgA, true);
+
+    if (self >= 0.95) {
+      state.verified = false;
+      showResult('note', 'Karakterin iki yana da aynı görünüyor, bu yüzden hangi yöne baktığı anlaşılmıyor. Ona tek tarafta duran bir ayrıntı ekle: burun, bakan bir göz ya da şapka siperliği gibi.');
+      return;
+    }
+    if (same >= 0.95) {
+      state.verified = false;
+      showResult('note', 'İki kare de aynı yöne bakıyor. İkinci kareyi Transform bölümündeki yatay çevirme düğmesiyle aynala ve resmi yeniden indir.');
+      return;
+    }
+    if (mirrored < 0.5) {
+      state.verified = false;
+      showResult('note', 'İkinci kare, birincinin aynadaki görünüşüne benzemiyor. Sola bakan hâl, sağa bakan hâlin aynası olmalı. 2. ipucu bu adımda işine yarar.');
+      return;
+    }
+    state.verified = true;
+    state.similarity = Math.round(mirrored * 100);
+    state.frameSize = w + ' × ' + h;
+    showResult('good', 'Harika! Karakterin sağa da sola da bakıyor. Aşağıdaki sahnede yürüyüşünü izleyebilirsin.');
+  }
+
+  var resultEl = document.getElementById('result');
+  function showResult(kind, text) {
+    resultEl.hidden = false;
+    resultEl.className = 'msg ' + kind;
+    resultEl.textContent = text;
+  }
+
+  function drawFrameTo(canvas, img) {
+    var box = 160;
+    var s = Math.max(1, Math.floor(box / Math.max(img.width, img.height)));
+    if (img.width * s > box || img.height * s > box) s = box / Math.max(img.width, img.height);
+    canvas.width = Math.max(1, Math.round(img.width * s));
+    canvas.height = Math.max(1, Math.round(img.height * s));
+    var c = canvas.getContext('2d');
+    c.imageSmoothingEnabled = false;
+    c.clearRect(0, 0, canvas.width, canvas.height);
+    c.drawImage(img, 0, 0, canvas.width, canvas.height);
+  }
+
+  function rightImg() { return state.swapped ? frameImgs[1] : frameImgs[0]; }
+  function leftImg() { return state.swapped ? frameImgs[0] : frameImgs[1]; }
+
+  function renderPreviews() {
+    var has = frameImgs[0] && frameImgs[1];
+    document.getElementById('previewArea').hidden = !has;
+    if (!has) return;
+    drawFrameTo(document.getElementById('prevRight'), rightImg());
+    drawFrameTo(document.getElementById('prevLeft'), leftImg());
+  }
+
+  document.getElementById('swap').addEventListener('click', function () {
+    state.swapped = !state.swapped;
+    renderPreviews();
+    drawHero();
+    save();
+  });
+
+  // Dosya seçme ve bırakma
+  var drop = document.getElementById('drop');
+  var fileInput = document.getElementById('file');
+  fileInput.addEventListener('change', function () { if (fileInput.files.length) handleFiles(fileInput.files); fileInput.value = ''; });
+  ['dragenter', 'dragover'].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); });
+  });
+  ['dragleave', 'drop'].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); });
+  });
+  drop.addEventListener('drop', function (e) { if (e.dataTransfer && e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); });
+
+  // ---------- Yürüyüş sahnesi ----------
+  var stage = document.getElementById('stage');
+  var sctx = stage.getContext('2d');
+  var walker = { x: 40, dir: 1, tick: 0 };
+  var playing = !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var rafId = null;
+  var playBtn = document.getElementById('play');
+
+  function stageFrame() {
+    var img = walker.dir > 0 ? rightImg() : leftImg();
+    if (!img) return;
+    var size = fitSize(img.width, img.height, 32, 44);
+    if (playing) {
+      walker.x += walker.dir * 0.7;
+      walker.tick++;
+      if (walker.x > 320 - size.w - 10) { walker.x = 320 - size.w - 10; walker.dir = -1; }
+      if (walker.x < 10) { walker.x = 10; walker.dir = 1; }
+    }
+    var bob = playing && Math.floor(walker.tick / 10) % 2 ? -1 : 0;
+    drawScene(sctx, { img: walker.dir > 0 ? rightImg() : leftImg(), x: walker.x, bob: bob, platform: true });
+    if (playing) rafId = requestAnimationFrame(stageFrame);
+  }
+  function startStage() {
+    cancelAnimationFrame(rafId);
+    playBtn.textContent = playing ? 'Durdur' : 'Yürüt';
+    stageFrame();
+  }
+  playBtn.addEventListener('click', function () {
+    playing = !playing;
+    startStage();
+  });
+
+  // ---------- Kahraman sahnesi ----------
+  var hctx = document.getElementById('heroScene').getContext('2d');
+  function drawHero() {
+    if (state.verified && rightImg()) {
+      var img = rightImg();
+      var size = fitSize(img.width, img.height, 32, 44);
+      drawScene(hctx, { img: img, x: 160 - size.w / 2, platform: true });
+    } else {
+      drawScene(hctx, { question: true, platform: true });
+    }
+  }
+
+  // ---------- İpuçları ----------
+  function decodeHint(b64) {
+    try { return decodeURIComponent(escape(atob(b64))); } catch (e) { return ''; }
+  }
+  document.querySelectorAll('[data-hint]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var n = btn.getAttribute('data-hint');
+      if (n === '3' && state.attempts < 3) return;
+      var el = document.getElementById('hintText' + n);
+      if (n === '3' && !el.textContent) el.textContent = decodeHint(HINT3);
+      el.hidden = !el.hidden;
+      state.hintsOpen[n] = !el.hidden;
+      save();
+    });
+  });
+  function updateHints() {
+    var btn3 = document.getElementById('hint3btn');
+    var unlocked = state.attempts >= 3;
+    btn3.disabled = !unlocked;
+    document.getElementById('hintLock').hidden = unlocked;
+    ['1', '2', '3'].forEach(function (n) {
+      var el = document.getElementById('hintText' + n);
+      if (n === '3' && !unlocked) { el.hidden = true; return; }
+      if (state.hintsOpen[n]) {
+        if (n === '3' && !el.textContent) el.textContent = decodeHint(HINT3);
+        el.hidden = false;
+      }
+    });
+  }
+
+  // ---------- Adımlar ve tanıtım ----------
+  document.querySelectorAll('input[data-step]').forEach(function (cb) {
+    cb.addEventListener('change', function () {
+      state.steps[cb.getAttribute('data-step')] = cb.checked;
+      save();
+      updateAll();
+    });
+  });
+
+  var nameEl = document.getElementById('charName');
+  var noteEl = document.getElementById('charNote');
+  var counterEl = document.getElementById('noteCounter');
+  nameEl.addEventListener('input', function () { state.name = nameEl.value; save(); updateAll(); });
+  noteEl.addEventListener('input', function () { state.note = noteEl.value; save(); updateAll(); });
+
+  function introDone() {
+    return state.name.trim().length >= 2 && state.note.trim().length >= MIN_NOTE;
+  }
+
+  function updateAll() {
+    ['1', '2', '3', '4'].forEach(function (n) {
+      document.getElementById('step' + n).classList.toggle('is-done', !!state.steps[n]);
+    });
+    document.getElementById('step5').classList.toggle('is-done', !!state.verified);
+    document.getElementById('step6').classList.toggle('is-done', introDone());
+
+    var len = state.note.trim().length;
+    counterEl.textContent = len >= MIN_NOTE ? len + ' harf, yeterli' : len + ' / ' + MIN_NOTE + ' harf';
+
+    document.getElementById('stageArea').hidden = !state.verified;
+    var ready = state.verified && introDone();
+    document.getElementById('sendArea').hidden = !ready;
+    document.getElementById('step7').classList.toggle('is-done', ready);
+    var lockedEl = document.getElementById('sendLocked');
+    lockedEl.hidden = ready;
+    if (!ready) {
+      var need = [];
+      if (!state.verified) need.push('5. adımda resmini yükle');
+      if (state.name.trim().length < 2) need.push('karakterinin adını yaz');
+      if (len < MIN_NOTE) need.push('oyunda neler yapacağını en az ' + MIN_NOTE + ' harfle anlat');
+      lockedEl.textContent = 'Göndermeden önce: ' + need.join(', ') + '.';
+    }
+    updateHints();
+    drawHero();
+    if (state.verified) startStage(); else cancelAnimationFrame(rafId);
+  }
+
+  // ---------- Rapor ve kart ----------
+  function today() {
+    try { return new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }); }
+    catch (e) { return new Date().toISOString().slice(0, 10); }
+  }
+  function reportText() {
+    var done = ['1', '2', '3', '4'].filter(function (n) { return state.steps[n]; });
+    done.push('5', '6');
+    return [
+      'Ödev: Karakterim iki yöne bakıyor',
+      'Öğrenci: Güneş',
+      'Tarih: ' + today(),
+      'Karakterin adı: ' + state.name.trim(),
+      'Oyunda yapacakları: ' + state.note.trim(),
+      'Kontrol: Sağa ve sola bakan hâller aynalı (benzerlik %' + state.similarity + ')',
+      'Kare boyutu: ' + state.frameSize + ' piksel',
+      'Tamamlanan adımlar: ' + done.join(', '),
+      'Kart ve iki çizim dosyası ayrıca gönderilecek.'
+    ].join('\n');
+  }
+
+  var sendMsg = document.getElementById('sendMsg');
+  function showSend(text) { sendMsg.hidden = false; sendMsg.textContent = text; }
+
+  document.getElementById('copyReport').addEventListener('click', function () {
+    var text = reportText();
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      showSend(ok ? 'Rapor kopyalandı. Şimdi WhatsApp\'ta öğretmenine yapıştır.' : 'Kopyalama bu tarayıcıda çalışmadı. Raporu ekrandan seçip kopyalayabilirsin.');
+      if (!ok) { sendMsg.textContent += '\n\n' + text; sendMsg.style.whiteSpace = 'pre-wrap'; }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        showSend('Rapor kopyalandı. Şimdi WhatsApp\'ta öğretmenine yapıştır.');
+      }, fallback);
+    } else { fallback(); }
+  });
+
+  function buildCard() {
+    var S = 1080;
+    var c = document.createElement('canvas');
+    c.width = S; c.height = S;
+    var x = c.getContext('2d');
+    x.imageSmoothingEnabled = false;
+    var ink = '#22305A';
+    x.fillStyle = '#DDF1FC'; x.fillRect(0, 0, S, S);
+    // zemin şeridi
+    for (var gx = 0; gx < S; gx += 54) {
+      x.fillStyle = '#9A6233'; x.fillRect(gx, S - 120, 54, 120);
+      x.fillStyle = '#7C4C25'; x.fillRect(gx + ((gx / 54) % 2 ? 8 : 30), S - 80, 14, 14);
+      x.fillStyle = '#45A84F'; x.fillRect(gx, S - 120, 54, 18);
+      x.fillStyle = '#7DCB5E'; x.fillRect(gx + 4, S - 120, 16, 7);
+    }
+    var font = '"Avenir Next", "Segoe UI", system-ui, sans-serif';
+    x.fillStyle = ink;
+    x.font = '600 34px ' + font;
+    x.fillText('Güneş\'in oyun kahramanı', 72, 112);
+    x.font = '800 76px ' + font;
+    var title = state.name.trim() || 'Karakterim';
+    x.fillText(title.length > 20 ? title.slice(0, 20) + '…' : title, 72, 200);
+
+    function panel(img, px, label) {
+      var size = 420, py = 260;
+      x.fillStyle = '#FFFFFF'; x.fillRect(px, py, size, size);
+      var cell = 30;
+      for (var yy = 0; yy < size; yy += cell) for (var xx = 0; xx < size; xx += cell) {
+        if (((xx + yy) / cell) % 2) { x.fillStyle = '#EEF3FA'; x.fillRect(px + xx, py + yy, cell, cell); }
+      }
+      x.lineWidth = 8; x.strokeStyle = ink; x.strokeRect(px, py, size, size);
+      var s = Math.min((size - 60) / img.width, (size - 60) / img.height);
+      var w = Math.round(img.width * s), h = Math.round(img.height * s);
+      x.imageSmoothingEnabled = false;
+      x.drawImage(img, px + (size - w) / 2, py + (size - h) / 2, w, h);
+      x.fillStyle = ink; x.font = '700 34px ' + font;
+      x.fillText(label, px, py + size + 52);
+    }
+    panel(rightImg(), 72, 'Sağa bakan');
+    panel(leftImg(), S - 72 - 420, 'Sola bakan');
+
+    // tanıtım cümlesi, en fazla üç satır
+    x.fillStyle = ink; x.font = '400 30px ' + font;
+    var words = state.note.trim().split(/\s+/), line = '', lines = [];
+    words.forEach(function (wd) {
+      var test = line ? line + ' ' + wd : wd;
+      if (x.measureText(test).width > S - 144 && line) { lines.push(line); line = wd; } else { line = test; }
+    });
+    if (line) lines.push(line);
+    if (lines.length > 3) { lines = lines.slice(0, 3); lines[2] = lines[2].replace(/\s*\S*$/, '') + '…'; }
+    lines.forEach(function (ln, i) { x.fillText(ln, 72, 820 + i * 42); });
+
+    x.fillStyle = '#FFFFFF'; x.font = '600 28px ' + font;
+    x.fillText('Piskel ödevi, ' + today(), 72, S - 40);
+
+    return c;
+  }
+
+  function downloadURL(url, name) {
+    var a = document.createElement('a');
+    a.download = name;
+    a.href = url;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+
+  var downloadCardBtn = document.getElementById('downloadCard');
+  downloadCardBtn.addEventListener('click', function () {
+    downloadURL(buildCard().toDataURL('image/png'), 'gunes-karakter-karti.png');
+    showSend('Kart İndirilenler klasörüne indi. Oradan WhatsApp sohbetine ekleyebilirsin.');
+  });
+
+  // Kartı resim olarak panoya kopyalar; tarayıcı izin vermezse indirme düğmesini gösterir.
+  document.getElementById('copyCard').addEventListener('click', function () {
+    var canvas = buildCard();
+    function blobPromise() { return new Promise(function (res) { canvas.toBlob(res, 'image/png'); }); }
+    function failed() {
+      downloadCardBtn.hidden = false;
+      showSend('Bu tarayıcı resmi kopyalayamadı. Kartı indir düğmesine bas ve inen resmi WhatsApp sohbetine ekle.');
+    }
+    function copied() {
+      showSend('Kart kopyalandı. Şimdi WhatsApp sohbetine yapıştır.');
+    }
+    if (!(navigator.clipboard && navigator.clipboard.write && window.ClipboardItem)) { failed(); return; }
+    try {
+      navigator.clipboard.write([new ClipboardItem({ 'image/png': blobPromise() })]).then(copied, function () {
+        blobPromise().then(function (blob) {
+          return navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        }).then(copied, failed);
+      });
+    } catch (e) { failed(); }
+  });
+
+  // Çizimleri Scratch'e hazır boyutta indirir: piksel netliği bozulmadan tam sayı kat büyütülür.
+  function scaledURL(img) {
+    var k = img.height >= 80 ? 1 : Math.max(1, Math.round(80 / img.height));
+    var c = document.createElement('canvas');
+    c.width = img.width * k; c.height = img.height * k;
+    var x = c.getContext('2d');
+    x.imageSmoothingEnabled = false;
+    x.drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL('image/png');
+  }
+  document.getElementById('downloadFrames').addEventListener('click', function () {
+    downloadURL(scaledURL(rightImg()), 'gunes-karakter-saga.png');
+    setTimeout(function () { downloadURL(scaledURL(leftImg()), 'gunes-karakter-sola.png'); }, 600);
+    showSend('İki çizim İndirilenler klasörüne indi: gunes-karakter-saga.png ve gunes-karakter-sola.png. Tarayıcı birden fazla dosya için izin isterse İzin ver\'e bas.');
+  });
+
+
+  // ---------- Başlangıç ----------
+  load();
+  document.querySelectorAll('input[data-step]').forEach(function (cb) { cb.checked = !!state.steps[cb.getAttribute('data-step')]; });
+  nameEl.value = state.name;
+  noteEl.value = state.note;
+  if (!canSave) savedEl.textContent = 'Bu tarayıcı kayıt yapmıyor; ödevi sayfayı kapatmadan bitir.';
+
+  if (state.frames[0] && state.frames[1]) {
+    Promise.all([loadImg(state.frames[0]), loadImg(state.frames[1])]).then(function (imgs) {
+      frameImgs = imgs;
+      renderPreviews();
+      if (state.verified) showResult('good', 'Karakterin sağa da sola da bakıyor. Aşağıdaki sahnede yürüyüşünü izleyebilirsin.');
+      updateAll();
+    }).catch(function () { updateAll(); });
+  } else {
+    updateAll();
+  }
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq.addEventListener) mq.addEventListener('change', function () { drawHero(); if (!playing && state.verified) stageFrame(); });
+  }
+})();
+</script>
+</body>
+</html>
